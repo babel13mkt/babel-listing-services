@@ -310,6 +310,9 @@ if(strlen($wa_clean) === 9) $wa_clean = '56' . $wa_clean;
     </div>
 </div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 function nexusSwap(src, el) {
     const vp = document.getElementById('bd-viewport');
@@ -320,5 +323,18 @@ function nexusSwap(src, el) {
     const t = new Image(); t.src = src;
     t.onload = () => { vp.src = src; vp.style.opacity = '1'; };
 }
+
+// Map Engine (Leaflet)
+document.addEventListener('DOMContentLoaded', function() {
+    const mapEl = document.getElementById('bd-interactive-map');
+    if (!mapEl) return;
+    const lat = parseFloat(mapEl.dataset.lat);
+    const lng = parseFloat(mapEl.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    const map = L.map('bd-interactive-map', { scrollWheelZoom: false }).setView([lat, lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.marker([lat, lng]).addTo(map);
+});
 </script>
 <?php get_footer(); ?>
