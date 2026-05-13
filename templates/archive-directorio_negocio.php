@@ -48,12 +48,6 @@ $query = new WP_Query( $query_args );
 
 <div class="bd-archive-wrapper">
     
-    <div class="bd-archive-hero">
-        <div class="bd-container">
-            <h1 class="bd-hero-title">Directorio de Negocios</h1>
-            <p class="bd-hero-subtitle">Descubre los mejores servicios y comercios cerca de ti.</p>
-        </div>
-    </div>
 
     <div class="bd-container">
         
@@ -186,20 +180,6 @@ $query = new WP_Query( $query_args );
 
         <!-- Resultados -->
         <main class="bd-archive-main" style="width: 100%;">
-            <div class="bd-results-header">
-                <div class="bd-results-info">
-                    Mostrando <strong id="bd-count-shown"><?php echo $query->found_posts; ?></strong> negocios
-                </div>
-                <div class="bd-results-sort">
-                    <span>Ordenar por:</span>
-                    <select id="bd-sort">
-                        <option value="newest">Más recientes</option>
-                        <option value="rating">Mejor valorados</option>
-                        <option value="az">Nombre (A-Z)</option>
-                        <option value="distance" <?php echo ($lat && $lng) ? 'selected' : ''; ?>>Cercanía (Radar)</option>
-                    </select>
-                </div>
-            </div>
 
             <div id="bd-grid-container" class="bd-results-grid-wrap">
                 <?php if ( $query->have_posts() ) : ?>

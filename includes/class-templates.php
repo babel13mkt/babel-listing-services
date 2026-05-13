@@ -37,7 +37,7 @@ class BD_Templates {
         }
 
         if ( is_tax( 'directorio_region' ) ) {
-            $plugin_template = BD_PATH . 'templates/taxonomy-directorio_categoria.php'; // Reuse archive layout
+            $plugin_template = BD_PATH . 'templates/taxonomy-directorio_region.php';
             if ( file_exists( $plugin_template ) ) {
                 return $plugin_template;
             }

@@ -34,22 +34,6 @@ $term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, '
 
 <div class="bd-archive-wrapper">
     
-    <!-- Hero Section -->
-    <div class="bd-archive-hero taxonomy-hero region-hero" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('<?php echo esc_url($term_image); ?>');">
-        <div class="bd-container">
-            <nav class="bd-breadcrumbs">
-                <a href="<?php echo home_url(); ?>">Inicio</a> / 
-                <a href="<?php echo get_post_type_archive_link('directorio_negocio'); ?>">Directorio</a> / 
-                <span>Región: <?php echo esc_html( $term->name ); ?></span>
-            </nav>
-            <h1 class="bd-hero-title">Negocios en <?php echo esc_html( $term->name ); ?></h1>
-            <?php if ( $term->description ) : ?>
-                <p class="bd-hero-subtitle"><?php echo esc_html( $term->description ); ?></p>
-            <?php else : ?>
-                <p class="bd-hero-subtitle">Descubre los mejores servicios locales y comercios en <?php echo esc_html( $term->name ); ?>.</p>
-            <?php endif; ?>
-        </div>
-    </div>
 
     <div class="bd-container bd-archive-layout">
         
@@ -57,20 +41,6 @@ $term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, '
 
         <!-- Resultados -->
         <main class="bd-archive-main" style="width: 100%;">
-            <div class="bd-results-header">
-                <div class="bd-results-info">
-                    Mostrando <strong id="bd-count-shown"><?php echo $wp_query->found_posts; ?></strong> negocios en <?php echo esc_html($term->name); ?>
-                </div>
-                <div class="bd-results-sort">
-                    <span>Ordenar por:</span>
-                    <select id="bd-sort">
-                        <option value="newest">Más recientes</option>
-                        <option value="rating">Mejor valorados</option>
-                        <option value="az">Nombre (A-Z)</option>
-                        <option value="distance" <?php echo ($lat && $lng) ? 'selected' : ''; ?>>Cercanía (Radar)</option>
-                    </select>
-                </div>
-            </div>
 
             <div id="bd-grid-container" class="bd-results-grid-wrap">
                 <?php if ( have_posts() ) : ?>
