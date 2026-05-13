@@ -53,94 +53,10 @@ $term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, '
 
     <div class="bd-container bd-archive-layout">
         
-        <!-- Sidebar Filtros -->
-        <aside class="bd-archive-sidebar">
-            <div class="bd-filter-card">
-                <div class="bd-filter-header">
-                    <i class="fas fa-sliders-h"></i>
-                    <span>Filtros de Búsqueda</span>
-                </div>
-                
-                <form id="bd-filter-form">
-                    <?php wp_nonce_field( 'bd_ajax_nonce', 'nonce' ); ?>
-                    
-                    <!-- Palabra Clave -->
-                    <div class="bd-filter-group">
-                        <label>Búsqueda libre</label>
-                        <div class="bd-input-icon">
-                            <i class="fas fa-search"></i>
-                            <input type="text" name="keyword" placeholder="¿Qué buscas en <?php echo esc_attr($term->name); ?>?" value="<?php echo esc_attr($keyword); ?>">
-                        </div>
-                    </div>
 
-                    <!-- Categorías -->
-                    <div class="bd-filter-group">
-                        <label>Categoría</label>
-                        <select name="category" id="bd-filter-cat">
-                            <option value="">Todas las Categorías</option>
-                            <?php
-                            foreach ( $categorias as $parent ) {
-                                $selected = ( $get_cat === $parent->slug ) ? 'selected' : '';
-                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent" ' . $selected . '>' . esc_html( $parent->name ) . '</option>';
-                                $children = get_terms( array( 'taxonomy' => 'directorio_categoria', 'parent' => $parent->term_id, 'hide_empty' => false ) );
-                                foreach ( $children as $child ) {
-                                    $selected_child = ( $get_cat === $child->slug ) ? 'selected' : '';
-                                    echo '<option value="' . esc_attr( $child->slug ) . '" ' . $selected_child . '>&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
-                                }
-                            }
-                            ?>
-                        </select>
-                    </div>
-
-                    <!-- Ubicación (Selector de Cambio de Ubicación) -->
-                    <div class="bd-filter-group">
-                        <label>Cambiar Ubicación</label>
-                        <select name="region" id="bd-filter-region">
-                            <option value="">Todo Chile</option>
-                            <?php
-                            foreach ( $regiones as $parent ) {
-                                $selected_parent = ( $term->slug === $parent->slug ) ? 'selected' : '';
-                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent" ' . $selected_parent . '>' . esc_html( $parent->name ) . '</option>';
-                                $children = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => $parent->term_id, 'hide_empty' => false ) );
-                                foreach ( $children as $child ) {
-                                    $selected_child = ( $term->slug === $child->slug ) ? 'selected' : '';
-                                    echo '<option value="' . esc_attr( $child->slug ) . '" ' . $selected_child . '>&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
-                                }
-                            }
-                            ?>
-                        </select>
-                    </div>
-
-                    <!-- Radar (Geolocalización) -->
-                    <div class="bd-filter-group bd-geo-group">
-                        <label>Búsqueda por Radar</label>
-                        <button type="button" id="bd-geo-btn" class="bd-btn-geo <?php echo ($lat && $lng) ? 'active' : ''; ?>">
-                            <i class="fas <?php echo ($lat && $lng) ? 'fa-map-marker-alt' : 'fa-location-arrow'; ?>"></i> <?php echo ($lat && $lng) ? 'Radar Activo' : 'Activar Radar'; ?>
-                        </button>
-                        <div id="bd-filter-radius" class="bd-radius-select" style="<?php echo ($lat && $lng) ? 'display:block;' : 'display:none;'; ?>">
-                            <span>Radio:</span>
-                            <select name="radius">
-                                <option value="5" <?php selected($radius, 5); ?>>5 km</option>
-                                <option value="10" <?php selected($radius, 10); ?>>10 km</option>
-                                <option value="25" <?php selected($radius, 25); ?>>25 km</option>
-                                <option value="50" <?php selected($radius, 50); ?>>50 km</option>
-                                <option value="100" <?php selected($radius, 100); ?>>100 km</option>
-                            </select>
-                        </div>
-                        <input type="hidden" id="bd-lat" name="lat" value="<?php echo esc_attr($lat); ?>">
-                        <input type="hidden" id="bd-lng" name="lng" value="<?php echo esc_attr($lng); ?>">
-                    </div>
-
-                    <div class="bd-filter-actions">
-                        <button type="submit" class="bd-btn bd-btn-primary">Aplicar Filtros</button>
-                        <button type="button" id="bd-reset-filters" class="bd-btn-reset">Limpiar todo</button>
-                    </div>
-                </form>
-            </div>
-        </aside>
 
         <!-- Resultados -->
-        <main class="bd-archive-main">
+        <main class="bd-archive-main" style="width: 100%;">
             <div class="bd-results-header">
                 <div class="bd-results-info">
                     Mostrando <strong id="bd-count-shown"><?php echo $wp_query->found_posts; ?></strong> negocios en <?php echo esc_html($term->name); ?>
