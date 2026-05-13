@@ -1,0 +1,40 @@
+:root {
+    --bs-primary: #3751ff;
+    --bs-text: #2c3e50;
+    --bs-muted: #6c757d;
+    --bs-bg: #f8f9fa;
+    --bs-card-bg: #ffffff;
+    --bs-border: #e9ecef;
+    --bs-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    --bs-radius: 12px;
+}
+.babel-services-hero { 
+    background: linear-gradient(135deg, #3751ff 0%, #0021f3 100%); 
+    padding: 80px 20px; 
+    text-align: center; 
+    color: white; 
+}
+.babel-services-hero h1 { font-size: 42px; font-weight: 800; margin: 0 0 15px 0; letter-spacing: -1px; }
+.babel-services-hero p { font-size: 18px; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+
+.babel-services-container { background-color: var(--bs-bg); padding: 60px 20px; font-family: 'Inter', -apple-system, sans-serif; }
+.babel-services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+.babel-services-card { background: var(--bs-card-bg); border-radius: var(--bs-radius); overflow: hidden; border: 1px solid var(--bs-border); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
+.babel-services-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+.babel-services-card-image { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #eee; }
+.babel-services-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.babel-services-card:hover .babel-services-card-image img { transform: scale(1.05); }
+.babel-services-card-badge { position: absolute; top: 15px; left: 15px; background: var(--bs-primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 2; }
+.babel-services-card-content { padding: 20px; flex-grow: 1; }
+.babel-services-card-title { margin: 0 0 10px 0; font-size: 18px; font-weight: 700; }
+.babel-services-card-title a { color: var(--bs-text); text-decoration: none; }
+.babel-services-card-title a:hover { color: var(--bs-primary); }
+.babel-services-card-location { color: var(--bs-muted); font-size: 14px; display: flex; align-items: center; gap: 5px; margin-bottom: 20px; }
+.babel-services-card-location .dashicons { font-size: 16px; width: 16px; height: 16px; }
+.babel-services-card-footer { border-top: 1px solid var(--bs-border); padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+.babel-services-card-rating { display: flex; align-items: center; gap: 5px; }
+.star-icon { color: #ffc107; font-size: 18px; }
+.rating-value { font-weight: 700; color: var(--bs-text); }
+.reviews-count { color: var(--bs-muted); font-size: 13px; }
+.babel-services-card-action { color: var(--bs-muted); cursor: pointer; transition: color 0.2s; }
+.babel-services-card-action:hover { color: #e74c3c; }
