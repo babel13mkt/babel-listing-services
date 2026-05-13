@@ -60,9 +60,10 @@ $term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, '
                     </div>
                 <?php else : ?>
                     <div class="bd-no-results-premium">
-                        <i class="fas fa-search-minus"></i>
-                        <h3>No hay resultados</h3>
-                        <p>No encontramos negocios en esta región con los filtros aplicados.</p>
+                        <i class="fas fa-rocket"></i>
+                        <h3>No hay nada por aquí todavía</h3>
+                        <p>Tú puedes ser el primero en aparecer en esta sección.</p>
+                        <a href="<?php echo home_url('/unete'); ?>" class="bd-btn bd-btn-primary" style="margin-top: 20px; display: inline-block;">¡Quiero ser el primero!</a>
                     </div>
                 <?php endif; ?>
             </div>

@@ -149,5 +149,21 @@ class BD_CPT {
             'show_in_rest' => true,
             'rewrite'      => array( 'slug' => 'region-negocio' ),
         ) );
+
+        // Características (Vegano, Pet Friendly, etc.) - SPRINT 6
+        register_taxonomy( 'directorio_features', array( 'directorio_negocio' ), array(
+            'hierarchical' => false,
+            'labels'       => array(
+                'name'          => 'Características',
+                'singular_name' => 'Característica',
+                'menu_name'     => 'Características',
+                'all_items'     => 'Todas las Características',
+                'add_new_item'  => 'Agregar Característica',
+            ),
+            'show_ui'      => true,
+            'show_in_menu' => 'bd-panel',
+            'show_in_rest' => true,
+            'rewrite'      => array( 'slug' => 'features-negocio' ),
+        ) );
     }
 }

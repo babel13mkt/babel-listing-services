@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Sistema de directorio premium inspirado en ListingHive para el mercado chileno.
- * Version: 3.4.0
+ * Version: 3.4.6
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( "ABSPATH" ) ) {
 }
 
 // Definir constantes globales
-define( "BD_VERSION", "3.4.0" );
+define( "BD_VERSION", "3.4.6" );
 define( "BD_PATH", plugin_dir_path( __FILE__ ) );
 define( "BD_URL", plugin_dir_url( __FILE__ ) );
 
@@ -72,9 +72,15 @@ class BD_Core {
          * Hito 15.7: Ordenar regiones alfabéticamente por nombre real,
          * ignorando el prefijo REG-N para la comparación.
          */
-        add_filter("get_terms", function($terms, $taxonomies) {
+        add_filter("get_terms", function($terms, $taxonomies, $args) {
             if (in_array("directorio_region", (array)$taxonomies) && is_array($terms) && !empty($terms)) {
+                // Si el caller pidió IDs o algo que no sea objetos, no tocamos nada
+                if (isset($args['fields']) && $args['fields'] !== 'all' && $args['fields'] !== '') {
+                     return $terms;
+                }
+                
                 usort($terms, function($a, $b) {
+                    if (!is_object($a) || !is_object($b)) return 0;
                     if (!isset($a->name) || !isset($b->name)) return 0;
                     // Limpiamos el prefijo REG-X para comparar
                     $nameA = preg_replace("/^REG-[IVXLMCD]+\s+/", "", $a->name);
@@ -83,7 +89,7 @@ class BD_Core {
                 });
             }
             return $terms;
-        }, 10, 2);
+        }, 10, 3);
     }
 
     public function activate() {

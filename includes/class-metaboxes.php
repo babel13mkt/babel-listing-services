@@ -66,6 +66,7 @@ class BD_Metaboxes {
             'maps_embed'      => get_post_meta( $post->ID, '_bd_maps_embed', true ),
             'latitud'         => get_post_meta( $post->ID, '_bd_latitud', true ),
             'longitud'        => get_post_meta( $post->ID, '_bd_longitud', true ),
+            'price_range'     => get_post_meta( $post->ID, '_bd_price_range', true ),
             'verificado'      => get_post_meta( $post->ID, '_bd_verificado', true ),
             'destacado'       => get_post_meta( $post->ID, '_bd_destacado', true ),
         );
@@ -109,6 +110,18 @@ class BD_Metaboxes {
                                 <label class="bd-meta-label">Teléfono / WhatsApp</label>
                                 <input type="tel" name="bd_telefono" value="<?php echo esc_attr($f['telefono']); ?>" class="bd-meta-input" placeholder="+56 9 ...">
                             </div>
+                            <div class="bd-meta-field">
+                                <label class="bd-meta-label">Rango de Precios</label>
+                                <div class="bd-meta-select-wrap">
+                                    <select name="bd_price_range" class="bd-meta-select">
+                                        <option value="0">No definido</option>
+                                        <option value="1" <?php selected($f['price_range'], '1'); ?>>$ - Barato</option>
+                                        <option value="2" <?php selected($f['price_range'], '2'); ?>>$$ - Moderado</option>
+                                        <option value="3" <?php selected($f['price_range'], '3'); ?>>$$$ - Caro</option>
+                                        <option value="4" <?php selected($f['price_range'], '4'); ?>>$$$$ - Lujo</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="bd-meta-field bd-full-width">
                                 <label class="bd-meta-label">Horario</label>
                                 <textarea name="bd_horario" class="bd-meta-textarea" style="height:60px;" placeholder="Ej: Lun-Vie 09:00 - 19:00"><?php echo esc_textarea($f['horario']); ?></textarea>
@@ -127,6 +140,21 @@ class BD_Metaboxes {
                             
                             <!-- Selectores Taxonomía Reutilizados -->
                             <?php $this->render_tax_selectors($post); ?>
+
+                             <div class="bd-meta-field bd-full-width">
+                                <label class="bd-meta-label">Características (Features)</label>
+                                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                                    <?php 
+                                    $all_features = get_terms( array( 'taxonomy' => 'directorio_features', 'hide_empty' => false ) );
+                                    $post_features = wp_get_post_terms( $post->ID, 'directorio_features', array( 'fields' => 'ids' ) );
+                                    foreach($all_features as $feature): ?>
+                                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--bda-text); cursor:pointer;">
+                                            <input type="checkbox" name="bd_features[]" value="<?php echo $feature->term_id; ?>" <?php checked(in_array($feature->term_id, $post_features)); ?>>
+                                            <?php echo $feature->name; ?>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
 
                             <div class="bd-meta-field bd-full-width">
                                 <label class="bd-meta-label">Mapa Embed (Iframe)</label>
@@ -251,7 +279,7 @@ class BD_Metaboxes {
 
         $fields = array(
             'direccion', 'telefono', 'email', 'sitio_web', 'horario', 
-            'logo_id', 'maps_embed', 'latitud', 'longitud'
+            'logo_id', 'maps_embed', 'latitud', 'longitud', 'price_range'
         );
         foreach($fields as $field) {
             if(isset($_POST['bd_'.$field])) {
@@ -266,6 +294,13 @@ class BD_Metaboxes {
         // Taxonomías
         $regions = array_filter(array( (int)$_POST['bd_tax_region'], (int)$_POST['bd_tax_comuna'] ));
         if(!empty($regions)) wp_set_post_terms($post_id, $regions, 'directorio_region');
+
+        if(isset($_POST['bd_features']) && is_array($_POST['bd_features'])) {
+            $features = array_map('intval', $_POST['bd_features']);
+            wp_set_post_terms($post_id, $features, 'directorio_features');
+        } else {
+            wp_set_post_terms($post_id, array(), 'directorio_features');
+        }
         
         // Thumbnail ID (Portada)
         if(isset($_POST['_thumbnail_id'])) {

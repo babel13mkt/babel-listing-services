@@ -134,9 +134,10 @@ class BD_AJAX {
             }
         } else {
             echo '<div class="bd-no-results-premium">';
-            echo '<i class="fas fa-search-minus"></i>';
-            echo '<h3>No encontramos nada por aquí</h3>';
-            echo '<p>Prueba ajustando los filtros o ampliando el radar de búsqueda.</p>';
+            echo '<i class="fas fa-rocket"></i>';
+            echo '<h3>No hay nada por aquí todavía</h3>';
+            echo '<p>Tú puedes ser el primero en aparecer en esta sección.</p>';
+            echo '<a href="' . home_url('/unete') . '" class="bd-btn bd-btn-primary" style="margin-top: 20px; display: inline-block;">¡Quiero ser el primero!</a>';
             echo '</div>';
         }
         

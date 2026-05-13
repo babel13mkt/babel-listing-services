@@ -199,9 +199,10 @@ $query = new WP_Query( $query_args );
                     </div>
                 <?php else : ?>
                     <div class="bd-no-results-premium">
-                        <i class="fas fa-search-minus"></i>
-                        <h3>No encontramos nada por aquí</h3>
-                        <p>Prueba ajustando los filtros o ampliando el radar de búsqueda.</p>
+                        <i class="fas fa-rocket"></i>
+                        <h3>No hay nada por aquí todavía</h3>
+                        <p>Tú puedes ser el primero en aparecer en esta sección.</p>
+                        <a href="<?php echo home_url('/unete'); ?>" class="bd-btn bd-btn-primary" style="margin-top: 20px; display: inline-block;">¡Quiero ser el primero!</a>
                     </div>
                 <?php endif; wp_reset_postdata(); ?>
             </div>

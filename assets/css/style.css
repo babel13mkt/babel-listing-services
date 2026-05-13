@@ -559,3 +559,48 @@
     background: #fafafa;
     border-color: #999;
 }
+
+/* ==========================================================================
+   No Results Premium Styling
+   ========================================================================== */
+.bd-no-results-premium {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    background: #ffffff;
+    border: 1px dashed #e2e8f0;
+    border-radius: 16px;
+    margin: 40px auto;
+    max-width: 600px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+.bd-no-results-premium i {
+    font-size: 64px;
+    color: #1a6ef5;
+    margin-bottom: 24px;
+    display: block;
+    opacity: 0.8;
+}
+
+.bd-no-results-premium h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin: 0 0 12px 0 !important;
+}
+
+.bd-no-results-premium p {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #64748b;
+    margin: 0 0 24px 0;
+    line-height: 1.6;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+

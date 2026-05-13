@@ -203,22 +203,29 @@ class BD_Frontend {
         <div class="bd-grid-container <?php echo esc_attr( $columns_class ); ?>">
             <?php foreach ( $terms as $term ) : ?>
                 <?php 
+                // FORZAR CONVERSIÓN DE ID A OBJETO WP_TERM
+                if ( is_numeric( $term ) ) {
+                    $term = get_term( (int) $term, 'directorio_region' );
+                }
+
+                // SALIR SI NO ES UN OBJETO VÁLIDO PARA EVITAR ERRORES FATALES
+                if ( ! is_a( $term, 'WP_Term' ) || is_wp_error( $term ) ) {
+                    continue; 
+                }
+
                 $param = ( $a['type'] === 'region' ) ? 'region' : 'category';
                 $term_link = esc_url( add_query_arg( $param, $term->slug, $search_url ) ); 
                 
                 // Obtener imagen real desde Term Meta (Sideloaded)
                 $term_image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
                 $term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, 'large' ) : '';
-
-                if ( ! $term_image ) {
-                    // Fallback a Picsum si no hay imagen real vinculada
-                    $term_image = 'https://picsum.photos/600/400';
-                }
                 ?>
                 <a href="<?php echo $term_link; ?>" class="bd-grid-card bd-grid-<?php echo esc_attr( $a['type'] ); ?>">
                     <div class="bd-grid-card-content">
                         <div class="bd-grid-image">
-                            <img src="<?php echo esc_url($term_image); ?>" alt="<?php echo esc_attr( $term->name ); ?>" loading="lazy">
+                            <?php if ( $term_image ) : ?>
+                                <img src="<?php echo esc_url($term_image); ?>" alt="<?php echo esc_attr( $term->name ); ?>" loading="lazy">
+                            <?php endif; ?>
                         </div>
                         <div class="bd-grid-header">
                             <h3 class="bd-grid-title"><?php echo esc_html( $term->name ); ?></h3>
@@ -403,14 +410,17 @@ class BD_Frontend {
         <style>
             .bd-taxonomies-grid {
                 display: grid;
-                grid-template-columns: 1.5fr 1fr;
-                gap: 50px;
+                grid-template-columns: 1.5fr 2fr; /* Ajuste solicitado para dar más ancho a Ubicaciones */
+                gap: 50px !important;
+                align-items: start;
                 font-family: 'Inter', sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
             }
             .bd-taxonomies-grid h4 {
                 color: #fff;
                 font-size: 1.1rem;
-                margin-bottom: 1rem;
+                margin-bottom: 1.5rem;
                 text-transform: uppercase;
                 letter-spacing: 1px;
                 border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -422,40 +432,43 @@ class BD_Frontend {
                 margin: 0 !important;
             }
             .bd-taxonomies-grid li {
-                margin-bottom: 0.5rem !important;
+                display: block !important;
+                margin-bottom: 12px !important;
                 padding-left: 0 !important;
+                break-inside: avoid-column;
+                page-break-inside: avoid;
             }
             .bd-taxonomies-grid li::before {
                 content: none !important;
             }
             .bd-taxonomies-grid a {
+                display: block;
                 color: rgba(255,255,255,0.7);
                 text-decoration: none;
                 transition: color 0.3s ease;
                 font-size: 0.95rem;
-                display: block;
+                line-height: 1.4;
+                white-space: nowrap; /* Fuerza una sola línea */
+                overflow: hidden; /* Oculta el desborde */
+                text-overflow: ellipsis; /* Añade los tres puntos si es muy largo */
             }
             .bd-taxonomies-grid a:hover {
                 color: #fff;
                 text-decoration: underline;
             }
-            .bd-regions-col a {
-                white-space: nowrap;
-            }
             .bd-regions-col ul {
                 column-count: 2;
-                column-gap: 50px;
+                column-gap: 20px;
             }
             .bd-categories-col ul {
-                column-count: 2;
-                column-gap: 50px;
+                column-count: 3;
+                column-gap: 30px;
             }
-            @media (max-width: 768px) {
+            @media (max-width: 992px) {
                 .bd-taxonomies-grid {
                     grid-template-columns: 1fr;
-                    gap: 1.5rem;
+                    gap: 2rem !important;
                 }
-                .bd-regions-col ul,
                 .bd-categories-col ul {
                     column-count: 2;
                 }
@@ -473,6 +486,13 @@ class BD_Frontend {
                 <h4>Ubicaciones</h4>
                 <ul>
                     <?php foreach ( $regiones as $region ) : ?>
+                        <?php 
+                        // Failsafe Hito 15.8
+                        if ( is_numeric( $region ) ) {
+                            $region = get_term( $region, 'directorio_region' );
+                        }
+                        if ( ! is_object( $region ) || is_wp_error( $region ) ) continue;
+                        ?>
                         <li>
                             <a href="<?php echo esc_url( add_query_arg( 'region', $region->slug, $search_url ) ); ?>">
                                 <?php echo esc_html( $region->name ); ?>
