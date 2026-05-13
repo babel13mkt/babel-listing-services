@@ -14,6 +14,7 @@ class BD_Frontend {
         add_shortcode( 'sdc_buscador', array( $this, 'render_buscador' ) );
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
         add_shortcode( 'bd_grid', array( $this, 'render_grid' ) );
+        add_shortcode( 'bd_footer_taxonomies', array( $this, 'render_footer_taxonomies' ) );
     }
 
     /**
@@ -56,14 +57,20 @@ class BD_Frontend {
                         <i class="fas fa-chevron-down bd-select-arrow"></i>
                     </div>
 
-                    <!-- Campo 3: Región -->
+                    <!-- Campo 3: Ubicación (Región/Comuna) -->
                     <div class="bd-sfield bd-select-wrapper">
                         <span class="bd-sfield-icon"><i class="fas fa-map"></i></span>
                         <select name="region" id="bd-filter-region">
                             <option value="">Todo Chile</option>
-                            <?php foreach ( $regiones as $reg ) : ?>
-                                <option value="<?php echo esc_attr( $reg->slug ); ?>"><?php echo esc_html( $reg->name ); ?></option>
-                            <?php endforeach; ?>
+                            <?php
+                            foreach ( $regiones as $parent ) {
+                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent">' . esc_html( $parent->name ) . '</option>';
+                                $children = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => $parent->term_id, 'hide_empty' => false ) );
+                                foreach ( $children as $child ) {
+                                    echo '<option value="' . esc_attr( $child->slug ) . '">&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
+                                }
+                            }
+                            ?>
                         </select>
                         <i class="fas fa-chevron-down bd-select-arrow"></i>
                     </div>
@@ -377,6 +384,117 @@ class BD_Frontend {
             });
         });
         </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_footer_taxonomies] para inyectar en el Footer (Widgets)
+     * Grid CSS: 1fr (Regiones) / 3fr (Categorías)
+     */
+    public function render_footer_taxonomies() {
+        $regiones = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => 0, 'hide_empty' => false ) );
+        $categorias = get_terms( array( 'taxonomy' => 'directorio_categoria', 'parent' => 0, 'hide_empty' => false ) );
+
+        $search_url = home_url( '/empresas/' );
+
+        ob_start();
+        ?>
+        <style>
+            .bd-taxonomies-grid {
+                display: grid;
+                grid-template-columns: 1.5fr 1fr;
+                gap: 50px;
+                font-family: 'Inter', sans-serif;
+            }
+            .bd-taxonomies-grid h4 {
+                color: #fff;
+                font-size: 1.1rem;
+                margin-bottom: 1rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding-bottom: 0.5rem;
+            }
+            .bd-taxonomies-grid ul {
+                list-style: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .bd-taxonomies-grid li {
+                margin-bottom: 0.5rem !important;
+                padding-left: 0 !important;
+            }
+            .bd-taxonomies-grid li::before {
+                content: none !important;
+            }
+            .bd-taxonomies-grid a {
+                color: rgba(255,255,255,0.7);
+                text-decoration: none;
+                transition: color 0.3s ease;
+                font-size: 0.95rem;
+                display: block;
+            }
+            .bd-taxonomies-grid a:hover {
+                color: #fff;
+                text-decoration: underline;
+            }
+            .bd-regions-col a {
+                white-space: nowrap;
+            }
+            .bd-regions-col ul {
+                column-count: 2;
+                column-gap: 50px;
+            }
+            .bd-categories-col ul {
+                column-count: 2;
+                column-gap: 50px;
+            }
+            @media (max-width: 768px) {
+                .bd-taxonomies-grid {
+                    grid-template-columns: 1fr;
+                    gap: 1.5rem;
+                }
+                .bd-regions-col ul,
+                .bd-categories-col ul {
+                    column-count: 2;
+                }
+            }
+            @media (max-width: 480px) {
+                .bd-regions-col ul,
+                .bd-categories-col ul {
+                    column-count: 1;
+                }
+            }
+        </style>
+
+        <div class="bd-taxonomies-grid">
+            <div class="bd-regions-col">
+                <h4>Ubicaciones</h4>
+                <ul>
+                    <?php foreach ( $regiones as $region ) : ?>
+                        <li>
+                            <a href="<?php echo esc_url( add_query_arg( 'region', $region->slug, $search_url ) ); ?>">
+                                <?php echo esc_html( $region->name ); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <div class="bd-categories-col">
+                <h4>Categorías</h4>
+                <ul>
+                    <?php foreach ( $categorias as $categoria ) : ?>
+                        <li>
+                            <a href="<?php echo esc_url( add_query_arg( 'category', $categoria->slug, $search_url ) ); ?>">
+                                <?php echo esc_html( $categoria->name ); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
         <?php
         return ob_get_clean();
     }

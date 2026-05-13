@@ -27,10 +27,15 @@ $regiones   = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => 0
 global $wp_query;
 ?>
 
+<?php 
+$term_image_id = get_term_meta( $term_id, 'bd_term_image_id', true );
+$term_image    = $term_image_id ? wp_get_attachment_image_url( $term_image_id, 'full' ) : 'https://picsum.photos/1920/600';
+?>
+
 <div class="bd-archive-wrapper">
     
     <!-- Hero Section -->
-    <div class="bd-archive-hero taxonomy-hero region-hero">
+    <div class="bd-archive-hero taxonomy-hero region-hero" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('<?php echo esc_url($term_image); ?>');">
         <div class="bd-container">
             <nav class="bd-breadcrumbs">
                 <a href="<?php echo home_url(); ?>">Inicio</a> / 
@@ -41,7 +46,7 @@ global $wp_query;
             <?php if ( $term->description ) : ?>
                 <p class="bd-hero-subtitle"><?php echo esc_html( $term->description ); ?></p>
             <?php else : ?>
-                <p class="bd-hero-subtitle">Descubre los mejores servicios locales y comercios en la región de <?php echo esc_html( $term->name ); ?>.</p>
+                <p class="bd-hero-subtitle">Descubre los mejores servicios locales y comercios en <?php echo esc_html( $term->name ); ?>.</p>
             <?php endif; ?>
         </div>
     </div>
@@ -87,16 +92,22 @@ global $wp_query;
                         </select>
                     </div>
 
-                    <!-- Ubicación (Selector de Cambio de Región) -->
+                    <!-- Ubicación (Selector de Cambio de Ubicación) -->
                     <div class="bd-filter-group">
-                        <label>Cambiar Región</label>
+                        <label>Cambiar Ubicación</label>
                         <select name="region" id="bd-filter-region">
                             <option value="">Todo Chile</option>
-                            <?php foreach ( $regiones as $reg ) : 
-                                $selected = ( $term->slug === $reg->slug ) ? 'selected' : '';
-                                ?>
-                                <option value="<?php echo esc_attr( $reg->slug ); ?>" <?php echo $selected; ?>><?php echo esc_html( $reg->name ); ?></option>
-                            <?php endforeach; ?>
+                            <?php
+                            foreach ( $regiones as $parent ) {
+                                $selected_parent = ( $term->slug === $parent->slug ) ? 'selected' : '';
+                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent" ' . $selected_parent . '>' . esc_html( $parent->name ) . '</option>';
+                                $children = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => $parent->term_id, 'hide_empty' => false ) );
+                                foreach ( $children as $child ) {
+                                    $selected_child = ( $term->slug === $child->slug ) ? 'selected' : '';
+                                    echo '<option value="' . esc_attr( $child->slug ) . '" ' . $selected_child . '>&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
+                                }
+                            }
+                            ?>
                         </select>
                     </div>
 

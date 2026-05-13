@@ -133,16 +133,16 @@ class BD_CPT {
             'rewrite'      => array( 'slug' => 'categoria-negocio' ),
         ) );
 
-        // Regiones
+        // Ubicaciones (Regiones y Comunas)
         register_taxonomy( 'directorio_region', array( 'directorio_negocio' ), array(
             'hierarchical' => true,
             'labels'       => array(
-                'name'          => 'Regiones',
-                'singular_name' => 'Región',
-                'menu_name'     => 'Regiones',
-                'all_items'     => 'Todas las Regiones',
-                'add_new_item'  => 'Agregar Nueva Región',
-                'new_item_name' => 'Nombre de Nueva Región',
+                'name'          => 'Ubicaciones',
+                'singular_name' => 'Ubicación',
+                'menu_name'     => 'Ubicaciones',
+                'all_items'     => 'Todas las Ubicaciones',
+                'add_new_item'  => 'Agregar Nueva Ubicación',
+                'new_item_name' => 'Nombre de Nueva Ubicación',
             ),
             'show_ui'      => true,
             'show_in_menu' => 'bd-panel',
