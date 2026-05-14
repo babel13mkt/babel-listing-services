@@ -69,7 +69,14 @@ class BD_Metaboxes {
             'price_range'     => get_post_meta( $post->ID, '_bd_price_range', true ),
             'verificado'      => get_post_meta( $post->ID, '_bd_verificado', true ),
             'destacado'       => get_post_meta( $post->ID, '_bd_destacado', true ),
+            'categoria_id'    => 0
         );
+
+        // Obtener categoría (asumimos una sola categoría principal)
+        $cats = wp_get_post_terms( $post->ID, 'directorio_categoria', array( 'fields' => 'ids' ) );
+        if ( ! empty( $cats ) ) {
+            $f['categoria_id'] = $cats[0];
+        }
         ?>
         <div class="bd-app-container">
             
@@ -109,6 +116,21 @@ class BD_Metaboxes {
                             <div class="bd-meta-field">
                                 <label class="bd-meta-label">Teléfono / WhatsApp</label>
                                 <input type="tel" name="bd_telefono" value="<?php echo esc_attr($f['telefono']); ?>" class="bd-meta-input" placeholder="+56 9 ...">
+                            </div>
+                            <div class="bd-meta-field">
+                                <label class="bd-meta-label">Categoría Principal</label>
+                                <div class="bd-meta-select-wrap">
+                                    <select name="bd_categoria_id" class="bd-meta-select">
+                                        <option value="0">Sin Categoría</option>
+                                        <?php 
+                                        $all_cats = get_terms( array( 'taxonomy' => 'directorio_categoria', 'hide_empty' => false ) );
+                                        foreach($all_cats as $cat): ?>
+                                            <option value="<?php echo $cat->term_id; ?>" <?php selected($f['categoria_id'], $cat->term_id); ?>>
+                                                <?php echo ($cat->parent ? '— ' : '') . $cat->name; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
                             <div class="bd-meta-field">
                                 <label class="bd-meta-label">Rango de Precios</label>
@@ -287,6 +309,12 @@ class BD_Metaboxes {
             }
         }
 
+        // Categoría
+        if ( isset( $_POST['bd_categoria_id'] ) ) {
+            $cat_id = intval( $_POST['bd_categoria_id'] );
+            wp_set_post_terms( $post_id, array( $cat_id ), 'directorio_categoria' );
+        }
+
         // Toggles
         update_post_meta($post_id, '_bd_verificado', isset($_POST['bd_verificado']) ? '1' : '0');
         update_post_meta($post_id, '_bd_destacado',  isset($_POST['bd_destacado'])  ? '1' : '0');
@@ -325,7 +353,7 @@ class BD_Metaboxes {
                     }).on('select', function() {
                         var attachment = $frame.state().get('selection').first().toJSON();
                         $target.val(attachment.id);
-                        $container.find('.bd-image-frame').html('<img src="' + attachment.url + '">');
+                        $container.find('.bd-image-frame').html('<img src="' + attachment.url + '" class="bd-preview-img">');
                         if($container.find('.bd-remove-media').length === 0) {
                             $container.append('<button type="button" class="bd-remove-media" style="background:none; border:none; color:var(--bda-danger); font-size:11px; margin-top:8px; cursor:pointer;">✕ Quitar imagen</button>');
                         }
