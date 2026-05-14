@@ -29,10 +29,18 @@ $region_name = ( $regiones && ! is_wp_error( $regiones ) ) ? $regiones[0]->name 
 $thumb_url = get_the_post_thumbnail_url( $post_id, 'medium_large' );
 if ( ! $thumb_url ) $thumb_url = BD_URL . 'assets/images/default-hero.jpg';
 
+// Función Helper para Formato Romano (Portado de class-frontend.php si existiera globalmente)
+function bd_format_region_name( $name ) {
+    if ( preg_match( '/^REG-([IVXLCDM]+)\s+(.*)$/', $name, $matches ) ) {
+        return $matches[1] . ' REG - ' . $matches[2];
+    }
+    return $name;
+}
+
 // Badge a mostrar en la foto
 $badge_text = '';
 if ( $region_name ) {
-    $badge_text = strtoupper( $region_name );
+    $badge_text = strtoupper( bd_format_region_name( $region_name ) );
 } elseif ( $cat_name ) {
     $badge_text = strtoupper( $cat_name );
 }
@@ -58,7 +66,7 @@ if ( $region_name ) {
         <?php if ( $region_name || $direccion ) : ?>
             <div class="bd-card-info bd-card-location">
                 <i class="fas fa-map-marker-alt"></i>
-                <span><?php echo esc_html( $region_name ? $region_name : $direccion ); ?></span>
+                <span><?php echo esc_html( $region_name ? bd_format_region_name( $region_name ) : $direccion ); ?></span>
             </div>
         <?php endif; ?>
 

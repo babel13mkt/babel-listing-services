@@ -18,6 +18,18 @@ class BD_Frontend {
     }
 
     /**
+     * Helper: Formatea REG-X a X REG - ...
+     */
+    public static function format_term_name( $name, $taxonomy = '' ) {
+        if ( $taxonomy === 'directorio_region' || strpos( $name, 'REG-' ) === 0 ) {
+            if ( preg_match( '/^REG-([IVXLCDM]+)\s+(.*)$/', $name, $matches ) ) {
+                return $matches[1] . ' REG - ' . $matches[2];
+            }
+        }
+        return $name;
+    }
+
+    /**
      * Renderiza la barra de filtros AJAX (para archive/taxonomías)
      */
     public function render_filter_bar() {
@@ -64,10 +76,10 @@ class BD_Frontend {
                             <option value="">Todo Chile</option>
                             <?php
                             foreach ( $regiones as $parent ) {
-                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent">' . esc_html( $parent->name ) . '</option>';
+                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent">' . esc_html( self::format_term_name( $parent->name, 'directorio_region' ) ) . '</option>';
                                 $children = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => $parent->term_id, 'hide_empty' => false ) );
                                 foreach ( $children as $child ) {
-                                    echo '<option value="' . esc_attr( $child->slug ) . '">&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
+                                echo '<option value="' . esc_attr( $child->slug ) . '" class="opt-child">&nbsp;&nbsp;— ' . esc_html( self::format_term_name( $child->name, 'directorio_region' ) ) . '</option>';
                                 }
                             }
                             ?>
@@ -228,7 +240,7 @@ class BD_Frontend {
                             <?php endif; ?>
                         </div>
                         <div class="bd-grid-header">
-                            <h3 class="bd-grid-title"><?php echo esc_html( $term->name ); ?></h3>
+                            <h3 class="bd-grid-title"><?php echo esc_html( self::format_term_name( $term->name, $taxonomy ) ); ?></h3>
                         </div>
                         <div class="bd-grid-footer">
                             <?php if (!empty($term->description)): ?>

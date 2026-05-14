@@ -46,7 +46,7 @@ if ($get_reg) {
 $query = new WP_Query( $query_args );
 ?>
 
-<div class="bd-archive-wrapper">
+<div class="bd-archive-wrapper" style="background: #f8fafc; padding-top: 40px; min-height: 100vh;">
     
 
     <div class="bd-container">
@@ -71,11 +71,11 @@ $query = new WP_Query( $query_args );
                             <?php
                             foreach ( $categorias as $parent ) {
                                 $selected = ( $get_cat === $parent->slug ) ? 'selected' : '';
-                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent" ' . $selected . '>' . esc_html( $parent->name ) . '</option>';
+                                echo '<option value="' . esc_attr( $parent->slug ) . '" class="opt-parent" ' . $selected . '>' . esc_html( BD_Frontend::format_term_name( $parent->name, 'directorio_region' ) ) . '</option>';
                                 $children = get_terms( array( 'taxonomy' => 'directorio_categoria', 'parent' => $parent->term_id, 'hide_empty' => false ) );
                                 foreach ( $children as $child ) {
                                     $selected_child = ( $get_cat === $child->slug ) ? 'selected' : '';
-                                    echo '<option value="' . esc_attr( $child->slug ) . '" ' . $selected_child . '>&nbsp;&nbsp;— ' . esc_html( $child->name ) . '</option>';
+                                    echo '<option value="' . esc_attr( $child->slug ) . '" ' . $selected_child . '>&nbsp;&nbsp;— ' . esc_html( BD_Frontend::format_term_name( $child->name, 'directorio_region' ) ) . '</option>';
                                 }
                             }
                             ?>
@@ -91,7 +91,7 @@ $query = new WP_Query( $query_args );
                             <?php foreach ( $regiones as $reg ) : 
                                 $selected = ( $get_reg === $reg->slug ) ? 'selected' : '';
                                 ?>
-                                <option value="<?php echo esc_attr( $reg->slug ); ?>" <?php echo $selected; ?>><?php echo esc_html( $reg->name ); ?></option>
+                                <option value="<?php echo esc_attr( $reg->slug ); ?>" <?php echo $selected; ?>><?php echo esc_html( BD_Frontend::format_term_name( $reg->name, 'directorio_region' ) ); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <i class="fas fa-chevron-down bd-select-arrow"></i>
@@ -179,7 +179,7 @@ $query = new WP_Query( $query_args );
         </script>
 
         <!-- Resultados -->
-        <main class="bd-archive-main" style="width: 100%;">
+        <main class="bd-archive-main" style="width: 100%; padding-bottom: 80px;">
 
             <div id="bd-grid-container" class="bd-results-grid-wrap">
                 <?php if ( $query->have_posts() ) : ?>

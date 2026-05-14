@@ -299,11 +299,11 @@
 .bd-grid,
 .bd-grid.bd-cols-3 {
     display:               grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap:                   28px;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); /* Tarjetas más anchas para que respiren */
+    gap:                   32px;
     max-width:             1200px;
-    margin:                40px auto;
-    padding:               0 20px;
+    margin:                0 auto;
+    padding:               0;
 }
 
 .bd-card {
@@ -597,6 +597,51 @@
     color: #64748b;
     margin: 0 0 24px 0;
     line-height: 1.6;
+}
+
+/* ==========================================================================
+   Paginación Premium
+   ========================================================================== */
+.bd-pagination {
+    margin-top: 60px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'Inter', sans-serif;
+}
+
+.bd-pagination .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.bd-pagination .page-numbers:hover {
+    border-color: #1a6ef5;
+    color: #1a6ef5;
+    background: #f8fafc;
+}
+
+.bd-pagination .page-numbers.current {
+    background: #1a6ef5;
+    border-color: #1a6ef5;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(26, 110, 245, 0.2);
+}
+
+.bd-pagination .page-numbers.dots {
+    border: none;
+    background: transparent;
 }
 
 @keyframes fadeIn {
