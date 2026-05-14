@@ -123,7 +123,12 @@ class BD_Metaboxes {
                                     <select name="bd_categoria_id" class="bd-meta-select">
                                         <option value="0">Sin Categoría</option>
                                         <?php 
-                                        $all_cats = get_terms( array( 'taxonomy' => 'directorio_categoria', 'hide_empty' => false ) );
+                                        $all_cats = get_terms( array( 
+                                            'taxonomy'   => 'directorio_categoria', 
+                                            'hide_empty' => false,
+                                            'orderby'    => 'name',
+                                            'order'      => 'ASC'
+                                        ) );
                                         foreach($all_cats as $cat): ?>
                                             <option value="<?php echo $cat->term_id; ?>" <?php selected($f['categoria_id'], $cat->term_id); ?>>
                                                 <?php echo ($cat->parent ? '— ' : '') . $cat->name; ?>
