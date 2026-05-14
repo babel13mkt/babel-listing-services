@@ -123,16 +123,30 @@ class BD_Metaboxes {
                                     <select name="bd_categoria_id" class="bd-meta-select">
                                         <option value="0">Sin Categoría</option>
                                         <?php 
-                                        $all_cats = get_terms( array( 
+                                        $parents = get_terms( array( 
                                             'taxonomy'   => 'directorio_categoria', 
+                                            'parent'     => 0,
                                             'hide_empty' => false,
                                             'orderby'    => 'name',
                                             'order'      => 'ASC'
                                         ) );
-                                        foreach($all_cats as $cat): ?>
-                                            <option value="<?php echo $cat->term_id; ?>" <?php selected($f['categoria_id'], $cat->term_id); ?>>
-                                                <?php echo ($cat->parent ? '— ' : '') . $cat->name; ?>
+                                        foreach($parents as $parent): ?>
+                                            <option value="<?php echo $parent->term_id; ?>" <?php selected($f['categoria_id'], $parent->term_id); ?> style="font-weight:700; background:#f8fafc;">
+                                                <?php echo $parent->name; ?>
                                             </option>
+                                            <?php
+                                            $children = get_terms( array( 
+                                                'taxonomy'   => 'directorio_categoria', 
+                                                'parent'     => $parent->term_id,
+                                                'hide_empty' => false,
+                                                'orderby'    => 'name',
+                                                'order'      => 'ASC'
+                                            ) );
+                                            foreach($children as $child): ?>
+                                                <option value="<?php echo $child->term_id; ?>" <?php selected($f['categoria_id'], $child->term_id); ?>>
+                                                    &nbsp;&nbsp;— <?php echo $child->name; ?>
+                                                </option>
+                                            <?php endforeach; ?>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
