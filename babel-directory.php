@@ -12,7 +12,7 @@ if ( ! defined( "ABSPATH" ) ) {
 }
 
 // Definir constantes globales
-define( "BD_VERSION", "3.4.6" );
+define( "BD_VERSION", "6.1.0" );
 define( "BD_PATH", plugin_dir_path( __FILE__ ) );
 define( "BD_URL", plugin_dir_url( __FILE__ ) );
 
