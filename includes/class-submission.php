@@ -19,12 +19,15 @@ class BD_Submission {
     }
 
     /**
-     * Encolar assets solo en páginas con el shortcode.
+     * Encolar assets.
+     * @param bool $force Forzar la carga (útil para admin o módulos dinámicos)
      */
-    public function enqueue_assets() {
-        global $post;
-        if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'bd_nuevo_negocio' ) ) {
-            return;
+    public function enqueue_assets( $force = false ) {
+        if ( ! $force ) {
+            global $post;
+            if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'bd_nuevo_negocio' ) ) {
+                return;
+            }
         }
         wp_enqueue_style(
             'bd-form-style',

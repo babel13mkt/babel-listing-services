@@ -10,6 +10,26 @@ class BD_Dashboard {
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_panel_menu' ), 5 );
         add_action( 'admin_init', array( $this, 'handle_moderation_actions' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+    }
+
+    /**
+     * Encolar assets para el Dashboard
+     */
+    public function enqueue_admin_assets( $hook ) {
+        // Encolar solo en páginas del plugin
+        if ( strpos( $hook, 'bd-' ) === false && $hook !== 'toplevel_page_bd-panel' ) {
+            return;
+        }
+
+        // Cargar estilos base del admin
+        wp_enqueue_style( 'bd-admin-style', BD_URL . 'assets/css/admin.css', array(), BD_VERSION );
+
+        // Si es la página de Alta Premium, cargar también los estilos del formulario
+        if ( $hook === 'panel_page_bd-alta-premium' ) {
+            $submission = new BD_Submission();
+            $submission->enqueue_assets( true );
+        }
     }
 
     /**
