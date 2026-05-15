@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 <div class="bd-form-wrapper" id="bd-submission-wrapper">
 
     <!-- Barra de progreso Premium -->
-    <div class="bd-progress-bar" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="3">
+    <div class="bd-progress-bar" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="<?php echo $is_admin ? '4' : '3'; ?>">
         <div class="bd-progress-steps">
             <div class="bd-progress-track-fill" id="bd-progress-fill"></div>
             
@@ -25,22 +25,55 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <span class="bd-step-num">3</span>
                 <span class="bd-step-label">Detalles</span>
             </div>
+            <?php if ( $is_admin ) : ?>
+            <div class="bd-step-dot" data-step="4">
+                <span class="bd-step-num">4</span>
+                <span class="bd-step-label">Soberanía</span>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
     <form class="bd-submission-form" id="bd-submission-form" novalidate>
         <?php wp_nonce_field( 'bd_submission_nonce', 'nonce' ); ?>
+        <?php if ( $is_admin ) : ?>
+            <input type="hidden" name="bd_admin_mode" value="1">
+        <?php endif; ?>
 
         <!-- Honeypot anti-spam -->
         <div class="bd-hp-field" aria-hidden="true" tabindex="-1" style="display:none;">
             <input type="text" name="bd_hp_field" value="" autocomplete="off" tabindex="-1">
         </div>
 
-        <!-- ── PASO 1: Datos Básicos ── -->
+        <!-- ── PASO 1: Identidad Editorial ── -->
         <div class="bd-form-step active" data-step="1">
             <div class="bd-form-header">
-                <h2 class="bd-form-title">¿Cuál es tu negocio?</h2>
-                <p class="bd-form-sub">Empecemos con lo esencial. Te tomará menos de 2 minutos.</p>
+                <h2 class="bd-form-title">Identidad del Negocio</h2>
+                <p class="bd-form-sub">Definí la presencia visual de tu establecimiento. El logo y la portada son la primera impresión de tu historia.</p>
+            </div>
+
+            <!-- Carga de Imágenes de Identidad -->
+            <div class="bd-upload-row">
+                <div class="bd-field-group">
+                    <label class="bd-label">Logo del Negocio</label>
+                    <div class="bd-dropzone" id="dz-logo">
+                        <input type="file" name="bd_logo" id="bd_logo" accept="image/*" hidden>
+                        <div class="dz-ui" id="dz-ui-logo">
+                            <span class="dz-icon">🖼️</span>
+                            <span class="dz-text">Subir Logo</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bd-field-group">
+                    <label class="bd-label">Foto de Portada (Principal)</label>
+                    <div class="bd-dropzone" id="dz-cover">
+                        <input type="file" name="bd_cover" id="bd_cover" accept="image/*" hidden>
+                        <div class="dz-ui" id="dz-ui-cover">
+                            <span class="dz-icon">📸</span>
+                            <span class="dz-text">Subir Portada</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="bd-field-group">
@@ -55,10 +88,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             </div>
 
             <div class="bd-field-group">
-                <label class="bd-label" for="bd_descripcion">Descripción</label>
+                <label class="bd-label" for="bd_descripcion">Historia y Descripción</label>
                 <textarea id="bd_descripcion" name="bd_descripcion" class="bd-textarea"
-                          placeholder="Contá brevemente qué ofrece tu negocio y qué te hace especial..."
-                          rows="4" maxlength="1000" required></textarea>
+                          placeholder="Contanos tu historia... Ej: Somos un café ubicado en Chile con más de 30 años en la zona, un lugar icónico..."
+                          rows="5" maxlength="2000" required></textarea>
                 <span class="bd-field-error" id="err-bd_descripcion"></span>
             </div>
 
@@ -134,11 +167,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             </div>
         </div>
 
-        <!-- ── PASO 2: Contacto & Ubicación ── -->
+        <!-- ── PASO 2: Ubicación & Conexión ── -->
         <div class="bd-form-step" data-step="2">
             <div class="bd-form-header">
-                <h2 class="bd-form-title">¿Cómo te encuentran?</h2>
-                <p class="bd-form-sub">Datos de contacto y ubicación para que tus clientes lleguen a vos.</p>
+                <h2 class="bd-form-title">Conexión con el Cliente</h2>
+                <p class="bd-form-sub">Facilitá el encuentro. Proporcioná los datos precisos para que la audiencia local llegue a tu puerta.</p>
             </div>
 
             <div class="bd-field-group">
@@ -148,6 +181,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                     <input type="text" id="bd_direccion" name="bd_direccion" class="bd-input"
                            placeholder="Ej: Av. Providencia 1234, Santiago" maxlength="255">
                 </div>
+            </div>
+
+            <div class="bd-field-group">
+                <label class="bd-label" for="bd_maps_embed">Mapa (Código Iframe)</label>
+                <textarea id="bd_maps_embed" name="bd_maps_embed" class="bd-textarea"
+                          placeholder="Pegá aquí el código <iframe> que obtenés de Google Maps (Compartir > Insertar un mapa)"
+                          rows="3"></textarea>
             </div>
 
             <div class="bd-field-row">
@@ -198,11 +238,23 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             </div>
         </div>
 
-        <!-- ── PASO 3: Atributos & Envío ── -->
+        <!-- ── PASO 3: Relato Visual & Atributos ── -->
         <div class="bd-form-step" data-step="3">
             <div class="bd-form-header">
-                <h2 class="bd-form-title">Últimos detalles</h2>
-                <p class="bd-form-sub">Agregá valor a tu ficha para destacar sobre la competencia.</p>
+                <h2 class="bd-form-title">Detalles & Curaduría</h2>
+                <p class="bd-form-sub">Completá el relato de tu negocio con una galería extendida y definí los servicios que te hacen único.</p>
+            </div>
+
+            <div class="bd-field-group">
+                <label class="bd-label">Galería de Fotos</label>
+                <div class="bd-dropzone multi" id="dz-gallery">
+                    <input type="file" name="bd_gallery[]" id="bd_gallery" accept="image/*" multiple hidden>
+                    <div class="dz-ui" id="dz-ui-gallery">
+                        <span class="dz-icon">📸</span>
+                        <span class="dz-text">Seleccionar múltiples imágenes</span>
+                    </div>
+                </div>
+                <div id="gallery-preview" class="bd-gallery-preview"></div>
             </div>
 
             <div class="bd-field-group">
@@ -254,20 +306,78 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <button type="button" class="bd-btn bd-btn-back" data-back="2">
                     <span>←</span> Atrás
                 </button>
-                <button type="submit" class="bd-btn bd-btn-submit" id="bd-submit-btn">
-                    Publicar Negocio
+                <?php if ( $is_admin ) : ?>
+                    <button type="button" class="bd-btn bd-btn-next" data-next="4">
+                        Control de Soberanía <span>→</span>
+                    </button>
+                <?php else : ?>
+                    <button type="submit" class="bd-btn bd-btn-submit" id="bd-submit-btn">
+                        Publicar Negocio
+                    </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php if ( $is_admin ) : ?>
+        <!-- ── PASO 4: Control de Soberanía (SOLO ADMIN) ── -->
+        <div class="bd-form-step" data-step="4">
+            <div class="bd-form-header">
+                <h2 class="bd-form-title">Control de Soberanía Editorial</h2>
+                <p class="bd-form-sub">Aprobación, validación y creación de reseña premium (Google Style).</p>
+            </div>
+
+            <div class="bd-card bd-admin-review-card" style="background: rgba(255,255,255,0.8); border: 1px solid #e2e8f0; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
+                <label class="bd-label" style="display:block; margin-bottom:15px; font-weight:700;">Calificación de Bienvenida (Google Style)</label>
+                
+                <div class="bd-rating-selector" style="margin-bottom: 20px;">
+                    <div class="bd-stars-input-admin" style="display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:10px;">
+                        <?php for ( $i = 5; $i >= 1; $i-- ) : ?>
+                            <input type="radio" id="admin-star<?php echo $i; ?>" name="bd_admin_review_stars" value="<?php echo $i; ?>" hidden>
+                            <label for="admin-star<?php echo $i; ?>" class="bd-star-label" style="font-size:32px; cursor:pointer; color:#cbd5e1;">★</label>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+
+                <div class="bd-field-group">
+                    <label class="bd-label" for="bd_admin_review_text">Reseña del Negocio</label>
+                    <textarea id="bd_admin_review_text" name="bd_admin_review_text" class="bd-textarea"
+                              placeholder="Escribí una reseña premium para darle un empujón al negocio (estética Google)..."
+                              rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="bd-field-group" style="margin-bottom: 30px;">
+                <label class="bd-attr-toggle" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" name="bd_publicar_inmediato" value="1" checked style="width: 20px; height: 20px;">
+                    <span style="font-weight: 700; color: var(--bda-text);">Aprobar y Publicar inmediatamente</span>
+                </label>
+                <p style="font-size: 13px; color: var(--bda-text-soft); margin-left: 32px;">El negocio será visible en el mapa y listados al instante.</p>
+            </div>
+
+            <div class="bd-form-actions">
+                <button type="button" class="bd-btn bd-btn-back" data-back="3">
+                    <span>←</span> Atrás
+                </button>
+                <button type="submit" class="bd-btn bd-btn-submit" id="bd-submit-btn" style="background: var(--bda-accent); border-color: var(--bda-accent);">
+                    Finalizar y Validar 🚀
                 </button>
             </div>
         </div>
+        <style>
+            .bd-stars-input-admin input:checked ~ label,
+            .bd-stars-input-admin label:hover,
+            .bd-stars-input-admin label:hover ~ label { color: #f59e0b !important; }
+        </style>
+        <?php endif; ?>
     </form>
 
-    <!-- Estado de éxito (inicialmente oculto) -->
+    <!-- Estado de éxito (Página de Confirmación Editorial) -->
     <div id="bd-form-success" class="bd-form-success" style="display:none;">
-        <div class="bd-success-icon">✨</div>
-        <h2 class="bd-success-title">¡Negocio Enviado!</h2>
-        <p class="bd-form-sub">Tu solicitud está en revisión. Te avisaremos pronto.</p>
-        <div style="margin-top: 30px;">
-            <button onclick="window.location.reload()" class="bd-btn bd-btn-next">Cargar otro</button>
+        <div class="bd-success-icon">🪶</div>
+        <h2 class="bd-success-title">Relato Recibido</h2>
+        <p class="bd-form-sub">Tu negocio ha sido ingresado a nuestro sistema de curaduría. Una vez validada la información, será publicado en el directorio.</p>
+        <div style="margin-top: 48px;">
+            <button onclick="window.location.reload()" class="bd-btn bd-btn-next">Inscribir otro negocio</button>
         </div>
     </div>
 </div>

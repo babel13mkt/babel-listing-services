@@ -15,6 +15,38 @@ class BD_Frontend {
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
         add_shortcode( 'bd_grid', array( $this, 'render_grid' ) );
         add_shortcode( 'bd_footer_taxonomies', array( $this, 'render_footer_taxonomies' ) );
+
+        // SEO dinámico para filtros
+        add_filter( 'pre_get_document_title', array( $this, 'dynamic_seo_title' ), 999 );
+        add_filter( 'wp_title', array( $this, 'dynamic_seo_title' ), 999 );
+    }
+
+    /**
+     * SEO Dinámico: Genera títulos basados en filtros de Región/Categoría
+     */
+    public function dynamic_seo_title( $title ) {
+        $get_cat = isset( $_GET['category'] ) ? sanitize_text_field( $_GET['category'] ) : '';
+        $get_reg = isset( $_GET['region'] ) ? sanitize_text_field( $_GET['region'] ) : '';
+
+        if ( ! empty( $get_reg ) || ! empty( $get_cat ) ) {
+            $parts = array();
+            
+            if ( ! empty( $get_cat ) ) {
+                $term = get_term_by( 'slug', $get_cat, 'directorio_categoria' );
+                if ( $term ) $parts[] = $term->name;
+            }
+
+            if ( ! empty( $get_reg ) ) {
+                $term = get_term_by( 'slug', $get_reg, 'directorio_region' );
+                if ( $term ) $parts[] = self::format_term_name( $term->name, 'directorio_region' );
+            }
+
+            if ( ! empty( $parts ) ) {
+                return implode( ' en ', $parts ) . ' | ' . get_bloginfo( 'name' );
+            }
+        }
+
+        return $title;
     }
 
     /**

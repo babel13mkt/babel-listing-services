@@ -69,6 +69,15 @@ class BD_Dashboard {
             'bd-moderation',
             array( $this, 'render_moderation_page' )
         );
+
+        add_submenu_page(
+            'bd-panel',
+            'Alta Premium',
+            'Alta Premium',
+            'manage_options',
+            'bd-alta-premium',
+            array( $this, 'render_new_business_form' )
+        );
     }
 
     private function get_stats() {
@@ -110,7 +119,7 @@ class BD_Dashboard {
                     <p style="margin:4px 0 0; color:var(--bda-text-soft);">Gestión centralizada de tu directorio</p>
                 </div>
                 <div class="bd-app-header-actions">
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=bd-panel&action=new' ) ); ?>"
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=bd-alta-premium' ) ); ?>"
                        class="bd-save-button" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px; background:var(--bda-accent); color:#fff; padding:12px 24px; border-radius:8px; font-weight:700;">
                        <span style="font-size:20px;">+</span> Nuevo Negocio
                     </a>
@@ -197,26 +206,29 @@ class BD_Dashboard {
     }
 
     public function render_new_business_form() {
-        // Envolvemos el renderizado en nuestro contenedor centralizado
         ?>
         <div class="bd-app-container">
             <div style="margin-bottom:20px;">
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=bd-panel' ) ); ?>" style="text-decoration:none; color:var(--bda-text-soft); font-weight:600; font-size:13px;">← Volver al Dashboard</a>
             </div>
             
-            <?php
-            $metaboxes = new BD_Metaboxes();
-            $post = new stdClass();
-            $post->ID = 0;
-            $post->post_title = '';
-            $post->post_status = 'pending';
-            
-            echo '<form method="post" action="' . esc_url( admin_url( 'admin.php?page=bd-panel&action=new' ) ) . '" id="post">';
-            wp_nonce_field( 'bd_details_metabox', 'bd_details_metabox_nonce' );
-            $metaboxes->render_metabox($post);
-            echo '</form>';
-            ?>
+            <div class="bd-card" style="padding: 40px;">
+                <div class="bd-app-header" style="margin-bottom:30px;">
+                    <h1 style="font-size:28px; font-weight:800; margin:0; color:var(--bda-text);">Alta de Negocio Premium</h1>
+                    <p style="margin:4px 0 0; color:var(--bda-text-soft);">Interfaz de entrada de alta fidelidad conectada a la red de soberanía.</p>
+                </div>
+
+                <?php
+                $submission = new BD_Submission();
+                echo $submission->render_form( true ); // Pasamos true para modo admin
+                ?>
+            </div>
         </div>
+        <style>
+            /* Ajustes para el formulario dentro del admin */
+            .bd-form-wrapper { max-width: 100% !important; padding: 0 !important; box-shadow: none !important; background: transparent !important; }
+            #wpbody-content { background: #f0f2f5; }
+        </style>
         <?php
     }
 

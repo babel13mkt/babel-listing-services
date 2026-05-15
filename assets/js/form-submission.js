@@ -6,7 +6,8 @@
 (function () {
     'use strict';
 
-    const STEPS_TOTAL = 3;
+    const progressBar = document.querySelector('.bd-progress-bar');
+    const STEPS_TOTAL = progressBar ? parseInt(progressBar.getAttribute('aria-valuemax'), 10) : 3;
     const STEP_REQUIRED = {
         1: ['bd_nombre', 'bd_descripcion', 'bd_categoria', 'bd_region'],
         2: [], 
@@ -32,7 +33,6 @@
 
     function setProgress(step) {
         // En la versión premium la barra es un segmento que se llena
-        // Step 1: 0%, Step 2: 50%, Step 3: 100% (o similar)
         const pct = ((step - 1) / (STEPS_TOTAL - 1)) * 100;
         if (progressFill) progressFill.style.width = pct + '%';
     }
@@ -107,6 +107,59 @@
         return valid;
     }
 
+    // ── Multimedia Logic ─────────────────────────────────────────
+
+    function initFileUploads() {
+        // Logo & Portada
+        ['logo', 'cover'].forEach(type => {
+            const dz = document.getElementById(`dz-${type}`);
+            const input = document.getElementById(`bd_${type}`);
+            if (!dz || !input) return;
+
+            dz.addEventListener('click', () => input.click());
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        dz.classList.add('has-file');
+                        // Remover preview anterior
+                        const oldPreview = dz.querySelector('.dz-img-preview');
+                        if (oldPreview) oldPreview.remove();
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'dz-img-preview';
+                        dz.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // Galería Multi
+        const dzGallery = document.getElementById('dz-gallery');
+        const inputGallery = document.getElementById('bd_gallery');
+        const previewGallery = document.getElementById('gallery-preview');
+        if (!dzGallery || !inputGallery) return;
+
+        dzGallery.addEventListener('click', () => inputGallery.click());
+        inputGallery.addEventListener('change', function() {
+            if (previewGallery) previewGallery.innerHTML = '';
+            const files = Array.from(this.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'bd-preview-thumb';
+                    thumb.innerHTML = `<img src="${e.target.result}">`;
+                    if (previewGallery) previewGallery.appendChild(thumb);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
     // ── Event Listeners ──────────────────────────────────────────
 
     wrapper.addEventListener('click', function(e) {
@@ -155,7 +208,8 @@
             if (data.success) {
                 // Éxito Premium
                 form.style.display = 'none';
-                wrapper.querySelector('.bd-progress-bar').style.display = 'none';
+                const progressBar = wrapper.querySelector('.bd-progress-bar');
+                if (progressBar) progressBar.style.display = 'none';
                 successEl.style.display = 'block';
                 window.scrollTo({ top: wrapper.offsetTop - 50, behavior: 'smooth' });
             } else {
@@ -172,7 +226,8 @@
         });
     });
 
-    // Init progress
+    // Init
+    initFileUploads();
     setProgress(1);
 
 })();

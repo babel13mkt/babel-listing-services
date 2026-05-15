@@ -54,7 +54,7 @@ class BD_Submission {
     /**
      * Renderizar el formulario via shortcode [bd_nuevo_negocio].
      */
-    public function render_form() {
+    public function render_form( $is_admin = false ) {
         $categorias = get_terms( array(
             'taxonomy'   => 'directorio_categoria',
             'parent'     => 0,
@@ -111,6 +111,20 @@ class BD_Submission {
         $latitud         = floatval( $_POST['bd_latitud']  ?? 0 );
         $longitud        = floatval( $_POST['bd_longitud'] ?? 0 );
 
+        // Mapa Embed (Iframe)
+        $maps_embed      = wp_kses( wp_unslash( $_POST['bd_maps_embed'] ?? '' ), array(
+            'iframe' => array(
+                'src'             => true,
+                'width'           => true,
+                'height'          => true,
+                'frameborder'     => true,
+                'style'           => true,
+                'allowfullscreen' => true,
+                'loading'         => true,
+                'referrerpolicy'  => true,
+            ),
+        ) );
+
         // Paso 3
         $rango_precio    = sanitize_text_field( wp_unslash( $_POST['bd_rango_precio'] ?? '' ) );
         $wifi            = ! empty( $_POST['bd_wifi'] )            ? '1' : '0';
@@ -119,11 +133,14 @@ class BD_Submission {
         $reservas        = ! empty( $_POST['bd_reservas'] )        ? '1' : '0';
         $accesibilidad   = ! empty( $_POST['bd_accesibilidad'] )   ? '1' : '0';
 
-        // 5. Crear el post como 'pending'
+        // 5. Crear el post
+        $is_admin = current_user_can( 'manage_options' ) && ! empty( $_POST['bd_admin_mode'] );
+        $status   = ( $is_admin && ! empty( $_POST['bd_publicar_inmediato'] ) ) ? 'publish' : 'pending';
+
         $post_id = wp_insert_post( array(
             'post_title'   => $nombre,
             'post_content' => $descripcion,
-            'post_status'  => 'pending',
+            'post_status'  => $status,
             'post_type'    => 'directorio_negocio',
             'post_author'  => is_user_logged_in() ? get_current_user_id() : 1,
         ), true );
@@ -132,7 +149,53 @@ class BD_Submission {
             wp_send_json_error( array( 'message' => $post_id->get_error_message() ) );
         }
 
-        // 6. Guardar meta — usando las mismas keys que class-metaboxes.php
+        // 6. Procesar Archivos (Multimedia)
+        require_once( ABSPATH . 'wp-admin/includes/image.php' );
+        require_once( ABSPATH . 'wp-admin/includes/file.php' );
+        require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
+        // Logo
+        if ( ! empty( $_FILES['bd_logo']['name'] ) ) {
+            $logo_id = media_handle_upload( 'bd_logo', $post_id );
+            if ( ! is_wp_error( $logo_id ) ) {
+                update_post_meta( $post_id, '_bd_logo_id', $logo_id );
+            }
+        }
+
+        // Portada (Featured Image)
+        if ( ! empty( $_FILES['bd_cover']['name'] ) ) {
+            $cover_id = media_handle_upload( 'bd_cover', $post_id );
+            if ( ! is_wp_error( $cover_id ) ) {
+                set_post_thumbnail( $post_id, $cover_id );
+            }
+        }
+
+        // Galería (Múltiple)
+        if ( ! empty( $_FILES['bd_gallery']['name'][0] ) ) {
+            $gallery_ids = array();
+            $files = $_FILES['bd_gallery'];
+            foreach ( $files['name'] as $key => $value ) {
+                if ( $files['name'][$key] ) {
+                    $file = array(
+                        'name'     => $files['name'][$key],
+                        'type'     => $files['type'][$key],
+                        'tmp_name' => $files['tmp_name'][$key],
+                        'error'    => $files['error'][$key],
+                        'size'     => $files['size'][$key],
+                    );
+                    $_FILES['bd_gallery_single'] = $file;
+                    $attachment_id = media_handle_upload( 'bd_gallery_single', $post_id );
+                    if ( ! is_wp_error( $attachment_id ) ) {
+                        $gallery_ids[] = $attachment_id;
+                    }
+                }
+            }
+            if ( ! empty( $gallery_ids ) ) {
+                update_post_meta( $post_id, '_bd_galeria', implode( ',', $gallery_ids ) );
+            }
+        }
+
+        // 7. Guardar meta — usando las mismas keys que class-metaboxes.php
         $meta = array(
             '_bd_direccion'       => $direccion,
             '_bd_telefono'        => $telefono,
@@ -142,6 +205,7 @@ class BD_Submission {
             '_bd_horario'         => $horario,
             '_bd_latitud'         => $latitud ? $latitud : '',
             '_bd_longitud'        => $longitud ? $longitud : '',
+            '_bd_maps_embed'      => $maps_embed,
             '_bd_rango_precio'    => $rango_precio,
             '_bd_wifi'            => $wifi,
             '_bd_estacionamiento' => $estacionamiento,
@@ -156,7 +220,23 @@ class BD_Submission {
             update_post_meta( $post_id, $key, $value );
         }
 
-        // 7. Asignar taxonomías
+        // 7.5 Meta de Reseña Premium (Sovereign)
+        if ( $is_admin ) {
+            $admin_stars  = intval( $_POST['bd_admin_review_stars'] ?? 0 );
+            $admin_review = sanitize_textarea_field( wp_unslash( $_POST['bd_admin_review_text'] ?? '' ) );
+            
+            if ( $admin_stars > 0 ) {
+                update_post_meta( $post_id, '_bd_admin_review_stars', $admin_stars );
+                update_post_meta( $post_id, '_bd_admin_review_text',  $admin_review );
+                update_post_meta( $post_id, '_bd_verificado', '1' ); // Autoverificado si lo hace el admin
+                
+                // Actualizar reputación inicial si hay reseña admin
+                update_post_meta( $post_id, '_bd_reputacion', floatval( $admin_stars ) );
+                update_post_meta( $post_id, '_bd_review_count', 1 );
+            }
+        }
+
+        // 8. Asignar taxonomías
         if ( $categoria_id ) {
             wp_set_object_terms( $post_id, $categoria_id, 'directorio_categoria' );
         }
@@ -164,7 +244,7 @@ class BD_Submission {
             wp_set_object_terms( $post_id, $region_id, 'directorio_region' );
         }
 
-        // 8. Notificar al admin por email
+        // 9. Notificar al admin por email
         $admin_email = get_option( 'admin_email' );
         $site_name   = get_bloginfo( 'name' );
         /* translators: 1: site name, 2: business name */

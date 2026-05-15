@@ -181,7 +181,32 @@ $query = new WP_Query( $query_args );
         <!-- Resultados -->
         <main class="bd-archive-main" style="width: 100%; padding-bottom: 80px;">
 
-            <div id="bd-grid-container" class="bd-results-grid-wrap">
+            <?php
+            $h1_parts = array();
+            if ( $get_cat ) {
+                $term = get_term_by( 'slug', $get_cat, 'directorio_categoria' );
+                if ( $term ) $h1_parts[] = $term->name;
+            }
+            if ( $get_reg ) {
+                $term = get_term_by( 'slug', $get_reg, 'directorio_region' );
+                if ( $term ) $h1_parts[] = BD_Frontend::format_term_name( $term->name, 'directorio_region' );
+            }
+            $h1_text = ! empty( $h1_parts ) ? implode( ' en ', $h1_parts ) : 'Directorio de Negocios';
+            ?>
+            
+            <header class="bd-archive-header" style="max-width: 1140px; margin: 0 auto 40px; padding: 0 30px;">
+                <h1 style="font-family: 'Inter', sans-serif; font-weight: 800; color: #0f172a; font-size: 2.5rem; margin: 0; line-height: 1.2; letter-spacing: -0.02em;">
+                    <?php echo esc_html( $h1_text ); ?>
+                </h1>
+                <div style="display: flex; align-items: center; gap: 15px; margin-top: 20px;">
+                    <span style="background: #f1f5f9; color: #64748b; padding: 6px 16px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; font-family: 'Inter', sans-serif; border: 1px solid #e2e8f0;">
+                        <?php echo intval( $query->found_posts ); ?> resultados encontrados
+                    </span>
+                    <div style="height: 1px; flex-grow: 1; background: linear-gradient(to right, #e2e8f0, transparent);"></div>
+                </div>
+            </header>
+
+            <div id="bd-grid-container" class="bd-results-grid-wrap" style="max-width: 1140px; margin: 0 auto; padding: 0 30px;">
                 <?php if ( $query->have_posts() ) : ?>
                     <div class="bd-grid bd-cols-3">
                         <?php while ( $query->have_posts() ) : $query->the_post(); 
