@@ -27,9 +27,9 @@ class Babel_Directory_Metaboxes {
      */
     public function add_business_meta_box() {
         add_meta_box(
-            'babel_business_details',
+            'babel_business_central_panel',
             __( 'Panel Central de Control de Negocio', 'babel-directory' ),
-            array( $this, 'render_business_meta_box' ),
+            array( $this, 'render_central_panel' ),
             'babel_business',
             'normal',
             'high'
@@ -55,7 +55,7 @@ class Babel_Directory_Metaboxes {
      *
      * @param WP_Post $post El objeto del post actual.
      */
-    public function render_business_meta_box( $post ) {
+    public function render_central_panel( $post ) {
         // Generar token de seguridad (Nonce)
         wp_nonce_field( 'babel_business_meta_box_nonce_action', 'babel_business_meta_box_nonce' );
 
@@ -482,11 +482,24 @@ class Babel_Directory_Metaboxes {
                 grid-template-columns: 1fr 280px;
                 gap: 20px;
             }
+            .post-type-babel_business #post-body-content {
+                grid-column: 1;
+                grid-row: 1;
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
             .post-type-babel_business #postbox-container-1 {
                 grid-column: 2;
+                grid-row: 1 / span 2;
             }
             .post-type-babel_business #postbox-container-2 {
                 grid-column: 1;
+                grid-row: 2;
+                clear: both;
+                width: 100%;
+            }
+            .post-type-babel_business .postbox-container {
+                float: none !important;
             }
             
             /* Ocultar barra lateral nativa de categorías e imagen destacada */
@@ -501,6 +514,15 @@ class Babel_Directory_Metaboxes {
                 }
                 .post-type-babel_business #postbox-container-1 {
                     grid-column: 1;
+                    grid-row: auto;
+                }
+                .post-type-babel_business #postbox-container-2 {
+                    grid-column: 1;
+                    grid-row: auto;
+                }
+                .post-type-babel_business #post-body-content {
+                    grid-column: 1;
+                    grid-row: auto;
                 }
             }
         </style>
