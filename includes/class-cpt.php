@@ -59,7 +59,7 @@ class Babel_Directory_CPT {
             'label'                 => __( 'Negocio', 'babel-directory' ),
             'description'           => __( 'Listado de Negocios de Babel Directory', 'babel-directory' ),
             'labels'                => $labels,
-            'supports'              => array( 'title', 'editor', 'thumbnail', 'revisions' ),
+            'supports'              => array( 'thumbnail', 'revisions' ),
             'taxonomies'            => array( 'babel_region', 'babel_category' ),
             'hierarchical'          => false,
             'public'                => true,
@@ -74,7 +74,7 @@ class Babel_Directory_CPT {
             'exclude_from_search'   => false,
             'publicly_queryable'    => true,
             'capability_type'       => 'post',
-            'show_in_rest'          => true, // Soporte para Gutenberg y API REST de WP
+            'show_in_rest'          => false, // Desactivar soporte para Gutenberg y API REST de WP en este CPT
         );
 
         register_post_type( 'babel_business', $args );

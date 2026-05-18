@@ -1,7 +1,7 @@
 <?php
 /**
  * Clase para el manejo de Metaboxes y Custom Fields unificados con estética SaaS moderna.
- * v7.0.0 — Hito 11: Panel Unificado de Carga Rápida sin Sidebar y soporte de Medios/Galerías.
+ * v8.0.0 — Panel Central Compacto por Pestañas, sin Sidebar de Categorías/Imagen y sin editor Gutenberg.
  *
  * @package Babel_Directory
  */
@@ -37,7 +37,7 @@ class Babel_Directory_Metaboxes {
     }
 
     /**
-     * Encola los scripts nativos de medios y ordenación de WordPress en la pantalla del CPT.
+     * Encola los scripts nativos de medios y taxonomías en la pantalla del CPT.
      *
      * @param string $hook Identificador de la página actual del panel de administración.
      */
@@ -46,17 +46,22 @@ class Babel_Directory_Metaboxes {
         if ( $screen && 'babel_business' === $screen->post_type ) {
             wp_enqueue_media();
             wp_enqueue_script( 'jquery-ui-sortable' );
+            wp_enqueue_script( 'category' ); // WordPress hierarchical checklist helper
         }
     }
 
     /**
-     * Renderiza los campos de la metabox en el backend de WordPress con CSS Grid y estética SaaS.
+     * Renderiza los campos de la metabox en el backend de WordPress estructurado por pestañas.
      *
      * @param WP_Post $post El objeto del post actual.
      */
     public function render_business_meta_box( $post ) {
         // Generar token de seguridad (Nonce)
         wp_nonce_field( 'babel_business_meta_box_nonce_action', 'babel_business_meta_box_nonce' );
+
+        // Nombre y Descripción del negocio (vinculados al post_title y post_content nativos)
+        $biz_name = $post->post_title;
+        $biz_desc = $post->post_content;
 
         // Recuperar valores guardados actualmente con fallback seguro a llaves anteriores
         $phone       = get_post_meta( $post->ID, '_babel_phone', true );
@@ -107,10 +112,6 @@ class Babel_Directory_Metaboxes {
             $hours = array();
         }
 
-        // Obtener la categoría del negocio asignada actualmente
-        $current_categories = wp_get_post_terms( $post->ID, 'babel_category', array( 'fields' => 'ids' ) );
-        $selected_cat_id    = ! empty( $current_categories ) && ! is_wp_error( $current_categories ) ? intval( $current_categories[0] ) : 0;
-
         // Obtener datos del Logotipo (Imagen destacada)
         $logo_id  = get_post_thumbnail_id( $post->ID );
         $logo_url = '';
@@ -126,41 +127,96 @@ class Babel_Directory_Metaboxes {
         }
         ?>
         <style>
-            .babel-metabox-wrapper {
-                background: #ffffff;
-                border-radius: 8px;
+            /* 1. Reset y Contenedor Principal */
+            .bd-metabox-wrapper {
+                background: #f8fafc;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 color: #334155;
-                padding: 10px;
                 box-sizing: border-box;
+                padding: 10px 0;
             }
-            .babel-grid-container {
+            
+            /* Pestañas / Tabs Navigation */
+            .bd-tabs-nav {
+                display: flex;
+                gap: 4px;
+                border-bottom: 1px solid #cbd5e1;
+                margin: 0 0 15px 0;
+                list-style: none;
+                padding: 0;
+            }
+            .bd-tab-link {
+                padding: 10px 18px;
+                cursor: pointer;
+                border-radius: 6px 6px 0 0;
+                background: #f1f5f9;
+                font-weight: 600;
+                font-size: 13px;
+                color: #64748b;
+                border: 1px solid #cbd5e1;
+                border-bottom: none;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .bd-tab-link:hover {
+                background: #cbd5e1;
+                color: #1e293b;
+            }
+            .bd-tab-link.active {
+                background: #ffffff;
+                color: #219ebc;
+                border-color: #cbd5e1;
+                border-bottom-color: #ffffff;
+                margin-bottom: -1px;
+                z-index: 2;
+                position: relative;
+            }
+            
+            /* Paneles de Contenido */
+            .bd-tab-panel {
+                display: none;
+            }
+            .bd-tab-panel.active {
+                display: block;
+            }
+            
+            /* Sistema de Grillas Premium */
+            .bd-metabox-grid {
                 display: grid;
                 grid-template-columns: repeat(12, 1fr);
                 gap: 16px;
-                align-items: start;
+                padding: 20px;
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 0 0 8px 8px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             }
-            .babel-grid-span-12 { grid-column: span 12; }
-            .babel-grid-span-8 { grid-column: span 8; }
-            .babel-grid-span-6 { grid-column: span 6; }
-            .babel-grid-span-4 { grid-column: span 4; }
-            .babel-grid-span-3 { grid-column: span 3; }
-
-            .babel-field-group {
+            
+            .bd-grid-span-12 { grid-column: span 12; }
+            .bd-grid-span-8 { grid-column: span 8; }
+            .bd-grid-span-6 { grid-column: span 6; }
+            .bd-grid-span-4 { grid-column: span 4; }
+            .bd-grid-span-3 { grid-column: span 3; }
+            
+            /* Elementos de Formulario Compactos */
+            .bd-field-group {
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
             }
-            .babel-field-group label {
+            .bd-field-group label {
                 font-weight: 600;
                 font-size: 13px;
                 color: #1e293b;
             }
-            .babel-field-group input[type="text"],
-            .babel-field-group input[type="email"],
-            .babel-field-group input[type="url"],
-            .babel-field-group input[type="time"],
-            .babel-field-group select {
+            .bd-field-group input[type="text"],
+            .bd-field-group input[type="email"],
+            .bd-field-group input[type="url"],
+            .bd-field-group input[type="time"],
+            .bd-field-group select,
+            .bd-field-group textarea {
                 width: 100%;
                 border: 1px solid #cbd5e1;
                 border-radius: 6px;
@@ -171,32 +227,137 @@ class Babel_Directory_Metaboxes {
                 box-sizing: border-box;
                 transition: all 0.2s ease;
             }
-            .babel-field-group input:focus,
-            .babel-field-group select:focus {
+            .bd-field-group input:focus,
+            .bd-field-group select:focus,
+            .bd-field-group textarea:focus {
                 background-color: #ffffff;
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                border-color: #219ebc;
+                box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
                 outline: none;
             }
-            .babel-field-desc {
+            .bd-field-desc {
                 margin: 2px 0 0;
                 font-size: 11px;
                 color: #64748b;
             }
-
-            /* Media Selector Box */
-            .babel-media-upload-container {
+            
+            /* WooCommerce Style Checklist */
+            .bd-category-checklist {
+                max-height: 180px;
+                overflow-y: auto;
+                border: 1px solid #cbd5e1;
+                padding: 10px;
+                border-radius: 6px;
+                background: #f8fafc;
+            }
+            .bd-category-checklist ul {
+                list-style: none;
+                margin: 0;
+                padding-left: 20px;
+            }
+            .bd-category-checklist > ul {
+                padding-left: 0;
+            }
+            .bd-category-checklist li {
+                margin-bottom: 6px;
+                font-size: 13px;
+                color: #334155;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .bd-category-checklist input[type="checkbox"] {
+                margin: 0;
+            }
+            
+            /* Toggles / Contenedor de Estados */
+            .bd-states-container {
+                display: flex;
+                gap: 24px;
+                background: #f8fafc;
+                border: 1px solid #cbd5e1;
+                padding: 14px 18px;
+                border-radius: 6px;
+                align-items: center;
+            }
+            .bd-state-checkbox {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                color: #1e293b;
+            }
+            .bd-state-checkbox input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 1px solid #cbd5e1;
+                cursor: pointer;
+                margin: 0;
+            }
+            
+            /* Horas y Rueda de Horarios */
+            .bd-hours-container {
+                background: #f8fafc;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .bd-hours-row {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                font-size: 13px;
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 8px;
+            }
+            .bd-hours-row:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .bd-hours-day {
+                width: 90px;
+                font-weight: 600;
+                color: #475569;
+            }
+            .bd-hours-inputs {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .bd-hours-inputs input[type="time"] {
+                padding: 4px 8px;
+                border-radius: 4px;
+                border: 1px solid #cbd5e1;
+            }
+            .bd-hours-closed-label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                margin-left: auto;
+                font-weight: 500;
+                color: #64748b;
+            }
+            
+            /* Contenedor de Carga de Medios / Logo */
+            .bd-media-upload-container {
                 display: flex;
                 gap: 16px;
                 align-items: center;
                 border: 1px dashed #cbd5e1;
-                padding: 10px;
+                padding: 12px;
                 border-radius: 6px;
                 background: #f8fafc;
-                min-height: 84px;
+                min-height: 90px;
                 box-sizing: border-box;
             }
-            .babel-media-preview-box {
+            .bd-media-preview-box {
                 width: 64px;
                 height: 64px;
                 border-radius: 6px;
@@ -209,144 +370,41 @@ class Babel_Directory_Metaboxes {
                 position: relative;
                 flex-shrink: 0;
             }
-            .babel-media-preview-box img {
+            .bd-media-preview-box img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
-            .babel-media-placeholder-icon {
+            .bd-media-placeholder-icon {
                 font-size: 24px;
                 color: #94a3b8;
             }
-            .babel-media-actions {
+            .bd-media-actions {
                 display: flex;
                 flex-direction: row;
                 gap: 8px;
             }
-            .babel-btn-primary {
-                background: #3b82f6 !important;
-                color: #ffffff !important;
-                border: none !important;
-                border-radius: 6px !important;
-                padding: 6px 12px !important;
-                font-weight: 500 !important;
-                font-size: 12px !important;
-                cursor: pointer !important;
-                transition: background 0.2s !important;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-            }
-            .babel-btn-primary:hover {
-                background: #2563eb !important;
-            }
-            .babel-btn-danger {
-                background: #ef4444 !important;
-                color: #ffffff !important;
-                border: none !important;
-                border-radius: 6px !important;
-                padding: 6px 12px !important;
-                font-weight: 500 !important;
-                font-size: 12px !important;
-                cursor: pointer !important;
-                transition: background 0.2s !important;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-            }
-            .babel-btn-danger:hover {
-                background: #dc2626 !important;
-            }
-
-            /* States Section */
-            .babel-states-container {
-                display: flex;
-                gap: 24px;
-                background: #f8fafc;
-                border: 1px solid #cbd5e1;
-                padding: 12px 16px;
-                border-radius: 6px;
-                align-items: center;
-            }
-            .babel-state-checkbox {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                cursor: pointer;
-                font-weight: 600;
-                font-size: 13px;
-                color: #1e293b;
-            }
-            .babel-state-checkbox input[type="checkbox"] {
-                width: 16px;
-                height: 16px;
-                border-radius: 4px;
-                border: 1px solid #cbd5e1;
-                cursor: pointer;
-                margin: 0;
-            }
-
-            /* Horas Section */
-            .babel-hours-container {
-                background: #f8fafc;
-                border: 1px solid #cbd5e1;
-                border-radius: 6px;
-                padding: 12px;
+            
+            /* Galería de Fotos Múltiples */
+            .bd-gallery-container {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
             }
-            .babel-hours-row {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                font-size: 13px;
-                border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 6px;
-            }
-            .babel-hours-row:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
-            }
-            .babel-hours-day {
-                width: 80px;
-                font-weight: 600;
-                color: #475569;
-            }
-            .babel-hours-inputs {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
-            .babel-hours-closed-label {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                cursor: pointer;
-                margin-left: auto;
-                font-weight: 500;
-                color: #64748b;
-            }
-            .babel-hours-closed-label input[type="checkbox"] {
-                margin: 0;
-            }
-
-            /* Gallery Section */
-            .babel-gallery-container {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .babel-gallery-grid {
+            .bd-gallery-grid {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 8px;
-                min-height: 84px;
+                min-height: 90px;
                 border: 1px dashed #cbd5e1;
                 border-radius: 6px;
-                padding: 10px;
+                padding: 12px;
                 background: #f8fafc;
                 box-sizing: border-box;
             }
-            .babel-gallery-item {
-                width: 70px;
-                height: 70px;
+            .bd-gallery-item {
+                width: 64px;
+                height: 64px;
                 border-radius: 6px;
                 border: 1px solid #cbd5e1;
                 background: #ffffff;
@@ -358,12 +416,12 @@ class Babel_Directory_Metaboxes {
                 justify-content: center;
                 box-sizing: border-box;
             }
-            .babel-gallery-item img {
+            .bd-gallery-item img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
-            .babel-gallery-item .babel-remove-gallery-item {
+            .bd-gallery-item .bd-remove-gallery-item {
                 position: absolute;
                 top: 2px;
                 right: 2px;
@@ -381,179 +439,294 @@ class Babel_Directory_Metaboxes {
                 justify-content: center;
                 padding: 0;
             }
+            
+            /* Premium Buttons (SaaS look) */
+            .bd-btn-primary {
+                background: #219ebc !important;
+                color: #ffffff !important;
+                border: none !important;
+                border-radius: 6px !important;
+                padding: 6px 14px !important;
+                font-weight: 600 !important;
+                font-size: 12px !important;
+                cursor: pointer !important;
+                transition: background 0.2s !important;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+            }
+            .bd-btn-primary:hover {
+                background: #023047 !important;
+            }
+            .bd-btn-danger {
+                background: #ef4444 !important;
+                color: #ffffff !important;
+                border: none !important;
+                border-radius: 6px !important;
+                padding: 6px 14px !important;
+                font-weight: 600 !important;
+                font-size: 12px !important;
+                cursor: pointer !important;
+                transition: background 0.2s !important;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+            }
+            .bd-btn-danger:hover {
+                background: #dc2626 !important;
+            }
+            
+            /* Ocultamiento del Sidebar y Centrado del Panel */
+            .post-type-babel_business #poststuff {
+                max-width: 1000px;
+                margin: 20px auto 0;
+            }
+            .post-type-babel_business #post-body {
+                display: grid;
+                grid-template-columns: 1fr 280px;
+                gap: 20px;
+            }
+            .post-type-babel_business #postbox-container-1 {
+                grid-column: 2;
+            }
+            .post-type-babel_business #postbox-container-2 {
+                grid-column: 1;
+            }
+            
+            /* Ocultar barra lateral nativa de categorías e imagen destacada */
+            .post-type-babel_business #babel_categorydiv,
+            .post-type-babel_business #postimagediv {
+                display: none !important;
+            }
+            
+            @media (max-width: 850px) {
+                .post-type-babel_business #post-body {
+                    grid-template-columns: 1fr;
+                }
+                .post-type-babel_business #postbox-container-1 {
+                    grid-column: 1;
+                }
+            }
         </style>
 
-        <div class="babel-metabox-wrapper">
-            <div class="babel-grid-container">
+        <div class="bd-metabox-wrapper">
+            <!-- Navegación por pestañas -->
+            <ul class="bd-tabs-nav">
+                <li class="bd-tab-link active" data-tab="tab-general">🏢 <?php esc_html_e( 'General', 'babel-directory' ); ?></li>
+                <li class="bd-tab-link" data-tab="tab-contacto">📞 <?php esc_html_e( 'Contacto', 'babel-directory' ); ?></li>
+                <li class="bd-tab-link" data-tab="tab-redes">🌐 <?php esc_html_e( 'Redes y Estados', 'babel-directory' ); ?></li>
+                <li class="bd-tab-link" data-tab="tab-horarios">⏰ <?php esc_html_e( 'Horarios y Medios', 'babel-directory' ); ?></li>
+            </ul>
 
-                <!-- FILA 1 (Categoría y Medios Base): Categoría (span 4), Logotipo (span 8) -->
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_category_id"><?php esc_html_e( 'Categoría Principal', 'babel-directory' ); ?></label>
-                    <select id="babel_category_id" name="babel_category_id">
-                        <option value="0"><?php esc_html_e( '-- Selecciona una Categoría --', 'babel-directory' ); ?></option>
-                        <?php $this->render_hierarchical_category_options( 'babel_category', 0, 0, $selected_cat_id ); ?>
-                    </select>
-                    <p class="babel-field-desc"><?php esc_html_e( 'Rubro o clasificación del negocio.', 'babel-directory' ); ?></p>
-                </div>
+            <!-- PANELES DE CONTENIDO -->
 
-                <div class="babel-field-group babel-grid-span-8">
-                    <label><?php esc_html_e( 'Imagen Principal / Logotipo', 'babel-directory' ); ?></label>
-                    <div class="babel-media-upload-container">
-                        <div class="babel-media-preview-box" id="babel-logo-preview">
-                            <?php if ( $logo_url ) : ?>
-                                <img src="<?php echo esc_url( $logo_url ); ?>" alt="Preview" />
-                            <?php else : ?>
-                                <span class="babel-media-placeholder-icon">🏢</span>
-                            <?php endif; ?>
+            <!-- PESTAÑA 1: GENERAL -->
+            <div id="tab-general" class="bd-tab-panel active">
+                <div class="bd-metabox-grid">
+                    <!-- Fila 1: Nombre (8 cols) y Categorías (4 cols) -->
+                    <div class="bd-field-group bd-grid-span-8">
+                        <label for="_babel_biz_name"><?php esc_html_e( 'Nombre del Negocio', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_biz_name" name="_babel_biz_name" value="<?php echo esc_attr( $biz_name ); ?>" placeholder="<?php esc_attr_e( 'Ej: Cafetería Central', 'babel-directory' ); ?>" required />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Nombre público oficial del comercio.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label><?php esc_html_e( 'Categorías del Negocio', 'babel-directory' ); ?></label>
+                        <div class="bd-category-checklist">
+                            <ul>
+                                <?php wp_terms_checklist( $post->ID, array( 'taxonomy' => 'babel_category' ) ); ?>
+                            </ul>
                         </div>
-                        <div class="babel-media-actions">
-                            <input type="hidden" id="babel_logo_id" name="babel_logo_id" value="<?php echo esc_attr( $logo_id ); ?>" />
-                            <button type="button" class="button babel-btn-primary" id="babel-select-logo-btn">
-                                <?php esc_html_e( 'Seleccionar Imagen', 'babel-directory' ); ?>
-                            </button>
-                            <button type="button" class="button babel-btn-danger" id="babel-remove-logo-btn" style="<?php echo $logo_url ? '' : 'display: none;'; ?>">
-                                <?php esc_html_e( 'Eliminar', 'babel-directory' ); ?>
-                            </button>
+                        <p class="bd-field-desc"><?php esc_html_e( 'Selecciona los rubros asociados.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 2: Descripción (12 cols) -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label for="_babel_biz_desc"><?php esc_html_e( 'Descripción del Negocio', 'babel-directory' ); ?></label>
+                        <textarea id="_babel_biz_desc" name="_babel_biz_desc" rows="6" placeholder="<?php esc_attr_e( 'Describe los productos, servicios y valor agregado del negocio...', 'babel-directory' ); ?>"><?php echo esc_textarea( $biz_desc ); ?></textarea>
+                        <p class="bd-field-desc"><?php esc_html_e( 'Información completa del comercio. Admite texto enriquecido básico.', 'babel-directory' ); ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 2: CONTACTO -->
+            <div id="tab-contacto" class="bd-tab-panel">
+                <div class="bd-metabox-grid">
+                    <!-- Fila 1: Teléfono, WhatsApp, Email (4 cols c/u) -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_phone"><?php esc_html_e( 'Teléfono de Contacto', 'babel-directory' ); ?></label>
+                        <input type="text" id="babel_phone" name="babel_phone" value="<?php echo esc_attr( $phone ); ?>" placeholder="Ej: +56 9 1234 5678" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Teléfono comercial directo.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_whatsapp"><?php esc_html_e( 'WhatsApp', 'babel-directory' ); ?></label>
+                        <input type="text" id="babel_whatsapp" name="babel_whatsapp" value="<?php echo esc_attr( $whatsapp ); ?>" placeholder="Ej: +56987654321" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Número directo para chat comercial (sin espacios).', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_email"><?php esc_html_e( 'Email Comercial', 'babel-directory' ); ?></label>
+                        <input type="email" id="babel_email" name="babel_email" value="<?php echo esc_attr( $email ); ?>" placeholder="Ej: contacto@empresa.cl" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Correo para solicitudes de clientes.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 2: Dirección y Maps (6 cols c/u) -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="babel_address"><?php esc_html_e( 'Dirección Física', 'babel-directory' ); ?></label>
+                        <input type="text" id="babel_address" name="babel_address" value="<?php echo esc_attr( $address ); ?>" placeholder="Ej: Av. Providencia 1234, Oficina 501" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Ubicación completa del local/oficina.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="babel_maps"><?php esc_html_e( 'Enlace de Google Maps', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_maps" name="babel_maps" value="<?php echo esc_url( $maps ); ?>" placeholder="Ej: https://maps.app.goo.gl/..." />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Enlace directo para abrir la ubicación en Google Maps.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 3: Coordenadas GPS (3 cols c/u) y Sitio Web (6 cols) -->
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_lat"><?php esc_html_e( 'Latitud GPS', 'babel-directory' ); ?></label>
+                        <input type="text" id="babel_lat" name="babel_lat" value="<?php echo esc_attr( $lat ); ?>" placeholder="Ej: -33.4372" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_lng"><?php esc_html_e( 'Longitud GPS', 'babel-directory' ); ?></label>
+                        <input type="text" id="babel_lng" name="babel_lng" value="<?php echo esc_attr( $lng ); ?>" placeholder="Ej: -70.6506" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="babel_website"><?php esc_html_e( 'Sitio Web', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_website" name="babel_website" value="<?php echo esc_url( $website ); ?>" placeholder="Ej: https://www.negocio.cl" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'URL oficial de la empresa.', 'babel-directory' ); ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 3: REDES SOCIALES Y ESTADOS -->
+            <div id="tab-redes" class="bd-tab-panel">
+                <div class="bd-metabox-grid">
+                    <!-- Fila 1: Instagram, Facebook, LinkedIn (4 cols c/u) -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_instagram"><?php esc_html_e( 'Instagram', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_instagram" name="babel_instagram" value="<?php echo esc_url( $instagram ); ?>" placeholder="Ej: https://instagram.com/perfil" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_facebook"><?php esc_html_e( 'Facebook', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_facebook" name="babel_facebook" value="<?php echo esc_url( $facebook ); ?>" placeholder="Ej: https://facebook.com/pagina" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="babel_linkedin"><?php esc_html_e( 'LinkedIn', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_linkedin" name="babel_linkedin" value="<?php echo esc_url( $linkedin ); ?>" placeholder="Ej: https://linkedin.com/company/empresa" />
+                    </div>
+
+                    <!-- Fila 2: Estados (12 cols) -->
+                    <div class="bd-grid-span-12">
+                        <div class="bd-states-container">
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" id="babel_verified" name="babel_verified" value="1" <?php checked( $verified, '1' ); ?> />
+                                <span>✨ <?php esc_html_e( 'Negocio Verificado', 'babel-directory' ); ?></span>
+                            </label>
+
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" id="babel_featured" name="babel_featured" value="1" <?php checked( $featured, '1' ); ?> />
+                                <span>🔥 <?php esc_html_e( 'Destacar Negocio', 'babel-directory' ); ?></span>
+                            </label>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- FILA 2 (Contacto): Teléfono (span 4), WhatsApp (span 4), Email (span 4) -->
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_phone"><?php esc_html_e( 'Teléfono de Contacto', 'babel-directory' ); ?></label>
-                    <input type="text" id="babel_phone" name="babel_phone" value="<?php echo esc_attr( $phone ); ?>" placeholder="Ej: +56 9 1234 5678" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Teléfono comercial directo.', 'babel-directory' ); ?></p>
-                </div>
-
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_whatsapp"><?php esc_html_e( 'WhatsApp', 'babel-directory' ); ?></label>
-                    <input type="text" id="babel_whatsapp" name="babel_whatsapp" value="<?php echo esc_attr( $whatsapp ); ?>" placeholder="Ej: +56987654321" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Número directo para chat comercial (sin espacios).', 'babel-directory' ); ?></p>
-                </div>
-
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_email"><?php esc_html_e( 'Email Comercial', 'babel-directory' ); ?></label>
-                    <input type="email" id="babel_email" name="babel_email" value="<?php echo esc_attr( $email ); ?>" placeholder="Ej: contacto@empresa.cl" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Correo para solicitudes de clientes.', 'babel-directory' ); ?></p>
-                </div>
-
-                <!-- FILA 3 (Geolocalización): Dirección (span 6), Maps Link (span 6) -->
-                <div class="babel-field-group babel-grid-span-6">
-                    <label for="babel_address"><?php esc_html_e( 'Dirección Física', 'babel-directory' ); ?></label>
-                    <input type="text" id="babel_address" name="babel_address" value="<?php echo esc_attr( $address ); ?>" placeholder="Ej: Av. Providencia 1234, Oficina 501" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Ubicación completa del local/oficina.', 'babel-directory' ); ?></p>
-                </div>
-
-                <div class="babel-field-group babel-grid-span-6">
-                    <label for="babel_maps"><?php esc_html_e( 'Enlace de Google Maps', 'babel-directory' ); ?></label>
-                    <input type="url" id="babel_maps" name="babel_maps" value="<?php echo esc_url( $maps ); ?>" placeholder="Ej: https://maps.app.goo.gl/..." />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Enlace directo para abrir la ubicación en Google Maps.', 'babel-directory' ); ?></p>
-                </div>
-
-                <!-- FILA 4 (Coordenadas y Web): Latitud (span 3), Longitud (span 3), Sitio Web (span 6) -->
-                <div class="babel-field-group babel-grid-span-3">
-                    <label for="babel_lat"><?php esc_html_e( 'Latitud GPS', 'babel-directory' ); ?></label>
-                    <input type="text" id="babel_lat" name="babel_lat" value="<?php echo esc_attr( $lat ); ?>" placeholder="Ej: -33.4372" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Latitud de geolocalización.', 'babel-directory' ); ?></p>
-                </div>
-
-                <div class="babel-field-group babel-grid-span-3">
-                    <label for="babel_lng"><?php esc_html_e( 'Longitud GPS', 'babel-directory' ); ?></label>
-                    <input type="text" id="babel_lng" name="babel_lng" value="<?php echo esc_attr( $lng ); ?>" placeholder="Ej: -70.6506" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'Longitud de geolocalización.', 'babel-directory' ); ?></p>
-                </div>
-
-                <div class="babel-field-group babel-grid-span-6">
-                    <label for="babel_website"><?php esc_html_e( 'Sitio Web', 'babel-directory' ); ?></label>
-                    <input type="url" id="babel_website" name="babel_website" value="<?php echo esc_url( $website ); ?>" placeholder="Ej: https://www.negocio.cl" />
-                    <p class="babel-field-desc"><?php esc_html_e( 'URL oficial de la empresa.', 'babel-directory' ); ?></p>
-                </div>
-
-                <!-- FILA 5 (Redes Sociales): Instagram (span 4), Facebook (span 4), LinkedIn (span 4) -->
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_instagram"><?php esc_html_e( 'Instagram', 'babel-directory' ); ?></label>
-                    <input type="url" id="babel_instagram" name="babel_instagram" value="<?php echo esc_url( $instagram ); ?>" placeholder="Ej: https://instagram.com/perfil" />
-                </div>
-
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_facebook"><?php esc_html_e( 'Facebook', 'babel-directory' ); ?></label>
-                    <input type="url" id="babel_facebook" name="babel_facebook" value="<?php echo esc_url( $facebook ); ?>" placeholder="Ej: https://facebook.com/pagina" />
-                </div>
-
-                <div class="babel-field-group babel-grid-span-4">
-                    <label for="babel_linkedin"><?php esc_html_e( 'LinkedIn', 'babel-directory' ); ?></label>
-                    <input type="url" id="babel_linkedin" name="babel_linkedin" value="<?php echo esc_url( $linkedin ); ?>" placeholder="Ej: https://linkedin.com/company/empresa" />
-                </div>
-
-                <!-- FILA 6 (Estados): Verified & Featured (span 12) -->
-                <div class="babel-grid-span-12">
-                    <div class="babel-states-container">
-                        <label class="babel-state-checkbox">
-                            <input type="checkbox" id="babel_verified" name="babel_verified" value="1" <?php checked( $verified, '1' ); ?> />
-                            <span>✨ <?php esc_html_e( 'Negocio Verificado', 'babel-directory' ); ?></span>
-                        </label>
-
-                        <label class="babel-state-checkbox">
-                            <input type="checkbox" id="babel_featured" name="babel_featured" value="1" <?php checked( $featured, '1' ); ?> />
-                            <span>🔥 <?php esc_html_e( 'Destacar Negocio', 'babel-directory' ); ?></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- FILA 7 (Módulos Complejos): Horarios (span 6), Galería (span 6) -->
-                <div class="babel-field-group babel-grid-span-6">
-                    <label><?php esc_html_e( 'Horarios de Atención', 'babel-directory' ); ?></label>
-                    <div class="babel-hours-container">
-                        <?php foreach ( $days_of_week as $day ) : 
-                            $day_open   = isset( $hours[ $day ]['open'] ) ? $hours[ $day ]['open'] : '09:00';
-                            $day_close  = isset( $hours[ $day ]['close'] ) ? $hours[ $day ]['close'] : '18:00';
-                            $day_closed = isset( $hours[ $day ]['closed'] ) && $hours[ $day ]['closed'];
-                            ?>
-                            <div class="babel-hours-row">
-                                <span class="babel-hours-day"><?php echo esc_html( $day ); ?></span>
-                                <div class="babel-hours-inputs">
-                                    <input type="time" name="babel_hours[<?php echo esc_attr( $day ); ?>][open]" value="<?php echo esc_attr( $day_open ); ?>" />
-                                    <span><?php esc_html_e( 'a', 'babel-directory' ); ?></span>
-                                    <input type="time" name="babel_hours[<?php echo esc_attr( $day ); ?>][close]" value="<?php echo esc_attr( $day_close ); ?>" />
+            <!-- PESTAÑA 4: HORARIOS Y MEDIOS -->
+            <div id="tab-horarios" class="bd-tab-panel">
+                <div class="bd-metabox-grid">
+                    <!-- Fila 1: Horarios Día por Día (12 cols) -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label><?php esc_html_e( 'Horarios de Atención', 'babel-directory' ); ?></label>
+                        <div class="bd-hours-container">
+                            <?php foreach ( $days_of_week as $day ) : 
+                                $day_open   = isset( $hours[ $day ]['open'] ) ? $hours[ $day ]['open'] : '09:00';
+                                $day_close  = isset( $hours[ $day ]['close'] ) ? $hours[ $day ]['close'] : '18:00';
+                                $day_closed = isset( $hours[ $day ]['closed'] ) && $hours[ $day ]['closed'];
+                                ?>
+                                <div class="bd-hours-row">
+                                    <span class="bd-hours-day"><?php echo esc_html( $day ); ?></span>
+                                    <div class="bd-hours-inputs">
+                                        <input type="time" name="babel_hours[<?php echo esc_attr( $day ); ?>][open]" value="<?php echo esc_attr( $day_open ); ?>" />
+                                        <span><?php esc_html_e( 'a', 'babel-directory' ); ?></span>
+                                        <input type="time" name="babel_hours[<?php echo esc_attr( $day ); ?>][close]" value="<?php echo esc_attr( $day_close ); ?>" />
+                                    </div>
+                                    <label class="bd-hours-closed-label">
+                                        <input type="checkbox" class="bd-hours-closed-checkbox" name="babel_hours[<?php echo esc_attr( $day ); ?>][closed]" value="1" <?php checked( $day_closed, true ); ?> />
+                                        <span><?php esc_html_e( 'Cerrado', 'babel-directory' ); ?></span>
+                                    </label>
                                 </div>
-                                <label class="babel-hours-closed-label">
-                                    <input type="checkbox" class="babel-hours-closed-checkbox" name="babel_hours[<?php echo esc_attr( $day ); ?>][closed]" value="1" <?php checked( $day_closed, true ); ?> />
-                                    <span><?php esc_html_e( 'Cerrado', 'babel-directory' ); ?></span>
-                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Fila 2: Logotipo (6 cols) y Galería (6 cols) -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label><?php esc_html_e( 'Imagen Principal / Logotipo', 'babel-directory' ); ?></label>
+                        <div class="bd-media-upload-container">
+                            <div class="bd-media-preview-box" id="bd-logo-preview">
+                                <?php if ( $logo_url ) : ?>
+                                    <img src="<?php echo esc_url( $logo_url ); ?>" alt="Preview" />
+                                <?php else : ?>
+                                    <span class="bd-media-placeholder-icon">🏢</span>
+                                <?php endif; ?>
                             </div>
-                        <?php endforeach; ?>
+                            <div class="bd-media-actions">
+                                <input type="hidden" id="babel_logo_id" name="babel_logo_id" value="<?php echo esc_attr( $logo_id ); ?>" />
+                                <button type="button" class="button bd-btn-primary" id="bd-select-logo-btn">
+                                    <?php esc_html_e( 'Seleccionar Imagen', 'babel-directory' ); ?>
+                                </button>
+                                <button type="button" class="button bd-btn-danger" id="bd-remove-logo-btn" style="<?php echo $logo_url ? '' : 'display: none;'; ?>">
+                                    <?php esc_html_e( 'Eliminar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-6 bd-gallery-container">
+                        <label><?php esc_html_e( 'Galería de Fotos Múltiple', 'babel-directory' ); ?></label>
+                        <input type="hidden" id="babel_gallery" name="babel_gallery" value="<?php echo esc_attr( $gallery ); ?>" />
+                        <div class="bd-gallery-grid" id="bd-gallery-grid">
+                            <?php foreach ( $gallery_ids as $img_id ) : 
+                                $img_url = wp_get_attachment_image_url( $img_id, 'thumbnail' );
+                                if ( ! $img_url ) {
+                                    continue;
+                                }
+                                ?>
+                                <div class="bd-gallery-item" data-id="<?php echo esc_attr( $img_id ); ?>">
+                                    <img src="<?php echo esc_url( $img_url ); ?>" alt="Thumbnail" />
+                                    <button type="button" class="bd-remove-gallery-item">&times;</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button bd-btn-primary" id="bd-add-gallery-btn" style="align-self: flex-start;">
+                            📸 <?php esc_html_e( 'Añadir Fotos', 'babel-directory' ); ?>
+                        </button>
                     </div>
                 </div>
-
-                <div class="babel-field-group babel-grid-span-6 babel-gallery-container">
-                    <label><?php esc_html_e( 'Galería de Fotos Múltiple', 'babel-directory' ); ?></label>
-                    <input type="hidden" id="babel_gallery" name="babel_gallery" value="<?php echo esc_attr( $gallery ); ?>" />
-                    <div class="babel-gallery-grid" id="babel-gallery-grid">
-                        <?php foreach ( $gallery_ids as $img_id ) : 
-                            $img_url = wp_get_attachment_image_url( $img_id, 'thumbnail' );
-                            if ( ! $img_url ) {
-                                continue;
-                            }
-                            ?>
-                            <div class="babel-gallery-item" data-id="<?php echo esc_attr( $img_id ); ?>">
-                                <img src="<?php echo esc_url( $img_url ); ?>" alt="Thumbnail" />
-                                <button type="button" class="babel-remove-gallery-item">&times;</button>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <button type="button" class="button babel-btn-primary" id="babel-add-gallery-btn" style="align-self: flex-start;">
-                        📸 <?php esc_html_e( 'Añadir Fotos', 'babel-directory' ); ?>
-                    </button>
-                </div>
-
             </div>
         </div>
 
         <script>
             jQuery(document).ready(function($) {
+                // --- CAMBIO DE PESTAÑAS (TABS LOGIC) ---
+                $('.bd-tab-link').on('click', function(e) {
+                    e.preventDefault();
+                    var tabId = $(this).data('tab');
+                    
+                    $('.bd-tab-link').removeClass('active');
+                    $('.bd-tab-panel').removeClass('active');
+                    
+                    $(this).addClass('active');
+                    $('#' + tabId).addClass('active');
+                });
+
                 // --- MANEJO DE LOGOTIPO / IMAGEN DESTACADA ---
                 var logoFrame;
-                $('#babel-select-logo-btn').on('click', function(e) {
+                $('#bd-select-logo-btn').on('click', function(e) {
                     e.preventDefault();
                     if (logoFrame) {
                         logoFrame.open();
@@ -570,22 +743,22 @@ class Babel_Directory_Metaboxes {
                         var attachment = logoFrame.state().get('selection').first().toJSON();
                         $('#babel_logo_id').val(attachment.id);
                         var imageUrl = (attachment.sizes && attachment.sizes.thumbnail) ? attachment.sizes.thumbnail.url : attachment.url;
-                        $('#babel-logo-preview').html('<img src="' + imageUrl + '" />');
-                        $('#babel-remove-logo-btn').show();
+                        $('#bd-logo-preview').html('<img src="' + imageUrl + '" />');
+                        $('#bd-remove-logo-btn').show();
                     });
                     logoFrame.open();
                 });
 
-                $('#babel-remove-logo-btn').on('click', function(e) {
+                $('#bd-remove-logo-btn').on('click', function(e) {
                     e.preventDefault();
                     $('#babel_logo_id').val('0');
-                    $('#babel-logo-preview').html('<span class="babel-media-placeholder-icon">🏢</span>');
+                    $('#bd-logo-preview').html('<span class="bd-media-placeholder-icon">🏢</span>');
                     $(this).hide();
                 });
 
                 // --- MANEJO DE GALERÍA DE FOTOS ---
                 var galleryFrame;
-                $('#babel-add-gallery-btn').on('click', function(e) {
+                $('#bd-add-gallery-btn').on('click', function(e) {
                     e.preventDefault();
                     if (galleryFrame) {
                         galleryFrame.open();
@@ -607,10 +780,10 @@ class Babel_Directory_Metaboxes {
                             if (currentIds.indexOf(attachment.id.toString()) === -1) {
                                 currentIds.push(attachment.id);
                                 var imgUrl = (attachment.sizes && attachment.sizes.thumbnail) ? attachment.sizes.thumbnail.url : attachment.url;
-                                $('#babel-gallery-grid').append(
-                                    '<div class="babel-gallery-item" data-id="' + attachment.id + '">' +
+                                $('#bd-gallery-grid').append(
+                                    '<div class="bd-gallery-item" data-id="' + attachment.id + '">' +
                                         '<img src="' + imgUrl + '" />' +
-                                        '<button type="button" class="babel-remove-gallery-item">&times;</button>' +
+                                        '<button type="button" class="bd-remove-gallery-item">&times;</button>' +
                                     '</div>'
                                 );
                             }
@@ -620,9 +793,9 @@ class Babel_Directory_Metaboxes {
                     galleryFrame.open();
                 });
 
-                $(document).on('click', '.babel-remove-gallery-item', function(e) {
+                $(document).on('click', '.bd-remove-gallery-item', function(e) {
                     e.preventDefault();
-                    var $item = $(this).closest('.babel-gallery-item');
+                    var $item = $(this).closest('.bd-gallery-item');
                     var idToRemove = $item.data('id').toString();
                     $item.remove();
                     
@@ -635,15 +808,15 @@ class Babel_Directory_Metaboxes {
                 });
 
                 // Habilitar ordenación por Drag-and-Drop (Sortable UI)
-                var $galleryGrid = $('#babel-gallery-grid');
+                var $galleryGrid = $('#bd-gallery-grid');
                 if ($galleryGrid.length && $.fn.sortable) {
                     $galleryGrid.sortable({
-                        items: '.babel-gallery-item',
+                        items: '.bd-gallery-item',
                         cursor: 'move',
                         opacity: 0.8,
                         update: function(event, ui) {
                             var ids = [];
-                            $galleryGrid.find('.babel-gallery-item').each(function() {
+                            $galleryGrid.find('.bd-gallery-item').each(function() {
                                 ids.push($(this).data('id'));
                             });
                             $('#babel_gallery').val(ids.join(','));
@@ -652,15 +825,15 @@ class Babel_Directory_Metaboxes {
                 }
 
                 // --- MANEJO DE SECCIÓN DE HORARIOS (DESACTIVAR AL MARCAR CERRADO) ---
-                $('.babel-hours-closed-checkbox').each(function() {
-                    var $row = $(this).closest('.babel-hours-row');
+                $('.bd-hours-closed-checkbox').each(function() {
+                    var $row = $(this).closest('.bd-hours-row');
                     if ($(this).is(':checked')) {
                         $row.find('input[type="time"]').prop('disabled', true).css('opacity', '0.5');
                     }
                 });
 
-                $(document).on('change', '.babel-hours-closed-checkbox', function() {
-                    var $row = $(this).closest('.babel-hours-row');
+                $(document).on('change', '.bd-hours-closed-checkbox', function() {
+                    var $row = $(this).closest('.bd-hours-row');
                     if ($(this).is(':checked')) {
                         $row.find('input[type="time"]').prop('disabled', true).css('opacity', '0.5');
                     } else {
@@ -670,33 +843,6 @@ class Babel_Directory_Metaboxes {
             });
         </script>
         <?php
-    }
-
-    /**
-     * Obtiene y renderiza recursivamente las opciones jerárquicas de una taxonomía.
-     *
-     * @param string $taxonomy    Nombre de la taxonomía.
-     * @param int    $parent      ID del término padre.
-     * @param int    $depth       Nivel de anidamiento actual.
-     * @param int    $selected_id ID del término seleccionado.
-     */
-    private function render_hierarchical_category_options( $taxonomy, $parent = 0, $depth = 0, $selected_id = 0 ) {
-        $terms = get_terms( array(
-            'taxonomy'   => $taxonomy,
-            'hide_empty' => false,
-            'parent'     => $parent,
-        ) );
-
-        if ( is_wp_error( $terms ) || empty( $terms ) ) {
-            return;
-        }
-
-        foreach ( $terms as $term ) {
-            $prefix = str_repeat( '&nbsp;&nbsp;&nbsp;&mdash;&nbsp;', $depth );
-            $selected = ( $term->term_id === $selected_id ) ? ' selected' : '';
-            echo '<option value="' . esc_attr( $term->term_id ) . '"' . $selected . '>' . $prefix . esc_html( $term->name ) . '</option>';
-            $this->render_hierarchical_category_options( $taxonomy, $term->term_id, $depth + 1, $selected_id );
-        }
     }
 
     /**
@@ -721,7 +867,25 @@ class Babel_Directory_Metaboxes {
             return;
         }
 
-        // 4. Sanitizar y guardar cada campo personalizado de forma individual
+        // 4. Mapear Nombre y Descripción a campos nativos del Post sin loops infinitos
+        if ( isset( $_POST['_babel_biz_name'] ) || isset( $_POST['_babel_biz_desc'] ) ) {
+            $updated_title = isset( $_POST['_babel_biz_name'] ) ? sanitize_text_field( wp_unslash( $_POST['_babel_biz_name'] ) ) : $post->post_title;
+            $updated_desc  = isset( $_POST['_babel_biz_desc'] ) ? sanitize_textarea_field( wp_unslash( $_POST['_babel_biz_desc'] ) ) : $post->post_content;
+
+            if ( $updated_title !== $post->post_title || $updated_desc !== $post->post_content ) {
+                remove_action( 'save_post_babel_business', array( $this, 'save_business_meta' ), 10 );
+                
+                wp_update_post( array(
+                    'ID'           => $post_id,
+                    'post_title'   => $updated_title,
+                    'post_content' => $updated_desc,
+                ) );
+                
+                add_action( 'save_post_babel_business', array( $this, 'save_business_meta' ), 10, 2 );
+            }
+        }
+
+        // 5. Sanitizar y guardar cada campo personalizado de forma individual
 
         // Teléfono
         if ( isset( $_POST['babel_phone'] ) ) {
@@ -778,14 +942,14 @@ class Babel_Directory_Metaboxes {
             update_post_meta( $post_id, '_babel_linkedin', esc_url_raw( wp_unslash( $_POST['babel_linkedin'] ) ) );
         }
 
-        // Categoría Principal
-        if ( isset( $_POST['babel_category_id'] ) ) {
-            $cat_id = intval( $_POST['babel_category_id'] );
-            if ( $cat_id > 0 ) {
-                wp_set_object_terms( $post_id, array( $cat_id ), 'babel_category' );
-            } else {
-                wp_set_object_terms( $post_id, array(), 'babel_category' );
-            }
+        // Categorías (WooCommerce style checklist saving)
+        if ( isset( $_POST['tax_input']['babel_category'] ) ) {
+            $categories = array_map( 'intval', (array) $_POST['tax_input']['babel_category'] );
+            $categories = array_filter( $categories );
+            wp_set_object_terms( $post_id, $categories, 'babel_category' );
+        } else {
+            // Si el checklist se envía vacío (ninguna categoría seleccionada)
+            wp_set_object_terms( $post_id, array(), 'babel_category' );
         }
 
         // Imagen Principal / Logotipo (Post Thumbnail / Destacada)
