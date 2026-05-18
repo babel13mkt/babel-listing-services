@@ -356,4 +356,3 @@ class Babel_Directory_Admin {
             <?php
         }
     }
-}
