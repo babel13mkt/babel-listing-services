@@ -1,268 +1,294 @@
 <?php
 /**
- * BD_Submission — Formulario Frontend de Alta de Negocios
- * Hito 13: Formulario multistep frontend sin dependencia de wp-admin ni Divi.
- * v1.0.0
+ * Procesamiento Seguro de Envío de Negocios desde el Frontend (Babel_Directory_Submission)
+ * v7.0.0 — Hito 10: Formulario de Registro Público de Negocios y Carga de Medios.
+ *
+ * @package Babel_Directory
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+    exit; // Salir si se accede directamente.
 }
 
-class BD_Submission {
+class Babel_Directory_Submission {
 
+    /**
+     * Almacena mensajes de éxito o error tras el procesamiento del formulario.
+     *
+     * @var array
+     */
+    private $notices = array();
+
+    /**
+     * Constructor de la clase. Registra el shortcode del formulario.
+     */
     public function __construct() {
-        add_shortcode( 'bd_nuevo_negocio', array( $this, 'render_form' ) );
-        add_action( 'wp_ajax_bd_submit_negocio',        array( $this, 'handle_submission' ) );
-        add_action( 'wp_ajax_nopriv_bd_submit_negocio', array( $this, 'handle_submission' ) );
-        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+        add_shortcode( 'babel_submission_form', array( $this, 'render_submission_form' ) );
+        add_action( 'wp_loaded', array( $this, 'handle_form_submission' ) );
     }
 
     /**
-     * Encolar assets.
-     * @param bool $force Forzar la carga (útil para admin o módulos dinámicos)
+     * Renderiza el formulario HTML seguro para envío de negocios.
+     *
+     * @return string Código HTML del formulario.
      */
-    public function enqueue_assets( $force = false ) {
-        if ( ! $force ) {
-            global $post;
-            if ( ! is_a( $post, 'WP_Post' ) || ! has_shortcode( $post->post_content, 'bd_nuevo_negocio' ) ) {
-                return;
+    public function render_submission_form() {
+        // Encolar los estilos del plugin por seguridad
+        wp_enqueue_style( 'babel-public-css' );
+
+        ob_start();
+
+        // Mostrar notificaciones si existen
+        if ( ! empty( $this->notices ) ) {
+            foreach ( $this->notices as $notice ) {
+                $class = $notice['type'] === 'success' ? 'babel-notice-success' : 'babel-notice-error';
+                echo '<div class="babel-notice ' . esc_attr( $class ) . '">';
+                echo esc_html( $notice['message'] );
+                echo '</div>';
             }
         }
-        wp_enqueue_style(
-            'bd-form-style',
-            BD_URL . 'assets/css/form.css',
-            array(),
-            BD_VERSION
-        );
-        wp_enqueue_script(
-            'bd-form-submission',
-            BD_URL . 'assets/js/form-submission.js',
-            array(),
-            BD_VERSION,
-            true
-        );
-        wp_localize_script( 'bd-form-submission', 'bdFormConfig', array(
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'bd_submission_nonce' ),
-            'strings' => array(
-                'sending'  => __( 'Enviando...', 'babel-directory' ),
-                'success'  => __( '¡Tu negocio fue enviado! Lo revisaremos pronto.', 'babel-directory' ),
-                'error'    => __( 'Hubo un error. Por favor intentá de nuevo.', 'babel-directory' ),
-                'required' => __( 'Este campo es obligatorio.', 'babel-directory' ),
-            ),
-        ) );
-    }
+        ?>
+        <div class="babel-submission-form-container">
+            <form action="" method="post" enctype="multipart/form-data" class="babel-submission-form">
+                
+                <?php wp_nonce_field( 'babel_submit_listing', 'babel_submission_nonce' ); ?>
 
-    /**
-     * Renderizar el formulario via shortcode [bd_nuevo_negocio].
-     */
-    public function render_form( $is_admin = false ) {
-        $categorias = get_terms( array(
-            'taxonomy'   => 'directorio_categoria',
-            'parent'     => 0,
-            'hide_empty' => false,
-            'orderby'    => 'name',
-        ) );
-        $regiones = get_terms( array(
-            'taxonomy'   => 'directorio_region',
-            'parent'     => 0,
-            'hide_empty' => false,
-            'orderby'    => 'name',
-        ) );
-        ob_start();
-        include BD_PATH . 'templates/form-nuevo-negocio.php';
+                <!-- Título del negocio -->
+                <div class="babel-form-group">
+                    <label for="babel_title">
+                        <?php esc_html_e( 'Nombre del Negocio *', 'babel-directory' ); ?>
+                    </label>
+                    <input type="text" id="babel_title" name="babel_title" required placeholder="<?php esc_attr_e( 'Ej: Cafetería Central', 'babel-directory' ); ?>" value="<?php echo isset( $_POST['babel_title'] ) ? esc_attr( wp_unslash( $_POST['babel_title'] ) ) : ''; ?>" />
+                </div>
+
+                <!-- Descripción -->
+                <div class="babel-form-group">
+                    <label for="babel_description">
+                        <?php esc_html_e( 'Descripción del Negocio *', 'babel-directory' ); ?>
+                    </label>
+                    <textarea id="babel_description" name="babel_description" required rows="5" placeholder="<?php esc_attr_e( 'Describe los servicios, productos y horarios de tu negocio...', 'babel-directory' ); ?>"><?php echo isset( $_POST['babel_description'] ) ? esc_textarea( wp_unslash( $_POST['babel_description'] ) ) : ''; ?></textarea>
+                </div>
+
+                <div class="babel-form-row">
+                    <!-- Categoría -->
+                    <div class="babel-form-group">
+                        <label for="babel_category">
+                            <?php esc_html_e( 'Categoría *', 'babel-directory' ); ?>
+                        </label>
+                        <select id="babel_category" name="babel_category" required>
+                            <option value=""><?php esc_html_e( '-- Selecciona una Categoría --', 'babel-directory' ); ?></option>
+                            <?php $this->render_taxonomy_options( 'babel_category' ); ?>
+                        </select>
+                    </div>
+
+                    <!-- Región/Comuna -->
+                    <div class="babel-form-group">
+                        <label for="babel_region">
+                            <?php esc_html_e( 'Región / Comuna *', 'babel-directory' ); ?>
+                        </label>
+                        <select id="babel_region" name="babel_region" required>
+                            <option value=""><?php esc_html_e( '-- Selecciona una Región/Comuna --', 'babel-directory' ); ?></option>
+                            <?php $this->render_taxonomy_options( 'babel_region' ); ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dirección -->
+                <div class="babel-form-group">
+                    <label for="babel_address">
+                        <?php esc_html_e( 'Dirección Comercial *', 'babel-directory' ); ?>
+                    </label>
+                    <input type="text" id="babel_address" name="babel_address" required placeholder="<?php esc_attr_e( 'Ej: Av. Providencia 1234, Oficina 501', 'babel-directory' ); ?>" value="<?php echo isset( $_POST['babel_address'] ) ? esc_attr( wp_unslash( $_POST['babel_address'] ) ) : ''; ?>" />
+                </div>
+
+                <div class="babel-form-row">
+                    <!-- Teléfono -->
+                    <div class="babel-form-group">
+                        <label for="babel_phone">
+                            <?php esc_html_e( 'Teléfono de Contacto *', 'babel-directory' ); ?>
+                        </label>
+                        <input type="text" id="babel_phone" name="babel_phone" required placeholder="<?php esc_attr_e( 'Ej: +56 9 1234 5678', 'babel-directory' ); ?>" value="<?php echo isset( $_POST['babel_phone'] ) ? esc_attr( wp_unslash( $_POST['babel_phone'] ) ) : ''; ?>" />
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div class="babel-form-group">
+                        <label for="babel_whatsapp">
+                            <?php esc_html_e( 'WhatsApp Comercial', 'babel-directory' ); ?>
+                        </label>
+                        <input type="text" id="babel_whatsapp" name="babel_whatsapp" placeholder="<?php esc_attr_e( 'Ej: +56 9 8765 4321', 'babel-directory' ); ?>" value="<?php echo isset( $_POST['babel_whatsapp'] ) ? esc_attr( wp_unslash( $_POST['babel_whatsapp'] ) ) : ''; ?>" />
+                    </div>
+                </div>
+
+                <!-- Logotipo / Imagen Destacada -->
+                <div class="babel-form-group">
+                    <label for="babel_logo">
+                        <?php esc_html_e( 'Logotipo del Negocio (Opcional)', 'babel-directory' ); ?>
+                    </label>
+                    <span>
+                        <?php esc_html_e( 'Formatos permitidos: JPG, PNG o WEBP de forma exclusiva.', 'babel-directory' ); ?>
+                    </span>
+                    <input type="file" id="babel_logo" name="babel_logo" accept="image/jpeg,image/png,image/webp" />
+                </div>
+
+                <!-- Botón de Envío -->
+                <button type="submit" name="babel_submit_action">
+                    <?php esc_html_e( 'Enviar Negocio a Moderación', 'babel-directory' ); ?>
+                </button>
+
+            </form>
+        </div>
+        <?php
         return ob_get_clean();
     }
 
     /**
-     * Procesar envío AJAX del formulario.
+     * Obtiene y renderiza jerárquicamente las opciones de un selector de taxonomía.
+     *
+     * @param string $taxonomy Nombre de la taxonomía.
      */
-    public function handle_submission() {
-
-        // 1. Verificar nonce
-        if ( ! check_ajax_referer( 'bd_submission_nonce', 'nonce', false ) ) {
-            wp_send_json_error( array( 'message' => __( 'Error de seguridad. Recargá la página.', 'babel-directory' ) ) );
-        }
-
-        // 2. Honeypot — fallo silencioso para bots
-        if ( ! empty( $_POST['bd_hp_field'] ) ) {
-            wp_send_json_success( array( 'message' => __( '¡Negocio enviado con éxito!', 'babel-directory' ) ) );
-        }
-
-        // 3. Validar campos obligatorios
-        $nombre = sanitize_text_field( wp_unslash( $_POST['bd_nombre'] ?? '' ) );
-        if ( empty( $nombre ) ) {
-            wp_send_json_error( array( 'message' => __( 'El nombre del negocio es obligatorio.', 'babel-directory' ) ) );
-        }
-
-        $descripcion  = wp_kses_post( wp_unslash( $_POST['bd_descripcion'] ?? '' ) );
-        $categoria_id = intval( $_POST['bd_categoria'] ?? 0 );
-        $region_id    = intval( $_POST['bd_region'] ?? 0 );
-
-        if ( empty( $descripcion ) ) {
-            wp_send_json_error( array( 'message' => __( 'La descripción es obligatoria.', 'babel-directory' ) ) );
-        }
-
-        // 4. Sanitizar el resto de campos
-        $direccion       = sanitize_text_field( wp_unslash( $_POST['bd_direccion']   ?? '' ) );
-        $telefono        = sanitize_text_field( wp_unslash( $_POST['bd_telefono']    ?? '' ) );
-        $whatsapp        = sanitize_text_field( wp_unslash( $_POST['bd_whatsapp']    ?? '' ) );
-        $email           = sanitize_email(      wp_unslash( $_POST['bd_email']       ?? '' ) );
-        $sitio_web       = esc_url_raw(         wp_unslash( $_POST['bd_sitio_web']   ?? '' ) );
-        $horario         = sanitize_textarea_field( wp_unslash( $_POST['bd_horario'] ?? '' ) );
-        $latitud         = floatval( $_POST['bd_latitud']  ?? 0 );
-        $longitud        = floatval( $_POST['bd_longitud'] ?? 0 );
-
-        // Mapa Embed (Iframe)
-        $maps_embed      = wp_kses( wp_unslash( $_POST['bd_maps_embed'] ?? '' ), array(
-            'iframe' => array(
-                'src'             => true,
-                'width'           => true,
-                'height'          => true,
-                'frameborder'     => true,
-                'style'           => true,
-                'allowfullscreen' => true,
-                'loading'         => true,
-                'referrerpolicy'  => true,
-            ),
+    private function render_taxonomy_options( $taxonomy ) {
+        $parent_terms = get_terms( array(
+            'taxonomy'   => $taxonomy,
+            'hide_empty' => false,
+            'parent'     => 0,
         ) );
 
-        // Paso 3
-        $rango_precio    = sanitize_text_field( wp_unslash( $_POST['bd_rango_precio'] ?? '' ) );
-        $wifi            = ! empty( $_POST['bd_wifi'] )            ? '1' : '0';
-        $estacionamiento = ! empty( $_POST['bd_estacionamiento'] ) ? '1' : '0';
-        $delivery        = ! empty( $_POST['bd_delivery'] )        ? '1' : '0';
-        $reservas        = ! empty( $_POST['bd_reservas'] )        ? '1' : '0';
-        $accesibilidad   = ! empty( $_POST['bd_accesibilidad'] )   ? '1' : '0';
-
-        // 5. Crear el post
-        $is_admin = current_user_can( 'manage_options' ) && ! empty( $_POST['bd_admin_mode'] );
-        $status   = ( $is_admin && ! empty( $_POST['bd_publicar_inmediato'] ) ) ? 'publish' : 'pending';
-
-        $post_id = wp_insert_post( array(
-            'post_title'   => $nombre,
-            'post_content' => $descripcion,
-            'post_status'  => $status,
-            'post_type'    => 'directorio_negocio',
-            'post_author'  => is_user_logged_in() ? get_current_user_id() : 1,
-        ), true );
-
-        if ( is_wp_error( $post_id ) ) {
-            wp_send_json_error( array( 'message' => $post_id->get_error_message() ) );
+        if ( is_wp_error( $parent_terms ) || empty( $parent_terms ) ) {
+            return;
         }
 
-        // 6. Procesar Archivos (Multimedia)
-        require_once( ABSPATH . 'wp-admin/includes/image.php' );
-        require_once( ABSPATH . 'wp-admin/includes/file.php' );
-        require_once( ABSPATH . 'wp-admin/includes/media.php' );
+        $selected_val = isset( $_POST[ $taxonomy ] ) ? intval( $_POST[ $taxonomy ] ) : 0;
 
-        // Logo
-        if ( ! empty( $_FILES['bd_logo']['name'] ) ) {
-            $logo_id = media_handle_upload( 'bd_logo', $post_id );
-            if ( ! is_wp_error( $logo_id ) ) {
-                update_post_meta( $post_id, '_bd_logo_id', $logo_id );
-            }
-        }
+        foreach ( $parent_terms as $parent ) {
+            $selected = $selected_val === $parent->term_id ? ' selected' : '';
+            echo '<option value="' . esc_attr( $parent->term_id ) . '" class="babel-opt-parent"' . $selected . '>' . esc_html( $parent->name ) . '</option>';
 
-        // Portada (Featured Image)
-        if ( ! empty( $_FILES['bd_cover']['name'] ) ) {
-            $cover_id = media_handle_upload( 'bd_cover', $post_id );
-            if ( ! is_wp_error( $cover_id ) ) {
-                set_post_thumbnail( $post_id, $cover_id );
-            }
-        }
+            // Obtener e iterar términos hijos directos
+            $child_terms = get_terms( array(
+                'taxonomy'   => $taxonomy,
+                'hide_empty' => false,
+                'parent'     => $parent->term_id,
+            ) );
 
-        // Galería (Múltiple)
-        if ( ! empty( $_FILES['bd_gallery']['name'][0] ) ) {
-            $gallery_ids = array();
-            $files = $_FILES['bd_gallery'];
-            foreach ( $files['name'] as $key => $value ) {
-                if ( $files['name'][$key] ) {
-                    $file = array(
-                        'name'     => $files['name'][$key],
-                        'type'     => $files['type'][$key],
-                        'tmp_name' => $files['tmp_name'][$key],
-                        'error'    => $files['error'][$key],
-                        'size'     => $files['size'][$key],
-                    );
-                    $_FILES['bd_gallery_single'] = $file;
-                    $attachment_id = media_handle_upload( 'bd_gallery_single', $post_id );
-                    if ( ! is_wp_error( $attachment_id ) ) {
-                        $gallery_ids[] = $attachment_id;
-                    }
+            if ( ! is_wp_error( $child_terms ) && ! empty( $child_terms ) ) {
+                foreach ( $child_terms as $child ) {
+                    $selected_child = $selected_val === $child->term_id ? ' selected' : '';
+                    echo '<option value="' . esc_attr( $child->term_id ) . '" class="babel-opt-child"' . $selected_child . '>&nbsp;&nbsp;&nbsp;&mdash;&nbsp;' . esc_html( $child->name ) . '</option>';
                 }
             }
-            if ( ! empty( $gallery_ids ) ) {
-                update_post_meta( $post_id, '_bd_galeria', implode( ',', $gallery_ids ) );
+        }
+    }
+
+    /**
+     * Escucha y procesa de forma segura el envío de datos del formulario de registro.
+     */
+    public function handle_form_submission() {
+        // Evaluar si se presionó el botón y si el Nonce de seguridad es válido
+        if ( ! isset( $_POST['babel_submit_action'] ) ) {
+            return;
+        }
+
+        if ( ! isset( $_POST['babel_submission_nonce'] ) || ! wp_verify_nonce( $_POST['babel_submission_nonce'], 'babel_submit_listing' ) ) {
+            $this->notices[] = array(
+                'type'    => 'error',
+                'message' => esc_html__( 'Error de seguridad. Por favor, recarga la página e inténtalo nuevamente.', 'babel-directory' ),
+            );
+            return;
+        }
+
+        // Capturar y sanitizar campos obligatorios de texto y selectores
+        $title       = isset( $_POST['babel_title'] ) ? sanitize_text_field( wp_unslash( $_POST['babel_title'] ) ) : '';
+        $description = isset( $_POST['babel_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['babel_description'] ) ) : '';
+        $category_id = isset( $_POST['babel_category'] ) ? intval( $_POST['babel_category'] ) : 0;
+        $region_id   = isset( $_POST['babel_region'] ) ? intval( $_POST['babel_region'] ) : 0;
+        $address     = isset( $_POST['babel_address'] ) ? sanitize_text_field( wp_unslash( $_POST['babel_address'] ) ) : '';
+        $phone       = isset( $_POST['babel_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['babel_phone'] ) ) : '';
+        $whatsapp    = isset( $_POST['babel_whatsapp'] ) ? sanitize_text_field( wp_unslash( $_POST['babel_whatsapp'] ) ) : '';
+
+        // Validar que los campos obligatorios no estén vacíos
+        if ( empty( $title ) || empty( $description ) || empty( $category_id ) || empty( $region_id ) || empty( $address ) || empty( $phone ) ) {
+            $this->notices[] = array(
+                'type'    => 'error',
+                'message' => esc_html__( 'Por favor, completa todos los campos obligatorios marcados con asterisco (*).', 'babel-directory' ),
+            );
+            return;
+        }
+
+        // Crear el nuevo negocio en estado 'pending' (para moderación)
+        $post_data = array(
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_status'  => 'pending',
+            'post_type'    => 'babel_business',
+        );
+
+        $post_id = wp_insert_post( $post_data );
+
+        if ( is_wp_error( $post_id ) || ! $post_id ) {
+            $this->notices[] = array(
+                'type'    => 'error',
+                'message' => esc_html__( 'Ocurrió un error al procesar tu solicitud de registro. Inténtalo más tarde.', 'babel-directory' ),
+            );
+            return;
+        }
+
+        // Vincular los términos de taxonomías correspondientes
+        wp_set_object_terms( $post_id, array( $category_id ), 'babel_category' );
+        wp_set_object_terms( $post_id, array( $region_id ), 'babel_region' );
+
+        // Almacenar metadatos del negocio
+        update_post_meta( $post_id, '_babel_address', $address );
+        update_post_meta( $post_id, '_babel_phone', $phone );
+        update_post_meta( $post_id, '_babel_whatsapp', $whatsapp );
+
+        // Procesamiento Seguro del Logotipo (Media Upload)
+        if ( isset( $_FILES['babel_logo'] ) && ! empty( $_FILES['babel_logo']['name'] ) ) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+
+            // Restringir dinámicamente los mime types permitidos
+            add_filter( 'upload_mimes', array( $this, 'restrict_submission_mimes' ) );
+
+            // Subir archivo de forma nativa y segura
+            $attachment_id = media_handle_upload( 'babel_logo', $post_id );
+
+            // Remover el filtro de mime types inmediatamente para no afectar otras subidas
+            remove_filter( 'upload_mimes', array( $this, 'restrict_submission_mimes' ) );
+
+            if ( ! is_wp_error( $attachment_id ) ) {
+                // Asignar el logotipo como imagen destacada del negocio
+                set_post_thumbnail( $post_id, $attachment_id );
+            } else {
+                $this->notices[] = array(
+                    'type'    => 'error',
+                    'message' => sprintf( esc_html__( 'El negocio fue registrado pero el logotipo no pudo subirse: %s', 'babel-directory' ), $attachment_id->get_error_message() ),
+                );
+                // Si la imagen falla, no detenemos el éxito del post
             }
         }
 
-        // 7. Guardar meta — usando las mismas keys que class-metaboxes.php
-        $meta = array(
-            '_bd_direccion'       => $direccion,
-            '_bd_telefono'        => $telefono,
-            '_bd_whatsapp'        => $whatsapp,
-            '_bd_email'           => $email,
-            '_bd_sitio_web'       => $sitio_web,
-            '_bd_horario'         => $horario,
-            '_bd_latitud'         => $latitud ? $latitud : '',
-            '_bd_longitud'        => $longitud ? $longitud : '',
-            '_bd_maps_embed'      => $maps_embed,
-            '_bd_rango_precio'    => $rango_precio,
-            '_bd_wifi'            => $wifi,
-            '_bd_estacionamiento' => $estacionamiento,
-            '_bd_delivery'        => $delivery,
-            '_bd_reservas'        => $reservas,
-            '_bd_accesibilidad'   => $accesibilidad,
-            '_bd_verificado'      => '0',
-            '_bd_destacado'       => '0',
-            '_bd_reputacion'      => '0.0',
+        // Registrar mensaje de éxito
+        $this->notices[] = array(
+            'type'    => 'success',
+            'message' => esc_html__( '¡Tu negocio ha sido registrado con éxito! Está en proceso de revisión por nuestro equipo de moderación.', 'babel-directory' ),
         );
-        foreach ( $meta as $key => $value ) {
-            update_post_meta( $post_id, $key, $value );
-        }
 
-        // 7.5 Meta de Reseña Premium (Sovereign)
-        if ( $is_admin ) {
-            $admin_stars  = intval( $_POST['bd_admin_review_stars'] ?? 0 );
-            $admin_review = sanitize_textarea_field( wp_unslash( $_POST['bd_admin_review_text'] ?? '' ) );
-            
-            if ( $admin_stars > 0 ) {
-                update_post_meta( $post_id, '_bd_admin_review_stars', $admin_stars );
-                update_post_meta( $post_id, '_bd_admin_review_text',  $admin_review );
-                update_post_meta( $post_id, '_bd_verificado', '1' ); // Autoverificado si lo hace el admin
-                
-                // Actualizar reputación inicial si hay reseña admin
-                update_post_meta( $post_id, '_bd_reputacion', floatval( $admin_stars ) );
-                update_post_meta( $post_id, '_bd_review_count', 1 );
-            }
-        }
+        // Limpiar $_POST para evitar rellenar el formulario de nuevo
+        $_POST = array();
+    }
 
-        // 8. Asignar taxonomías
-        if ( $categoria_id ) {
-            wp_set_object_terms( $post_id, $categoria_id, 'directorio_categoria' );
-        }
-        if ( $region_id ) {
-            wp_set_object_terms( $post_id, $region_id, 'directorio_region' );
-        }
-
-        // 9. Notificar al admin por email
-        $admin_email = get_option( 'admin_email' );
-        $site_name   = get_bloginfo( 'name' );
-        /* translators: 1: site name, 2: business name */
-        $subject = sprintf( __( '[%1$s] Nuevo negocio pendiente: %2$s', 'babel-directory' ), $site_name, $nombre );
-        $body    = sprintf(
-            /* translators: 1: business name, 2: contact info, 3: admin URL */
-            __( "Nuevo negocio para revisión:\n\nNombre: %1\$s\nContacto: %2\$s\n\nRevisar: %3\$s", 'babel-directory' ),
-            $nombre,
-            $email ? $email : $telefono,
-            admin_url( 'post.php?post=' . $post_id . '&action=edit' )
+    /**
+     * Restringe estrictamente los tipos de archivo permitidos para el logotipo.
+     *
+     * @param array $mimes Mime types existentes.
+     * @return array Mime types permitidos.
+     */
+    public function restrict_submission_mimes( $mimes ) {
+        return array(
+            'jpg|jpeg' => 'image/jpeg',
+            'png'      => 'image/png',
+            'webp'     => 'image/webp',
         );
-        wp_mail( $admin_email, $subject, $body );
-
-        wp_send_json_success( array(
-            'message' => __( '¡Tu negocio fue enviado con éxito! Lo revisaremos y publicaremos pronto.', 'babel-directory' ),
-        ) );
     }
 }

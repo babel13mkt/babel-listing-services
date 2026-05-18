@@ -1,28 +1,39 @@
 <?php
 /**
  * Plugin Name: Babel Directory
- * Description: Sistema de directorio premium inspirado en ListingHive para el mercado chileno.
- * Version: 3.4.6
+ * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
+ * Version: 7.0.0
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
 
-if ( ! defined( "ABSPATH" ) ) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Salir si se accede directamente.
 }
 
-// Definir constantes globales
-define( "BD_VERSION", "6.1.0" );
-define( "BD_PATH", plugin_dir_path( __FILE__ ) );
-define( "BD_URL", plugin_dir_url( __FILE__ ) );
+// Definir constantes globales de la arquitectura v7.0.0+
+define( 'BD_VERSION', '7.0.0' );
+define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
+define( 'BD_URL', plugin_dir_url( __FILE__ ) );
 
 /**
- * Clase Maestra del Directorio (BD_Core)
+ * Clase principal de inicialización: Babel_Directory_Core (Pattern Singleton).
+ * Coordina la carga segura de la arquitectura desacoplada del plugin.
  */
-class BD_Core {
+class Babel_Directory_Core {
 
+    /**
+     * Instancia única de la clase.
+     *
+     * @var Babel_Directory_Core|null
+     */
     private static $instance = null;
 
+    /**
+     * Retorna la instancia única del plugin de forma segura.
+     *
+     * @return Babel_Directory_Core
+     */
     public static function get_instance() {
         if ( null === self::$instance ) {
             self::$instance = new self();
@@ -30,82 +41,93 @@ class BD_Core {
         return self::$instance;
     }
 
+    /**
+     * Constructor privado de seguridad para prevenir instanciación externa.
+     */
     private function __construct() {
         $this->includes();
         $this->init_components();
-        $this->hooks();
-        
-        // Hook de activación
-        register_activation_hook( __FILE__, array( $this, "activate" ) );
     }
 
+    /**
+     * Inclusión segura y acoplada de todos los archivos core de la arquitectura.
+     */
     private function includes() {
-        require_once BD_PATH . "includes/class-cpt.php";
-        require_once BD_PATH . "includes/class-metaboxes.php";
-        require_once BD_PATH . "includes/class-assets.php";
-        require_once BD_PATH . "includes/class-frontend.php";
-        require_once BD_PATH . "includes/class-ajax.php";
-        require_once BD_PATH . "includes/class-templates.php";
-        require_once BD_PATH . "includes/class-reviews.php";
-        require_once BD_PATH . "includes/class-dashboard.php";
-        require_once BD_PATH . "includes/class-search-index.php";
-        require_once BD_PATH . "includes/class-submission.php";
-        require_once BD_PATH . "includes/class-taxonomy-images.php";
+        // Estructura de Datos (CPT y Metaboxes)
+        require_once BD_PATH . 'includes/class-cpt.php';
+        require_once BD_PATH . 'includes/class-metaboxes.php';
+
+        // Componentes de Lógica, Procesamiento y Calificaciones
+        require_once BD_PATH . 'includes/class-search-index.php';
+        require_once BD_PATH . 'includes/class-reviews.php';
+        require_once BD_PATH . 'includes/class-submission.php';
+        require_once BD_PATH . 'includes/class-ajax.php';
+        require_once BD_PATH . 'includes/class-admin.php';
+        require_once BD_PATH . 'includes/class-assets.php';
     }
 
+    /**
+     * Instanciación y desacople de los componentes estructurales del plugin.
+     * Protegido dinámicamente mediante verificaciones de existencia de clases.
+     */
     private function init_components() {
-        new BD_CPT();
-        new BD_Metaboxes();
-        new BD_Assets();
-        new BD_Frontend();
-        new BD_AJAX();
-        new BD_Templates();
-        new BD_Reviews();
-        new BD_Dashboard();
-        new BD_Search_Index();
-        new BD_Submission();
-        new BD_Taxonomy_Images();
-    }
+        // 1. Estructura de Datos: CPT (Custom Post Types & Taxonomías)
+        if ( class_exists( 'Babel_Directory_CPT' ) ) {
+            new Babel_Directory_CPT();
+        }
 
-    private function hooks() {
-        /**
-         * Hito 15.7: Ordenar regiones alfabéticamente por nombre real,
-         * ignorando el prefijo REG-N para la comparación.
-         */
-        add_filter("get_terms", function($terms, $taxonomies, $args) {
-            if (in_array("directorio_region", (array)$taxonomies) && is_array($terms) && !empty($terms)) {
-                // Si el caller pidió IDs o algo que no sea objetos, no tocamos nada
-                if (isset($args['fields']) && $args['fields'] !== 'all' && $args['fields'] !== '') {
-                     return $terms;
-                }
-                
-                usort($terms, function($a, $b) {
-                    if (!is_object($a) || !is_object($b)) return 0;
-                    if (!isset($a->name) || !isset($b->name)) return 0;
-                    // Limpiamos el prefijo REG-X para comparar
-                    $nameA = preg_replace("/^REG-[IVXLMCD]+\s+/", "", $a->name);
-                    $nameB = preg_replace("/^REG-[IVXLMCD]+\s+/", "", $b->name);
-                    return strcasecmp($nameA, $nameB);
-                });
-            }
-            return $terms;
-        }, 10, 3);
-    }
+        // 2. Estructura de Datos: Metaboxes de Datos de Negocios
+        if ( class_exists( 'Babel_Directory_Metaboxes' ) ) {
+            new Babel_Directory_Metaboxes();
+        }
 
-    public function activate() {
-        $cpt = new BD_CPT();
-        $cpt->register_listing_cpt();
-        $cpt->register_listing_taxonomy();
-        $index = new BD_Search_Index();
-        $index->create_table();
-        new BD_Submission();
-        new BD_Taxonomy_Images();
-        flush_rewrite_rules();
+        // 3. Motor de Indexación Rápida
+        if ( class_exists( 'Babel_Directory_Search_Index' ) ) {
+            new Babel_Directory_Search_Index();
+        }
+
+        // 4. Control de Consultas Asíncronas AJAX
+        if ( class_exists( 'Babel_Directory_Ajax' ) ) {
+            new Babel_Directory_Ajax();
+        }
+
+        // 5. Panel de Administración y Registro de Menús/Settings API
+        if ( class_exists( 'Babel_Directory_Admin' ) ) {
+            new Babel_Directory_Admin();
+        }
+
+        // 6. Gestión de Assets Públicos y Shortcodes de Presentación
+        if ( class_exists( 'Babel_Directory_Assets' ) ) {
+            new Babel_Directory_Assets();
+        }
+
+        // 7. Sistema de Gestión de Reseñas y Calificaciones
+        if ( class_exists( 'Babel_Directory_Reviews' ) ) {
+            new Babel_Directory_Reviews();
+        }
+
+        // 8. Procesamiento Seguro de Envío de Negocios desde el Frontend
+        if ( class_exists( 'Babel_Directory_Submission' ) ) {
+            new Babel_Directory_Submission();
+        }
     }
 }
 
-// Iniciar motor
-function bd_run() {
-    return BD_Core::get_instance();
+/**
+ * Hook de Activación de Seguridad:
+ * Vincula el método estático de creación de la tabla física de búsquedas rápidas.
+ * Se ejecuta exclusivamente al activar el plugin para garantizar integridad.
+ */
+register_activation_hook( __FILE__, array( 'Babel_Directory_Search_Index', 'create_table' ) );
+
+/**
+ * Inicializa y retorna la instancia principal de la arquitectura del plugin.
+ *
+ * @return Babel_Directory_Core
+ */
+function babel_directory_init() {
+    return Babel_Directory_Core::get_instance();
 }
-bd_run();
+
+// Arrancar el plugin de forma segura
+babel_directory_init();

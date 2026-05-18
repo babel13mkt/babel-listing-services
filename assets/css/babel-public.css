@@ -1,0 +1,740 @@
+/**
+ * Babel Directory Public Stylesheet (Structural & Layout-Neutral)
+ * v7.0.0 — Estilos estructurales básicos para el buscador y grilla del plugin.
+ * Diseñado con respeto por la cascada visual de Divi 5 y compatibilidad asíncrona.
+ */
+
+/* ==========================================================================
+   1. CONTENEDOR Y GRILLA (.babel-grid-container)
+   ========================================================================== */
+.babel-grid-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .babel-grid-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 981px) {
+    .babel-grid-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Contenedor de wrapper Divi para cards individuales en grilla */
+.babel-divi-card-wrapper {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* ==========================================================================
+   2. ESTADO DE CARGA (.babel-loading-state)
+   ========================================================================== */
+.babel-results-container {
+    width: 100%;
+    position: relative;
+    min-height: 200px;
+    transition: opacity 0.3s ease;
+}
+
+.babel-loading-state {
+    opacity: 0.5 !important;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+/* ==========================================================================
+   3. TARJETA DE FALLBACK (.babel-card-fallback / .babel-premium-card)
+   ========================================================================== */
+.babel-card-fallback,
+.babel-premium-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.babel-card-fallback:hover,
+.babel-premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Cabecera de la Tarjeta (Logotipo / Placeholder) */
+.babel-card-header {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background-color: #f9f9f9;
+}
+
+.babel-card-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.babel-card-logo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.babel-card-badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.babel-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 4px;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.babel-badge-featured {
+    background-color: #ffb703;
+}
+
+.babel-badge-category {
+    background-color: #219ebc;
+}
+
+/* Cuerpo de la Tarjeta */
+.babel-card-body,
+.babel-fallback-details {
+    flex-grow: 1;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.babel-card-title {
+    font-size: 18px;
+    line-height: 1.4;
+    margin: 0 0 10px 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.babel-card-title a {
+    color: #1a1a1a;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.babel-card-title a:hover {
+    color: #023047;
+}
+
+.babel-verified-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background-color: #2a9d8f;
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+/* Detalles de la tarjeta de fallback */
+.babel-fallback-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+}
+
+.babel-fallback-details li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4a4a4a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.babel-card-location {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #555555;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.babel-location-icon {
+    flex-shrink: 0;
+}
+
+/* Pie de la Tarjeta (Acciones) */
+.babel-card-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    border-top: 1px solid #eaeaea;
+    padding-top: 16px;
+}
+
+.babel-card-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.babel-card-action-btn:active {
+    transform: scale(0.97);
+}
+
+.babel-btn-gmaps {
+    background-color: #e5e5e5;
+    color: #333333;
+    padding: 10px;
+    width: 40px;
+    flex-shrink: 0;
+}
+
+.babel-btn-gmaps:hover {
+    background-color: #d5d5d5;
+}
+
+.babel-btn-phone {
+    background-color: #219ebc;
+    color: #ffffff;
+    flex-grow: 1;
+}
+
+.babel-btn-phone:hover {
+    background-color: #023047;
+}
+
+.babel-btn-whatsapp {
+    background-color: #25d366;
+    color: #ffffff;
+    flex-grow: 1;
+}
+
+.babel-btn-whatsapp:hover {
+    background-color: #128c7e;
+}
+
+/* Destacado visual para tarjetas marcadas como featured */
+.babel-card-featured {
+    border-color: #ffb703;
+    background-color: #fffdf5;
+    box-shadow: 0 2px 12px rgba(255, 183, 3, 0.1);
+}
+
+.babel-card-featured:hover {
+    box-shadow: 0 6px 20px rgba(255, 183, 3, 0.15);
+}
+
+/* ==========================================================================
+   4. CONTENEDORES DE MAPAS (.babel-google-map)
+   ========================================================================== */
+.babel-google-map {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    min-height: 400px;
+    background-color: #eaeaea;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+/* Fallback de mapa en contingencia */
+.babel-map-fallback {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border: 1px dashed #b0c4de;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.babel-map-fallback-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.babel-map-fallback-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    color: #333333;
+}
+
+.babel-map-fallback-desc {
+    font-size: 13px;
+    color: #666666;
+    margin: 0 0 16px 0;
+    max-width: 300px;
+}
+
+.babel-map-fallback-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #219ebc;
+    color: #ffffff !important;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(33, 158, 188, 0.3);
+    transition: background-color 0.2s ease;
+}
+
+.babel-map-fallback-btn:hover {
+    background-color: #023047;
+}
+
+/* ==========================================================================
+   5. FORMULARIO ESTRUCTURAL DE BÚSQUEDA (.babel-search-form-wrapper)
+   ========================================================================== */
+.babel-search-form-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 32px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .babel-search-form-wrapper {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+.babel-search-field {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.babel-search-field label.screen-reader-text {
+    border: 0;
+    clip: rect(1px, 1px, 1px, 1px);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    word-wrap: normal !important;
+}
+
+.babel-search-field input[type="text"],
+.babel-search-field select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #333333;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.babel-search-field input[type="text"]:focus,
+.babel-search-field select:focus {
+    border-color: #219ebc;
+    box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+    outline: none;
+}
+
+.babel-search-submit-btn {
+    width: 100%;
+    padding: 12px 24px;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 700;
+    text-align: center;
+    border: none;
+    border-radius: 6px;
+    background-color: #219ebc;
+    color: #ffffff;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0 2px 6px rgba(33, 158, 188, 0.2);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.babel-search-submit-btn:hover {
+    background-color: #023047;
+    box-shadow: 0 4px 10px rgba(2, 48, 71, 0.25);
+}
+
+/* Opciones Anidadas para Dropdowns */
+.babel-opt-parent {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.babel-opt-child {
+    padding-left: 12px;
+}
+
+/* ==========================================================================
+   6. ESTADOS VACÍOS, ERRORES Y PAGINACIÓN
+   ========================================================================== */
+.babel-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    background-color: #fdfdfd;
+    border: 1px dashed #eaeaea;
+    border-radius: 8px;
+    margin: 20px 0;
+    box-sizing: border-box;
+}
+
+.babel-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+}
+
+.babel-empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    color: #222222;
+}
+
+.babel-empty-state p {
+    font-size: 15px;
+    color: #666666;
+    margin: 0 0 20px 0;
+    max-width: 420px;
+    line-height: 1.6;
+}
+
+.babel-clear-filters-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ef4444;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+    transition: background-color 0.2s ease;
+}
+
+.babel-clear-filters-btn:hover {
+    background-color: #dc2626;
+}
+
+.babel-error-message {
+    padding: 20px 24px;
+    border: 1px solid #fca5a5;
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-radius: 8px;
+    font-size: 15px;
+    text-align: center;
+    margin: 20px 0;
+    box-sizing: border-box;
+}
+
+/* Paginación */
+.babel-pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 40px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.babel-pagination-wrapper .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333333;
+    text-decoration: none;
+    border: 1px solid #eaeaea;
+    border-radius: 6px;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.babel-pagination-wrapper .page-numbers:hover:not(.current) {
+    border-color: #219ebc;
+    color: #219ebc;
+    background-color: #f6fcfd;
+}
+
+.babel-pagination-wrapper .page-numbers.current {
+    background-color: #219ebc;
+    color: #ffffff;
+    border-color: #219ebc;
+    box-shadow: 0 2px 6px rgba(33, 158, 188, 0.25);
+}
+
+.babel-pagination-arrow {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ==========================================================================
+   7. FORMULARIO DE ENVÍO PÚBLICO (.babel-submission-form-container)
+   ========================================================================== */
+.babel-submission-form-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 32px;
+    box-sizing: border-box;
+    border: 1px solid #eaeaea;
+}
+
+.babel-submission-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.babel-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.babel-form-group label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+    display: block;
+}
+
+.babel-form-group input[type="text"],
+.babel-form-group input[type="file"],
+.babel-form-group textarea,
+.babel-form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #333333;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.babel-form-group input[type="text"]:focus,
+.babel-form-group textarea:focus,
+.babel-form-group select:focus {
+    border-color: #219ebc;
+    box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+    outline: none;
+}
+
+.babel-form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.babel-form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .babel-form-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.babel-submission-form button[type="submit"] {
+    background-color: #219ebc;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(33, 158, 188, 0.2);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    margin-top: 10px;
+    display: inline-block;
+    text-align: center;
+}
+
+.babel-submission-form button[type="submit"]:hover {
+    background-color: #023047;
+    box-shadow: 0 4px 12px rgba(2, 48, 71, 0.25);
+}
+
+.babel-submission-form button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+/* ==========================================================================
+   8. SELECTOR DE ESTRELLAS DE RESEÑAS (.bd-rating-selector-wrap)
+   ========================================================================== */
+.bd-rating-selector-wrap {
+    margin-bottom: 24px;
+    padding: 16px;
+    background-color: #fcfcfc;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.bd-rating-label {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.bd-stars-input {
+    display: flex;
+    gap: 12px;
+    font-size: 16px;
+    align-items: center;
+}
+
+.bd-stars-input label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    color: #4a4a4a;
+}
+
+.bd-stars-input label:hover {
+    border-color: #ffb703;
+    background-color: #fffdf5;
+    color: #b37d00;
+}
+
+.bd-stars-input input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+    accent-color: #ffb703;
+}
+
+/* ==========================================================================
+   9. NOTIFICACIONES DE FRONTEND (.babel-notice)
+   ========================================================================== */
+.babel-notice {
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+
+.babel-notice-success {
+    background-color: #e6f7ed !important;
+    color: #1e7e34 !important;
+    border: 1px solid #c3e6cb !important;
+}
+
+.babel-notice-error {
+    background-color: #fde8e8 !important;
+    color: #c81e1e !important;
+    border: 1px solid #f8b4b4 !important;
+}

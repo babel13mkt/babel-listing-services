@@ -1,409 +1,293 @@
 <?php
 /**
- * Metaboxes del Directorio (BD_Metaboxes)
- * v5.0.0 — Rediseño Premium: Dashboard Centralizado y Media Uploader Frame.
+ * Clase para el manejo de Metaboxes y Custom Fields nativos
+ *
+ * @package Babel_Directory
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+    exit; // Salir si se accede directamente.
 }
 
-class BD_Metaboxes {
+class Babel_Directory_Metaboxes {
 
+    /**
+     * Constructor de la clase de metaboxes.
+     * Enlaza los hooks de WordPress para renderizado y guardado.
+     */
     public function __construct() {
-        add_action( 'add_meta_boxes', array( $this, 'register_metaboxes' ) );
-        add_action( 'save_post',      array( $this, 'save_metabox' ) );
-        add_action( 'admin_footer', array( $this, 'inline_js' ) );
-        add_action( 'admin_head',   array( $this, 'inject_app_mode_css' ) );
-        add_filter( 'wp_insert_post_data', array( $this, 'capture_manual_title' ), 10, 2 );
+        add_action( 'add_meta_boxes', array( $this, 'add_business_meta_box' ) );
+        add_action( 'save_post_babel_business', array( $this, 'save_business_meta' ), 10, 2 );
     }
 
-    public function inject_app_mode_css() {
-        $screen = get_current_screen();
-        $is_cpt = $screen && $screen->post_type === 'directorio_negocio';
-        $is_panel = isset($_GET['page']) && $_GET['page'] === 'bd-panel';
-
-        if ( $is_cpt || $is_panel ) {
-            // Solo mantenemos inyecciones dinámicas si fueran necesarias.
-            // La mayoría del CSS ya vive en admin.css
-            echo '<style>
-                #wpbody-content { background: #f8fafc !important; }
-            </style>';
-        }
-    }
-
-    public function capture_manual_title( $data, $postarr ) {
-        if ( isset( $postarr['post_type'] ) && $postarr['post_type'] === 'directorio_negocio' ) {
-            if ( isset( $_POST['post_title'] ) ) {
-                $data['post_title'] = sanitize_text_field( $_POST['post_title'] );
-            }
-        }
-        return $data;
-    }
-
-    public function register_metaboxes() {
+    /**
+     * Registra la metabox nativa para el post type 'babel_business'.
+     */
+    public function add_business_meta_box() {
         add_meta_box(
-            'bd_details_metabox',
-            'Editor Premium',
-            array( $this, 'render_metabox' ),
-            'directorio_negocio',
+            'babel_business_details',
+            __( 'Información de Contacto y Detalles del Negocio', 'babel-directory' ),
+            array( $this, 'render_business_meta_box' ),
+            'babel_business',
             'normal',
             'high'
         );
     }
 
-    public function render_metabox( $post ) {
-        wp_nonce_field( 'bd_save_meta', 'bd_nonce' );
+    /**
+     * Renderiza los campos de la metabox en el backend de WordPress.
+     *
+     * @param WP_Post $post El objeto del post actual.
+     */
+    public function render_business_meta_box( $post ) {
+        // Generar token de seguridad (Nonce)
+        wp_nonce_field( 'babel_business_meta_box_nonce_action', 'babel_business_meta_box_nonce' );
 
-        $f = array(
-            'direccion'       => get_post_meta( $post->ID, '_bd_direccion', true ),
-            'telefono'        => get_post_meta( $post->ID, '_bd_telefono', true ),
-            'whatsapp'        => get_post_meta( $post->ID, '_bd_whatsapp', true ),
-            'email'           => get_post_meta( $post->ID, '_bd_email', true ),
-            'sitio_web'       => get_post_meta( $post->ID, '_bd_sitio_web', true ),
-            'horario'         => get_post_meta( $post->ID, '_bd_horario', true ),
-            'logo_id'         => get_post_meta( $post->ID, '_bd_logo_id', true ),
-            'maps_embed'      => get_post_meta( $post->ID, '_bd_maps_embed', true ),
-            'latitud'         => get_post_meta( $post->ID, '_bd_latitud', true ),
-            'longitud'        => get_post_meta( $post->ID, '_bd_longitud', true ),
-            'price_range'     => get_post_meta( $post->ID, '_bd_price_range', true ),
-            'verificado'      => get_post_meta( $post->ID, '_bd_verificado', true ),
-            'destacado'       => get_post_meta( $post->ID, '_bd_destacado', true ),
-            'categoria_id'    => 0
-        );
-
-        // Obtener categoría (asumimos una sola categoría principal)
-        $cats = wp_get_post_terms( $post->ID, 'directorio_categoria', array( 'fields' => 'ids' ) );
-        if ( ! empty( $cats ) ) {
-            $f['categoria_id'] = $cats[0];
-        }
+        // Recuperar los valores guardados actualmente
+        $phone       = get_post_meta( $post->ID, '_babel_phone', true );
+        $whatsapp    = get_post_meta( $post->ID, '_babel_whatsapp', true );
+        $address     = get_post_meta( $post->ID, '_babel_address', true );
+        $gmaps       = get_post_meta( $post->ID, '_babel_gmaps', true );
+        $hours       = get_post_meta( $post->ID, '_babel_hours', true );
+        $latitude    = get_post_meta( $post->ID, '_babel_latitude', true );
+        $longitude   = get_post_meta( $post->ID, '_babel_longitude', true );
+        $is_verified = get_post_meta( $post->ID, '_babel_is_verified', true );
+        $is_featured = get_post_meta( $post->ID, '_babel_is_featured', true );
         ?>
-        <div class="bd-app-container">
-            
-            <!-- Header Unificado -->
-            <div class="bd-app-header" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:30px;">
-                <div style="flex:1;">
-                    <span style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--bda-text-soft); letter-spacing:1px;">Modernizar Directorio</span>
-                    <input type="text" name="post_title" value="<?php echo esc_attr($post->post_title); ?>" 
-                           placeholder="Nombre del Comercio..." 
-                           style="border:none; background:transparent; font-size:32px; font-weight:800; padding:0; width:100%; outline:none; color:var(--bda-text);">
-                </div>
-                <div style="display:flex; gap:12px;">
-                    <?php if($post->ID > 0): ?>
-                    <a href="<?php echo get_permalink($post->ID); ?>" target="_blank" class="bd-action-btn" style="background:#fff; border:1px solid var(--bda-border); text-decoration:none;">👁️ Previsualizar</a>
-                    <?php endif; ?>
-                    <button type="button" class="bd-save-button" id="bd-app-save" style="background:var(--bda-accent); color:#fff; border:none; padding:12px 24px; border-radius:8px; font-weight:700; cursor:pointer;">💾 Guardar Cambios</button>
-                </div>
-            </div>
-
-            <div class="bd-app-layout">
-                
-                <!-- COLUMNA PRINCIPAL -->
-                <div class="bd-main-content">
-                    
-                    <!-- CAJA 1: INFORMACIÓN BÁSICA -->
-                    <div class="bd-card">
-                        <h2 class="bd-card-title">📝 Información General</h2>
-                        <div class="bd-form-grid">
-                            <div class="bd-meta-field bd-full-width">
-                                <label class="bd-meta-label">Sitio Web</label>
-                                <input type="url" name="bd_sitio_web" value="<?php echo esc_attr($f['sitio_web']); ?>" class="bd-meta-input" placeholder="https://ejemplo.cl">
-                            </div>
-                            <div class="bd-meta-field">
-                                <label class="bd-meta-label">Email de Contacto</label>
-                                <input type="email" name="bd_email" value="<?php echo esc_attr($f['email']); ?>" class="bd-meta-input" placeholder="hola@comercio.cl">
-                            </div>
-                            <div class="bd-meta-field">
-                                <label class="bd-meta-label">Teléfono / WhatsApp</label>
-                                <input type="tel" name="bd_telefono" value="<?php echo esc_attr($f['telefono']); ?>" class="bd-meta-input" placeholder="+56 9 ...">
-                            </div>
-                            <div class="bd-meta-field">
-                                <label class="bd-meta-label">Categoría Principal</label>
-                                <div class="bd-meta-select-wrap">
-                                    <select name="bd_categoria_id" class="bd-meta-select">
-                                        <option value="0">Sin Categoría</option>
-                                        <?php 
-                                        $parents = get_terms( array( 
-                                            'taxonomy'   => 'directorio_categoria', 
-                                            'parent'     => 0,
-                                            'hide_empty' => false,
-                                            'orderby'    => 'name',
-                                            'order'      => 'ASC'
-                                        ) );
-                                        foreach($parents as $parent): ?>
-                                            <option value="<?php echo $parent->term_id; ?>" <?php selected($f['categoria_id'], $parent->term_id); ?> style="font-weight:700; background:#f8fafc;">
-                                                <?php echo $parent->name; ?>
-                                            </option>
-                                            <?php
-                                            $children = get_terms( array( 
-                                                'taxonomy'   => 'directorio_categoria', 
-                                                'parent'     => $parent->term_id,
-                                                'hide_empty' => false,
-                                                'orderby'    => 'name',
-                                                'order'      => 'ASC'
-                                            ) );
-                                            foreach($children as $child): ?>
-                                                <option value="<?php echo $child->term_id; ?>" <?php selected($f['categoria_id'], $child->term_id); ?>>
-                                                    &nbsp;&nbsp;— <?php echo $child->name; ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="bd-meta-field">
-                                <label class="bd-meta-label">Rango de Precios</label>
-                                <div class="bd-meta-select-wrap">
-                                    <select name="bd_price_range" class="bd-meta-select">
-                                        <option value="0">No definido</option>
-                                        <option value="1" <?php selected($f['price_range'], '1'); ?>>$ - Barato</option>
-                                        <option value="2" <?php selected($f['price_range'], '2'); ?>>$$ - Moderado</option>
-                                        <option value="3" <?php selected($f['price_range'], '3'); ?>>$$$ - Caro</option>
-                                        <option value="4" <?php selected($f['price_range'], '4'); ?>>$$$$ - Lujo</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="bd-meta-field bd-full-width">
-                                <label class="bd-meta-label">Horario</label>
-                                <textarea name="bd_horario" class="bd-meta-textarea" style="height:60px;" placeholder="Ej: Lun-Vie 09:00 - 19:00"><?php echo esc_textarea($f['horario']); ?></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CAJA 2: UBICACIÓN -->
-                    <div class="bd-card">
-                        <h2 class="bd-card-title">📍 Ubicación y Mapa</h2>
-                        <div class="bd-form-grid">
-                            <div class="bd-meta-field bd-full-width">
-                                <label class="bd-meta-label">Dirección Completa</label>
-                                <input type="text" name="bd_direccion" value="<?php echo esc_attr($f['direccion']); ?>" class="bd-meta-input" placeholder="Av. Siempre Viva 742, Springfield">
-                            </div>
-                            
-                            <!-- Selectores Taxonomía Reutilizados -->
-                            <?php $this->render_tax_selectors($post); ?>
-
-                             <div class="bd-meta-field bd-full-width">
-                                <label class="bd-meta-label">Características (Features)</label>
-                                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                                    <?php 
-                                    $all_features = get_terms( array( 'taxonomy' => 'directorio_features', 'hide_empty' => false ) );
-                                    $post_features = wp_get_post_terms( $post->ID, 'directorio_features', array( 'fields' => 'ids' ) );
-                                    foreach($all_features as $feature): ?>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--bda-text); cursor:pointer;">
-                                            <input type="checkbox" name="bd_features[]" value="<?php echo $feature->term_id; ?>" <?php checked(in_array($feature->term_id, $post_features)); ?>>
-                                            <?php echo $feature->name; ?>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-
-                            <div class="bd-meta-field bd-full-width">
-                                <label class="bd-meta-label">Mapa Embed (Iframe)</label>
-                                <textarea name="bd_maps_embed" class="bd-meta-textarea" style="height:80px;" placeholder="Pega aquí el código <iframe...> de Google Maps"><?php echo esc_textarea($f['maps_embed']); ?></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- SIDEBAR -->
-                <div class="bd-sidebar-content">
-                    
-                    <!-- CAJA 3: LOGO Y ESTADO -->
-                    <div class="bd-card">
-                        <h2 class="bd-card-title">🖼️ Identidad</h2>
-                        <label class="bd-meta-label" style="margin-bottom:8px; display:block;">Logo del Negocio</label>
-                        <?php $this->render_media_uploader('bd_logo_id', $f['logo_id']); ?>
-                        
-                        <div class="bd-section-divider" style="margin:24px 0 16px; border-top:1px solid var(--bda-border); padding-top:16px;">Configuración</div>
-                        
-                        <div class="bd-meta-field">
-                            <label class="bd-meta-label">Estado</label>
-                            <div class="bd-meta-select-wrap">
-                                <select name="post_status" class="bd-meta-select">
-                                    <option value="publish" <?php selected($post->post_status, 'publish'); ?>>✅ Publicado</option>
-                                    <option value="pending" <?php selected($post->post_status, 'pending'); ?>>⏳ Pendiente</option>
-                                    <option value="draft"   <?php selected($post->post_status, 'draft');   ?>>📝 Borrador</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-                            <label class="bd-toggle-item <?php echo $f['verificado'] ? 'checked' : ''; ?>" style="padding:10px; border-radius:8px; border:1px solid var(--bda-border); display:flex; align-items:center; gap:10px; cursor:pointer;">
-                                <input type="checkbox" name="bd_verificado" value="1" <?php checked($f['verificado'], '1'); ?>>
-                                <span>Verificado</span>
-                            </label>
-                            <label class="bd-toggle-item <?php echo $f['destacado'] ? 'checked' : ''; ?>" style="padding:10px; border-radius:8px; border:1px solid var(--bda-border); display:flex; align-items:center; gap:10px; cursor:pointer;">
-                                <input type="checkbox" name="bd_destacado" value="1" <?php checked($f['destacado'], '1'); ?>>
-                                <span>Destacado ⭐</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- CAJA EXTRA: IMAGEN DESTACADA (Portada) -->
-                    <div class="bd-card">
-                        <h2 class="bd-card-title">📸 Foto de Portada</h2>
-                        <?php 
-                        $thumb_id = get_post_thumbnail_id($post->ID);
-                        $this->render_media_uploader('_thumbnail_id', $thumb_id); 
-                        ?>
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
-        <?php
-    }
-
-    private function render_media_uploader($name, $current_id) {
-        $img_url = $current_id ? wp_get_attachment_url($current_id) : '';
-        ?>
-        <div class="bd-media-uploader" data-target="<?php echo esc_attr($name); ?>">
-            <div class="bd-image-frame bd-open-media">
-                <?php if($img_url): ?>
-                    <img src="<?php echo esc_url($img_url); ?>" class="bd-preview-img">
-                <?php else: ?>
-                    <div class="bd-image-placeholder">
-                        <span style="font-size:24px; display:block; margin-bottom:8px;">📁</span>
-                        <span>Seleccionar archivo</span>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <input type="hidden" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($current_id); ?>">
-            <?php if($img_url): ?>
-                <button type="button" class="bd-remove-media" style="background:none; border:none; color:var(--bda-danger); font-size:11px; margin-top:8px; cursor:pointer;">✕ Quitar imagen</button>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
-
-    private function render_tax_selectors($post) {
-        // Reutilizamos la lógica de taxonomías que ya teníamos pero ajustada al nuevo grid
-        $all_regions  = get_terms( array( 'taxonomy' => 'directorio_region', 'hide_empty' => false ) );
-        $post_regions = wp_get_post_terms( $post->ID, 'directorio_region', array( 'fields' => 'ids' ) );
-        $selected_region = 0; $selected_comuna = 0;
-        foreach($post_regions as $rid) {
-            $t = get_term($rid);
-            if($t->parent === 0) $selected_region = $rid; else $selected_comuna = $rid;
-        }
-        ?>
-        <div class="bd-meta-field">
-            <label class="bd-meta-label">Región</label>
-            <div class="bd-meta-select-wrap">
-                <select id="bd_tax_region" name="bd_tax_region" class="bd-meta-select">
-                    <option value="0">Seleccionar Región</option>
-                    <?php foreach($all_regions as $r) if($r->parent === 0): ?>
-                        <option value="<?php echo $r->term_id; ?>" <?php selected($selected_region, $r->term_id); ?>><?php echo $r->name; ?></option>
-                    <?php endif; ?>
-                </select>
-            </div>
-        </div>
-        <div class="bd-meta-field">
-            <label class="bd-meta-label">Comuna</label>
-            <div class="bd-meta-select-wrap">
-                <select id="bd_tax_comuna" name="bd_tax_comuna" class="bd-meta-select">
-                    <option value="0">Primero elige región</option>
-                    <?php foreach($all_regions as $r) if($r->parent !== 0): ?>
-                        <option value="<?php echo $r->term_id; ?>" data-parent="<?php echo $r->parent; ?>" <?php selected($selected_comuna, $r->term_id); ?>><?php echo $r->name; ?></option>
-                    <?php endif; ?>
-                </select>
-            </div>
-        </div>
-        <?php
-    }
-
-    public function save_metabox( $post_id ) {
-        if ( ! isset( $_POST['bd_nonce'] ) || ! wp_verify_nonce( $_POST['bd_nonce'], 'bd_save_meta' ) ) return;
-        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
-        if ( ! current_user_can( 'edit_post', $post_id ) ) return;
-
-        $fields = array(
-            'direccion', 'telefono', 'email', 'sitio_web', 'horario', 
-            'logo_id', 'maps_embed', 'latitud', 'longitud', 'price_range'
-        );
-        foreach($fields as $field) {
-            if(isset($_POST['bd_'.$field])) {
-                update_post_meta($post_id, '_bd_'.$field, sanitize_text_field($_POST['bd_'.$field]));
+        <style>
+            .babel-meta-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
             }
-        }
+            .babel-meta-table th {
+                width: 20%;
+                text-align: left;
+                padding: 12px 10px;
+                font-weight: 600;
+                color: #1d2327;
+                vertical-align: top;
+            }
+            .babel-meta-table td {
+                padding: 8px 10px;
+                vertical-align: top;
+            }
+            .babel-meta-table input[type="text"],
+            .babel-meta-table input[type="url"],
+            .babel-meta-table textarea {
+                width: 100%;
+                box-sizing: border-box;
+                border-radius: 4px;
+                border: 1px solid #8c8f94;
+                padding: 8px 10px;
+                font-size: 14px;
+                line-height: 1.5;
+                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            }
+            .babel-meta-table input[type="text"]:focus,
+            .babel-meta-table input[type="url"]:focus,
+            .babel-meta-table textarea:focus {
+                border-color: #2271b1;
+                box-shadow: 0 0 0 1px #2271b1;
+                outline: 2px solid transparent;
+            }
+            .babel-meta-desc {
+                margin: 4px 0 0;
+                font-size: 12px;
+                font-style: italic;
+                color: #646970;
+            }
+        </style>
 
-        // Categoría
-        if ( isset( $_POST['bd_categoria_id'] ) ) {
-            $cat_id = intval( $_POST['bd_categoria_id'] );
-            wp_set_post_terms( $post_id, array( $cat_id ), 'directorio_categoria' );
-        }
+        <table class="babel-meta-table">
+            <tbody>
+                <!-- Campo Teléfono -->
+                <tr>
+                    <th>
+                        <label for="babel_phone"><?php esc_html_e( 'Teléfono de Contacto', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="babel_phone" name="babel_phone" value="<?php echo esc_attr( $phone ); ?>" placeholder="<?php esc_attr_e( 'Ej: +56 9 1234 5678 o 2 2345 6789', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Teléfono comercial de atención general.', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
 
-        // Toggles
-        update_post_meta($post_id, '_bd_verificado', isset($_POST['bd_verificado']) ? '1' : '0');
-        update_post_meta($post_id, '_bd_destacado',  isset($_POST['bd_destacado'])  ? '1' : '0');
+                <!-- Campo WhatsApp -->
+                <tr>
+                    <th>
+                        <label for="babel_whatsapp"><?php esc_html_e( 'WhatsApp', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="babel_whatsapp" name="babel_whatsapp" value="<?php echo esc_attr( $whatsapp ); ?>" placeholder="<?php esc_attr_e( 'Ej: +56912345678', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Número telefónico en formato internacional para enlace directo de WhatsApp (sin espacios ni guiones).', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
 
-        // Taxonomías
-        $regions = array_filter(array( (int)$_POST['bd_tax_region'], (int)$_POST['bd_tax_comuna'] ));
-        if(!empty($regions)) wp_set_post_terms($post_id, $regions, 'directorio_region');
+                <!-- Campo Dirección Física -->
+                <tr>
+                    <th>
+                        <label for="babel_address"><?php esc_html_e( 'Dirección Física', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="babel_address" name="babel_address" value="<?php echo esc_attr( $address ); ?>" placeholder="<?php esc_attr_e( 'Ej: Av. Providencia 1234, Oficina 501, Providencia', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Dirección comercial completa para los clientes.', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
 
-        if(isset($_POST['bd_features']) && is_array($_POST['bd_features'])) {
-            $features = array_map('intval', $_POST['bd_features']);
-            wp_set_post_terms($post_id, $features, 'directorio_features');
-        } else {
-            wp_set_post_terms($post_id, array(), 'directorio_features');
-        }
-        
-        // Thumbnail ID (Portada)
-        if(isset($_POST['_thumbnail_id'])) {
-            set_post_thumbnail($post_id, (int)$_POST['_thumbnail_id']);
-        }
+                <!-- Enlace Google Maps -->
+                <tr>
+                    <th>
+                        <label for="babel_gmaps"><?php esc_html_e( 'Enlace de Google Maps', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="url" id="babel_gmaps" name="babel_gmaps" value="<?php echo esc_url( $gmaps ); ?>" placeholder="<?php esc_attr_e( 'Ej: https://maps.app.goo.gl/... o https://google.com/maps/...', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'URL directa de la ubicación en Google Maps.', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
+
+                <!-- Horarios de Atención -->
+                <tr>
+                    <th>
+                        <label for="babel_hours"><?php esc_html_e( 'Horarios de Atención', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <textarea id="babel_hours" name="babel_hours" rows="4" placeholder="<?php esc_attr_e( "Ej:\nLunes a Viernes: 09:00 a 18:00\nSábados: 10:00 a 14:00\nDomingos: Cerrado", 'babel-directory' ); ?>"><?php echo esc_textarea( $hours ); ?></textarea>
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Detalla los días y horarios comerciales de atención al público.', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
+
+                <!-- Latitud GPS -->
+                <tr>
+                    <th>
+                        <label for="babel_latitude"><?php esc_html_e( 'Latitud GPS', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="babel_latitude" name="babel_latitude" value="<?php echo esc_attr( $latitude ); ?>" placeholder="<?php esc_attr_e( 'Ej: -33.4372', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Coordenada de latitud para geolocalización (radar de proximidad).', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
+
+                <!-- Longitud GPS -->
+                <tr>
+                    <th>
+                        <label for="babel_longitude"><?php esc_html_e( 'Longitud GPS', 'babel-directory' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="babel_longitude" name="babel_longitude" value="<?php echo esc_attr( $longitude ); ?>" placeholder="<?php esc_attr_e( 'Ej: -70.6506', 'babel-directory' ); ?>" />
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Coordenada de longitud para geolocalización (radar de proximidad).', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
+
+                <!-- Estados Especiales (Verificado y Destacado) -->
+                <tr>
+                    <th>
+                        <?php esc_html_e( 'Estados Especiales', 'babel-directory' ); ?>
+                    </th>
+                    <td>
+                        <label style="margin-right: 20px; display: inline-flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="babel_is_verified" name="babel_is_verified" value="1" <?php checked( $is_verified, '1' ); ?> style="margin-right: 6px;" />
+                            <strong><?php esc_html_e( 'Negocio Verificado', 'babel-directory' ); ?></strong>
+                        </label>
+                        
+                        <label style="display: inline-flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="babel_is_featured" name="babel_is_featured" value="1" <?php checked( $is_featured, '1' ); ?> style="margin-right: 6px;" />
+                            <strong><?php esc_html_e( 'Destacar Negocio', 'babel-directory' ); ?></strong>
+                        </label>
+                        <p class="babel-meta-desc"><?php esc_html_e( 'Marcar si el negocio está verificado o si debe tener prioridad de posicionamiento (Destacado).', 'babel-directory' ); ?></p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <?php
     }
 
-    public function inline_js() {
-        ?>
-        <script>
-        (function($) {
-            $(document).ready(function() {
-                // Media Uploader Frame
-                $('.bd-app-container').on('click', '.bd-open-media', function(e) {
-                    e.preventDefault();
-                    var $container = $(this).closest('.bd-media-uploader');
-                    var $target = $('#' + $container.data('target'));
-                    var $frame = wp.media({
-                        title: 'Seleccionar Archivo',
-                        multiple: false,
-                        library: { type: 'image' }
-                    }).on('select', function() {
-                        var attachment = $frame.state().get('selection').first().toJSON();
-                        $target.val(attachment.id);
-                        $container.find('.bd-image-frame').html('<img src="' + attachment.url + '" class="bd-preview-img">');
-                        if($container.find('.bd-remove-media').length === 0) {
-                            $container.append('<button type="button" class="bd-remove-media" style="background:none; border:none; color:var(--bda-danger); font-size:11px; margin-top:8px; cursor:pointer;">✕ Quitar imagen</button>');
-                        }
-                    }).open();
-                });
+    /**
+     * Guarda y sanitiza de forma segura los metadatos en la base de datos de WordPress.
+     *
+     * @param int     $post_id ID del post que se está guardando.
+     * @param WP_Post $post    Objeto del post que se está guardando.
+     */
+    public function save_business_meta( $post_id, $post ) {
+        // 1. Validar el token de seguridad (Nonce)
+        if ( ! isset( $_POST['babel_business_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['babel_business_meta_box_nonce'], 'babel_business_meta_box_nonce_action' ) ) {
+            return;
+        }
 
-                $('.bd-app-container').on('click', '.bd-remove-media', function() {
-                    var $container = $(this).closest('.bd-media-uploader');
-                    $('#' + $container.data('target')).val('');
-                    $container.find('.bd-image-frame').html('<div class="bd-image-placeholder"><span style="font-size:24px; display:block; margin-bottom:8px;">📁</span><span>Seleccionar archivo</span></div>');
-                    $(this).remove();
-                });
+        // 2. Verificar que no sea un guardado automático (Autosave)
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return;
+        }
 
-                // Cascada Región -> Comuna
-                $('#bd_tax_region').on('change', function() {
-                    var rid = $(this).val();
-                    $('#bd_tax_comuna option').each(function() {
-                        if($(this).val() == 0) return;
-                        $(this).toggle($(this).data('parent') == rid);
-                    });
-                    if($('#bd_tax_comuna option:selected').is(':hidden')) $('#bd_tax_comuna').val(0);
-                }).trigger('change');
+        // 3. Verificar permisos del usuario actual
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            return;
+        }
 
-                // Guardado
-                $('#bd-app-save').on('click', function() {
-                    var $publish = $('#publish');
-                    if($publish.length) $publish.click(); else $(this).closest('form').submit();
-                });
-            });
-        })(jQuery);
-        </script>
-        <?php
+        // 4. Sanitizar y guardar cada campo personalizado de forma individual
+
+        // Teléfono
+        if ( isset( $_POST['babel_phone'] ) ) {
+            $phone = sanitize_text_field( wp_unslash( $_POST['babel_phone'] ) );
+            update_post_meta( $post_id, '_babel_phone', $phone );
+        } else {
+            delete_post_meta( $post_id, '_babel_phone' );
+        }
+
+        // WhatsApp
+        if ( isset( $_POST['babel_whatsapp'] ) ) {
+            $whatsapp = sanitize_text_field( wp_unslash( $_POST['babel_whatsapp'] ) );
+            $whatsapp = preg_replace( '/[^0-9+]/', '', $whatsapp ); // Permitir sólo números y el símbolo '+'
+            update_post_meta( $post_id, '_babel_whatsapp', $whatsapp );
+        } else {
+            delete_post_meta( $post_id, '_babel_whatsapp' );
+        }
+
+        // Dirección Física
+        if ( isset( $_POST['babel_address'] ) ) {
+            $address = sanitize_text_field( wp_unslash( $_POST['babel_address'] ) );
+            update_post_meta( $post_id, '_babel_address', $address );
+        } else {
+            delete_post_meta( $post_id, '_babel_address' );
+        }
+
+        // Enlace de Google Maps
+        if ( isset( $_POST['babel_gmaps'] ) ) {
+            $gmaps = esc_url_raw( wp_unslash( $_POST['babel_gmaps'] ) );
+            update_post_meta( $post_id, '_babel_gmaps', $gmaps );
+        } else {
+            delete_post_meta( $post_id, '_babel_gmaps' );
+        }
+
+        // Horarios
+        if ( isset( $_POST['babel_hours'] ) ) {
+            $hours = sanitize_textarea_field( wp_unslash( $_POST['babel_hours'] ) );
+            update_post_meta( $post_id, '_babel_hours', $hours );
+        } else {
+            delete_post_meta( $post_id, '_babel_hours' );
+        }
+
+        // Latitud
+        if ( isset( $_POST['babel_latitude'] ) ) {
+            $latitude = sanitize_text_field( wp_unslash( $_POST['babel_latitude'] ) );
+            update_post_meta( $post_id, '_babel_latitude', $latitude );
+        } else {
+            delete_post_meta( $post_id, '_babel_latitude' );
+        }
+
+        // Longitud
+        if ( isset( $_POST['babel_longitude'] ) ) {
+            $longitude = sanitize_text_field( wp_unslash( $_POST['babel_longitude'] ) );
+            update_post_meta( $post_id, '_babel_longitude', $longitude );
+        } else {
+            delete_post_meta( $post_id, '_babel_longitude' );
+        }
+
+        // Verificado (Checkbox)
+        $is_verified = isset( $_POST['babel_is_verified'] ) ? '1' : '0';
+        update_post_meta( $post_id, '_babel_is_verified', $is_verified );
+
+        // Destacado (Checkbox)
+        $is_featured = isset( $_POST['babel_is_featured'] ) ? '1' : '0';
+        update_post_meta( $post_id, '_babel_is_featured', $is_featured );
     }
 }
