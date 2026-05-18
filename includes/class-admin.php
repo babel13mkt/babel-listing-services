@@ -19,6 +19,7 @@ class Babel_Directory_Admin {
     public function __construct() {
         add_action( 'admin_init', array( $this, 'register_settings' ) );
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+        add_filter( 'parent_file', array( $this, 'fix_menu_highlighting' ) );
     }
 
     /**
@@ -91,6 +92,42 @@ class Babel_Directory_Admin {
             array( $this, 'render_admin_page' ),
             'dashicons-layout',
             3
+        );
+
+        // 1. Todos los Negocios CPT
+        add_submenu_page(
+            'bd-panel',
+            __( 'Todos los Negocios', 'babel-directory' ),
+            __( 'Todos los Negocios', 'babel-directory' ),
+            'manage_options',
+            'edit.php?post_type=babel_business'
+        );
+
+        // 2. Añadir Nuevo Negocio
+        add_submenu_page(
+            'bd-panel',
+            __( 'Añadir Nuevo', 'babel-directory' ),
+            __( 'Añadir Nuevo', 'babel-directory' ),
+            'manage_options',
+            'post-new.php?post_type=babel_business'
+        );
+
+        // 3. Categorías de Negocio
+        add_submenu_page(
+            'bd-panel',
+            __( 'Categorías', 'babel-directory' ),
+            __( 'Categorías', 'babel-directory' ),
+            'manage_options',
+            'edit-tags.php?taxonomy=babel_category&post_type=babel_business'
+        );
+
+        // 4. Regiones/Comunas
+        add_submenu_page(
+            'bd-panel',
+            __( 'Regiones/Comunas', 'babel-directory' ),
+            __( 'Regiones/Comunas', 'babel-directory' ),
+            'manage_options',
+            'edit-tags.php?taxonomy=babel_region&post_type=babel_business'
         );
     }
 
@@ -355,4 +392,22 @@ class Babel_Directory_Admin {
             </style>
             <?php
         }
+
+    /**
+     * Corrige el resaltado del menú lateral para que Panel Babel permanezca activo
+     * al navegar por el listado, creación o taxonomías de negocios.
+     *
+     * @param string $parent_file El archivo padre actual.
+     * @return string El archivo padre filtrado.
+     */
+    public function fix_menu_highlighting( $parent_file ) {
+        global $current_screen;
+        
+        // Si estamos en cualquier pantalla del CPT 'babel_business' o sus taxonomías asociadas
+        if ( isset( $current_screen->post_type ) && 'babel_business' === $current_screen->post_type ) {
+            return 'bd-panel';
+        }
+        
+        return $parent_file;
     }
+}
