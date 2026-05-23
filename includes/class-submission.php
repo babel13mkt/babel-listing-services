@@ -10,7 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_Submission {
+namespace Babel\Directory;
+
+
+class Submission {
 
     public function __construct() {
         add_shortcode( 'babel_submission_form', array( $this, 'render_submission_form' ) );
@@ -108,7 +111,7 @@ class Babel_Directory_Submission {
             'parent'     => 0,
         ) );
 
-        if ( is_wp_error( $parent_terms ) || empty( $parent_terms ) ) {
+        if ( \is_wp_error( $parent_terms ) || empty( $parent_terms ) ) {
             return;
         }
 
@@ -121,7 +124,7 @@ class Babel_Directory_Submission {
                 'parent'     => $parent->term_id,
             ) );
 
-            if ( ! is_wp_error( $child_terms ) && ! empty( $child_terms ) ) {
+            if ( ! \is_wp_error( $child_terms ) && ! empty( $child_terms ) ) {
                 foreach ( $child_terms as $child ) {
                     echo '<option value="' . esc_attr( $child->term_id ) . '">&nbsp;&nbsp;&nbsp;&mdash;&nbsp;' . esc_html( $child->name ) . '</option>';
                 }
@@ -145,7 +148,7 @@ class Babel_Directory_Submission {
             'post_type'    => 'babel_business'
         ) );
 
-        if ( is_wp_error( $post_id ) || $post_id === 0 ) {
+        if ( \is_wp_error( $post_id ) || $post_id === 0 ) {
             wp_send_json_error( array( 'message' => 'Error al crear el registro en la base de datos.' ) );
         }
 
@@ -176,7 +179,7 @@ class Babel_Directory_Submission {
             require_once( ABSPATH . 'wp-admin/includes/media.php' );
 
             $attachment_id = media_handle_upload( 'featured_image', $post_id );
-            if ( ! is_wp_error( $attachment_id ) ) {
+            if ( ! \is_wp_error( $attachment_id ) ) {
                 set_post_thumbnail( $post_id, $attachment_id );
             }
         }

@@ -8,7 +8,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class Babel_Directory_Ajax {
+namespace Babel\Directory;
+
+
+class Ajax {
 
     /**
      * Constructor de la clase. Registra los hooks AJAX de WordPress.

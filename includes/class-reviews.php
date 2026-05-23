@@ -10,7 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_Reviews {
+namespace Babel\Directory;
+
+
+class Reviews {
 
     /**
      * Constructor de la clase. Registra los hooks y filtros necesarios.

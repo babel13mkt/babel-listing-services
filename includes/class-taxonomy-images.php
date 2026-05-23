@@ -7,7 +7,10 @@ if ( ! defined( "ABSPATH" ) ) {
     exit;
 }
 
-class BD_Taxonomy_Images {
+namespace Babel\Directory;
+
+
+class Taxonomy_Images {
 
     public function __construct() {
         $taxonomies = array( "babel_region", "babel_category" );

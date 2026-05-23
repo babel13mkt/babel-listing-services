@@ -10,7 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_Metaboxes {
+namespace Babel\Directory;
+
+
+class Metaboxes {
 
     /**
      * Constructor de la clase de metaboxes.
@@ -151,12 +154,12 @@ class Babel_Directory_Metaboxes {
             'orderby'    => 'name',
             'order'      => 'ASC',
         ) );
-        if ( is_wp_error( $all_categories ) ) {
+        if ( \is_wp_error( $all_categories ) ) {
             $all_categories = array();
         }
         // Obtener categorías YA asignadas al post
         $assigned_cat_ids = wp_get_object_terms( $post->ID, 'babel_category', array( 'fields' => 'ids' ) );
-        if ( is_wp_error( $assigned_cat_ids ) ) {
+        if ( \is_wp_error( $assigned_cat_ids ) ) {
             $assigned_cat_ids = array();
         }
 

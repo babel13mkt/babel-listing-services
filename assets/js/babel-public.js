@@ -112,7 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch(babel_vars.ajax_url, {
+            // Usamos la nueva REST API de alto rendimiento en lugar de admin-ajax
+            const fetchUrl = babel_vars.rest_url ? babel_vars.rest_url : babel_vars.ajax_url;
+
+            const response = await fetch(fetchUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'

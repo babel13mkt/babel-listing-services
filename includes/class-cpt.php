@@ -9,7 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_CPT {
+namespace Babel\Directory;
+
+
+class CPT {
 
     /**
      * Constructor de la clase CPT.

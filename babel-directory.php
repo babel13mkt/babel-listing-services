@@ -45,28 +45,14 @@ class Babel_Directory_Core {
      * Constructor privado de seguridad para prevenir instanciación externa.
      */
     private function __construct() {
-        $this->includes();
+        require_once BD_PATH . 'includes/autoloader.php';
         $this->init_components();
     }
 
     /**
      * Inclusión segura y acoplada de todos los archivos core de la arquitectura.
      */
-    private function includes() {
-        // Estructura de Datos (CPT y Metaboxes)
-        require_once BD_PATH . 'includes/class-cpt.php';
-        require_once BD_PATH . 'includes/class-metaboxes.php';
-
-        // Componentes de Lógica, Procesamiento y Calificaciones
-        require_once BD_PATH . 'includes/class-search-index.php';
-        require_once BD_PATH . 'includes/class-reviews.php';
-        require_once BD_PATH . 'includes/class-submission.php';
-        require_once BD_PATH . 'includes/class-ajax.php';
-        require_once BD_PATH . 'includes/class-admin.php';
-        require_once BD_PATH . 'includes/class-assets.php';
-        require_once BD_PATH . 'includes/class-taxonomy-images.php';
-        require_once BD_PATH . 'includes/class-shortcodes.php';
-    }
+    
 
     /**
      * Instanciación y desacople de los componentes estructurales del plugin.
@@ -74,53 +60,58 @@ class Babel_Directory_Core {
      */
     private function init_components() {
         // 1. Estructura de Datos: CPT (Custom Post Types & Taxonomías)
-        if ( class_exists( 'Babel_Directory_CPT' ) ) {
-            new Babel_Directory_CPT();
+        if ( class_exists( 'Babel\Directory\CPT' ) ) {
+            new \Babel\Directory\CPT();
         }
 
         // 2. Estructura de Datos: Metaboxes de Datos de Negocios
-        if ( class_exists( 'Babel_Directory_Metaboxes' ) ) {
-            new Babel_Directory_Metaboxes();
+        if ( class_exists( 'Babel\Directory\Metaboxes' ) ) {
+            new \Babel\Directory\Metaboxes();
         }
 
         // 3. Motor de Indexación Rápida
-        if ( class_exists( 'Babel_Directory_Search_Index' ) ) {
-            new Babel_Directory_Search_Index();
+        if ( class_exists( 'Babel\Directory\Search_Index' ) ) {
+            new \Babel\Directory\Search_Index();
         }
 
         // 4. Control de Consultas Asíncronas AJAX
-        if ( class_exists( 'Babel_Directory_Ajax' ) ) {
-            new Babel_Directory_Ajax();
+        if ( class_exists( 'Babel\Directory\Ajax' ) ) {
+            new \Babel\Directory\Ajax();
         }
 
         // 5. Panel de Administración y Registro de Menús/Settings API
-        if ( class_exists( 'Babel_Directory_Admin' ) ) {
-            new Babel_Directory_Admin();
+        if ( class_exists( 'Babel\Directory\Admin' ) ) {
+            new \Babel\Directory\Admin();
         }
 
         // 6. Gestión de Assets Públicos y Shortcodes de Presentación
-        if ( class_exists( 'Babel_Directory_Assets' ) ) {
-            new Babel_Directory_Assets();
+        if ( class_exists( 'Babel\Directory\Assets' ) ) {
+            new \Babel\Directory\Assets();
         }
 
         // 7. Sistema de Gestión de Reseñas y Calificaciones
-        if ( class_exists( 'Babel_Directory_Reviews' ) ) {
-            new Babel_Directory_Reviews();
+        if ( class_exists( 'Babel\Directory\Reviews' ) ) {
+            new \Babel\Directory\Reviews();
         }
 
         // 8. Procesamiento Seguro de Envío de Negocios desde el Frontend
-        if ( class_exists( 'Babel_Directory_Submission' ) ) {
-            new Babel_Directory_Submission();
+        if ( class_exists( 'Babel\Directory\Submission' ) ) {
+            new \Babel\Directory\Submission();
         }
 
         // 9. Soporte de Imágenes en Taxonomías
-        if ( class_exists( 'BD_Taxonomy_Images' ) ) {
-            new BD_Taxonomy_Images();
+        if ( class_exists( 'Babel\Directory\Taxonomy_Images' ) ) {
+            new \Babel\Directory\Taxonomy_Images();
         }
 
         // 10. Shortcodes de Presentación (Radar y Grilla de Regiones)
-        if ( class_exists( 'Babel_Directory_Shortcodes' ) ) {
-            new Babel_Directory_Shortcodes();
+        if ( class_exists( 'Babel\Directory\Shortcodes' ) ) {
+            new \Babel\Directory\Shortcodes();
+        }
+
+        // 11. Endpoints de REST API
+        if ( class_exists( '\Babel\Directory\Api\Rest_Endpoints' ) ) {
+            new \Babel\Directory\Api\Rest_Endpoints();
         }
     }
 }
@@ -130,7 +121,7 @@ class Babel_Directory_Core {
  * Vincula el método estático de creación de la tabla física de búsquedas rápidas.
  * Se ejecuta exclusivamente al activar el plugin para garantizar integridad.
  */
-register_activation_hook( __FILE__, array( 'Babel_Directory_Search_Index', 'create_table' ) );
+register_activation_hook( __FILE__, array( 'Babel\\Directory\\Search_Index', 'create_table' ) );
 
 /**
  * Inicializa y retorna la instancia principal de la arquitectura del plugin.

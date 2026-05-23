@@ -8,7 +8,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class Babel_Directory_Shortcodes {
+namespace Babel\Directory;
+
+
+class Shortcodes {
 
     public function __construct() {
         add_shortcode( 'babel_radar_search', array( $this, 'render_radar_search' ) );
@@ -94,7 +97,7 @@ class Babel_Directory_Shortcodes {
 
         $terms = get_terms( $terms_args );
 
-        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+        if ( \is_wp_error( $terms ) || empty( $terms ) ) {
             return '<p>No se encontraron regiones.</p>';
         }
 
@@ -113,7 +116,7 @@ class Babel_Directory_Shortcodes {
             }
 
             $term_link = get_term_link( $term );
-            if ( is_wp_error( $term_link ) ) {
+            if ( \is_wp_error( $term_link ) ) {
                 continue;
             }
 
@@ -134,11 +137,11 @@ class Babel_Directory_Shortcodes {
             // Obtener el conteo recursivo de negocios (región padre + comunas hijas)
             $child_ids = get_term_children( $term->term_id, 'babel_region' );
             $term_ids = array( $term->term_id );
-            if ( ! is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
+            if ( ! \is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
                 $term_ids = array_merge( $term_ids, $child_ids );
             }
 
-            $business_query = new WP_Query( array(
+            $business_query = new \WP_Query( array(
                 'post_type'      => 'babel_business',
                 'post_status'    => 'publish',
                 'posts_per_page' => 1,
@@ -194,7 +197,7 @@ class Babel_Directory_Shortcodes {
             'hide_empty' => false,
         ) );
 
-        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+        if ( \is_wp_error( $terms ) || empty( $terms ) ) {
             return '';
         }
 
@@ -216,7 +219,7 @@ class Babel_Directory_Shortcodes {
                 <?php foreach ( $terms as $term ) : ?>
                     <?php
                     $term_link = get_term_link( $term );
-                    if ( is_wp_error( $term_link ) ) {
+                    if ( \is_wp_error( $term_link ) ) {
                         continue;
                     }
                     ?>
@@ -263,7 +266,7 @@ class Babel_Directory_Shortcodes {
 
         $terms = get_terms( $terms_args );
 
-        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+        if ( \is_wp_error( $terms ) || empty( $terms ) ) {
             return '';
         }
 
@@ -280,7 +283,7 @@ class Babel_Directory_Shortcodes {
                 <?php foreach ( $terms as $term ) : ?>
                     <?php
                     $term_link = get_term_link( $term );
-                    if ( is_wp_error( $term_link ) ) {
+                    if ( \is_wp_error( $term_link ) ) {
                         continue;
                     }
                     ?>
@@ -312,9 +315,9 @@ class Babel_Directory_Shortcodes {
                     $categorias = get_the_terms( get_the_ID(), 'babel_category' );
                     $regiones = get_the_terms( get_the_ID(), 'babel_region' );
                     
-                    $cat_name = ! empty( $categorias ) && ! is_wp_error( $categorias ) ? $categorias[0]->name : 'Comercio';
+                    $cat_name = ! empty( $categorias ) && ! \is_wp_error( $categorias ) ? $categorias[0]->name : 'Comercio';
                     $reg_name = '';
-                    if ( ! empty( $regiones ) && ! is_wp_error( $regiones ) ) {
+                    if ( ! empty( $regiones ) && ! \is_wp_error( $regiones ) ) {
                         // Si el término es una comuna (tiene padre), podemos mostrar su nombre.
                         $reg_name = preg_replace('/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $regiones[0]->name);
                     }

@@ -8,7 +8,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Evitar acceso directo
 }
 
-class Babel_Directory_Search_Index {
+namespace Babel\Directory;
+
+
+class Search_Index {
 
     private $table_name;
 
@@ -70,8 +73,8 @@ class Babel_Directory_Search_Index {
         $categories = wp_get_post_terms( $post_id, 'babel_category', array( 'fields' => 'ids' ) );
         $regions    = wp_get_post_terms( $post_id, 'babel_region', array( 'fields' => 'ids' ) );
 
-        $category_id = ! empty( $categories ) && ! is_wp_error( $categories ) ? intval( $categories[0] ) : 0;
-        $region_id   = ! empty( $regions ) && ! is_wp_error( $regions ) ? intval( $regions[0] ) : 0;
+        $category_id = ! empty( $categories ) && ! \is_wp_error( $categories ) ? intval( $categories[0] ) : 0;
+        $region_id   = ! empty( $regions ) && ! \is_wp_error( $regions ) ? intval( $regions[0] ) : 0;
 
         // 2. Obtener y sanitizar Coordenadas desde Meta (tratados estrictamente como floats)
         $lat = get_post_meta( $post_id, '_babel_latitude', true ); // Asegura mapear tus llaves correctas
@@ -130,7 +133,7 @@ class Babel_Directory_Search_Index {
             'fields'         => 'ids'
         );
 
-        $query = new WP_Query( $args );
+        $query = new \WP_Query( $args );
         $count = 0;
 
         if ( $query->have_posts() ) {
@@ -149,7 +152,7 @@ class Babel_Directory_Search_Index {
  * Soporte de WP-CLI para indexación masiva nativa del directorio.
  */
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    class Babel_Directory_CLI_Command {
+    class CLI_Command {
 
         /**
          * Re-indexa de forma masiva todos los negocios de la plataforma.

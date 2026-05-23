@@ -10,7 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_Assets {
+namespace Babel\Directory;
+
+
+class Assets {
 
     /**
      * Constructor de la clase.
@@ -49,7 +52,8 @@ class Babel_Directory_Assets {
 
         // Pasar variables de forma segura desde el backend a JavaScript
         wp_localize_script( 'babel-public-js', 'babel_vars', array(
-            'ajax_url'         => admin_url( 'admin-ajax.php' ),
+            'ajax_url'         => admin_url( 'admin-ajax.php' ), // Para retrocompatibilidad
+            'rest_url'         => esc_url_raw( rest_url( 'babel/v1/search' ) ), // Nueva API REST
             'nonce'            => wp_create_nonce( 'babel_search_nonce' ),
             'submission_nonce' => wp_create_nonce( 'babel_submission_nonce' ),
             'ajaxUrl'          => admin_url( 'admin-ajax.php' ), // alias para form-submission.js

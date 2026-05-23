@@ -10,7 +10,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-class Babel_Directory_Admin {
+namespace Babel\Directory;
+
+
+class Admin {
 
     /**
      * Constructor de la clase.
