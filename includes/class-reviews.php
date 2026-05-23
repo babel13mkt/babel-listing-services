@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Sistema de Gestión de Reseñas y Calificaciones (Babel_Directory_Reviews)
  * v7.0.0 — Hito 9: Recálculo de Promedios e Indexación Síncrona.
@@ -9,10 +11,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class Reviews {
 
     /**

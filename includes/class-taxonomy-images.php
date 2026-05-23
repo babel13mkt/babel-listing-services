@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Soporte de imágenes nativas para taxonomías (BD_Taxonomy_Images)
  */
@@ -6,10 +8,6 @@
 if ( ! defined( "ABSPATH" ) ) {
     exit;
 }
-
-namespace Babel\Directory;
-
-
 class Taxonomy_Images {
 
     public function __construct() {

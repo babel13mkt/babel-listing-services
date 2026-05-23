@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Panel de Administración y Configuración Integral (Babel_Directory_Admin)
  * v7.0.0 — Hito 10: Configuración Administrativa Integral (ID de Layout de Divi & Settings API)
@@ -9,10 +11,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class Admin {
 
     /**

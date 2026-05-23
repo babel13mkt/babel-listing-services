@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Motor de Indexación y Base de Datos para Búsquedas Rápidas
  * Fase 2 - Paso 2.1
@@ -7,10 +9,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Evitar acceso directo
 }
-
-namespace Babel\Directory;
-
-
 class Search_Index {
 
     private $table_name;

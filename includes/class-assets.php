@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Gestión de Assets y Shortcodes Públicos (Babel_Directory_Assets)
  * v7.0.0 — Hito 9: Buscador de Frontend, Carga Inteligente y Shortcodes Semánticos.
@@ -9,10 +11,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class Assets {
 
     /**

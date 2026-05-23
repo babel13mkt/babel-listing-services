@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Clase para el manejo de Metaboxes y Custom Fields unificados con estética SaaS moderna.
  * v8.0.0 — Panel Central Compacto por Pestañas, sin Sidebar de Categorías/Imagen y sin editor Gutenberg.
@@ -9,10 +11,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class Metaboxes {
 
     /**

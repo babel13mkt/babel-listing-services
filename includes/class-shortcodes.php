@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Shortcodes para UI del Frontend (BD_Shortcodes)
  * Provee componentes visuales para integrar en Divi 5.
@@ -7,10 +9,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-
-namespace Babel\Directory;
-
-
 class Shortcodes {
 
     public function __construct() {

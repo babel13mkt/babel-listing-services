@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Procesamiento Seguro de Envío de Negocios desde el Frontend (Babel_Directory_Submission)
  * v7.1.0 — Hito 11: Formulario Predictivo AJAX y Mapa Leaflet.
@@ -9,10 +11,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class Submission {
 
     public function __construct() {

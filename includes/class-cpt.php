@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Clase para el registro de Custom Post Types y Taxonomías
  *
@@ -8,10 +10,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
-
-namespace Babel\Directory;
-
-
 class CPT {
 
     /**

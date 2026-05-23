@@ -1,4 +1,6 @@
 <?php
+namespace Babel\Directory;
+
 /**
  * Lógica de Consultas AJAX Dinámicas y Renderizado Premium
  * v4.0.0 — Optimización MySQL e Integración con Divi 5 Library
@@ -7,10 +9,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-
-namespace Babel\Directory;
-
-
 class Ajax {
 
     /**
