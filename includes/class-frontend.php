@@ -444,6 +444,7 @@ class BD_Frontend {
      * Grid CSS: 1fr (Regiones) / 3fr (Categorías)
      */
     public function render_footer_taxonomies() {
+        wp_enqueue_style( 'babel-public-css' );
         $regiones = get_terms( array( 'taxonomy' => 'directorio_region', 'parent' => 0, 'hide_empty' => false ) );
         $categorias = get_terms( array( 'taxonomy' => 'directorio_categoria', 'parent' => 0, 'hide_empty' => false ) );
 
@@ -451,80 +452,6 @@ class BD_Frontend {
 
         ob_start();
         ?>
-        <style>
-            .bd-taxonomies-grid {
-                display: grid;
-                grid-template-columns: 1.5fr 2fr; /* Ajuste solicitado para dar más ancho a Ubicaciones */
-                gap: 50px !important;
-                align-items: start;
-                font-family: 'Inter', sans-serif;
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-            .bd-taxonomies-grid h4 {
-                color: #fff;
-                font-size: 1.1rem;
-                margin-bottom: 1.5rem;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-                padding-bottom: 0.5rem;
-            }
-            .bd-taxonomies-grid ul {
-                list-style: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .bd-taxonomies-grid li {
-                display: block !important;
-                margin-bottom: 12px !important;
-                padding-left: 0 !important;
-                break-inside: avoid-column;
-                page-break-inside: avoid;
-            }
-            .bd-taxonomies-grid li::before {
-                content: none !important;
-            }
-            .bd-taxonomies-grid a {
-                display: block;
-                color: rgba(255,255,255,0.7);
-                text-decoration: none;
-                transition: color 0.3s ease;
-                font-size: 0.95rem;
-                line-height: 1.4;
-                white-space: nowrap; /* Fuerza una sola línea */
-                overflow: hidden; /* Oculta el desborde */
-                text-overflow: ellipsis; /* Añade los tres puntos si es muy largo */
-            }
-            .bd-taxonomies-grid a:hover {
-                color: #fff;
-                text-decoration: underline;
-            }
-            .bd-regions-col ul {
-                column-count: 2;
-                column-gap: 20px;
-            }
-            .bd-categories-col ul {
-                column-count: 3;
-                column-gap: 30px;
-            }
-            @media (max-width: 992px) {
-                .bd-taxonomies-grid {
-                    grid-template-columns: 1fr;
-                    gap: 2rem !important;
-                }
-                .bd-categories-col ul {
-                    column-count: 2;
-                }
-            }
-            @media (max-width: 480px) {
-                .bd-regions-col ul,
-                .bd-categories-col ul {
-                    column-count: 1;
-                }
-            }
-        </style>
-
         <div class="bd-taxonomies-grid">
             <div class="bd-regions-col">
                 <h4>Ubicaciones</h4>

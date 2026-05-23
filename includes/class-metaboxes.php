@@ -65,26 +65,57 @@ class Babel_Directory_Metaboxes {
 
         // Recuperar valores guardados actualmente con fallback seguro a llaves anteriores
         $phone       = get_post_meta( $post->ID, '_babel_phone', true );
+        if ( empty( $phone ) ) {
+            $phone   = get_post_meta( $post->ID, '_bd_telefono', true );
+        }
+
         $whatsapp    = get_post_meta( $post->ID, '_babel_whatsapp', true );
+        if ( empty( $whatsapp ) ) {
+            $whatsapp = get_post_meta( $post->ID, '_bd_whatsapp', true );
+        }
+
         $email       = get_post_meta( $post->ID, '_babel_email', true );
+        if ( empty( $email ) ) {
+            $email   = get_post_meta( $post->ID, '_bd_email', true );
+        }
+
         $address     = get_post_meta( $post->ID, '_babel_address', true );
+        if ( empty( $address ) ) {
+            $address = get_post_meta( $post->ID, '_bd_direccion', true );
+        }
         
         $maps        = get_post_meta( $post->ID, '_babel_maps', true );
         if ( empty( $maps ) ) {
             $maps    = get_post_meta( $post->ID, '_babel_gmaps', true );
+        }
+        if ( empty( $maps ) ) {
+            $maps    = get_post_meta( $post->ID, '_bd_gmaps', true );
         }
         
         $lat         = get_post_meta( $post->ID, '_babel_lat', true );
         if ( empty( $lat ) ) {
             $lat     = get_post_meta( $post->ID, '_babel_latitude', true );
         }
+        if ( empty( $lat ) ) {
+            $lat     = get_post_meta( $post->ID, '_bd_latitud', true );
+        }
         
         $lng         = get_post_meta( $post->ID, '_babel_lng', true );
         if ( empty( $lng ) ) {
             $lng     = get_post_meta( $post->ID, '_babel_longitude', true );
         }
+        if ( empty( $lng ) ) {
+            $lng     = get_post_meta( $post->ID, '_bd_longitud', true );
+        }
         
         $website     = get_post_meta( $post->ID, '_babel_website', true );
+        if ( empty( $website ) ) {
+            $website = get_post_meta( $post->ID, '_bd_sitio_web', true );
+        }
+        if ( empty( $website ) ) {
+            $website = get_post_meta( $post->ID, '_bd_web', true );
+        }
+
         $instagram   = get_post_meta( $post->ID, '_babel_instagram', true );
         $facebook    = get_post_meta( $post->ID, '_babel_facebook', true );
         $linkedin    = get_post_meta( $post->ID, '_babel_linkedin', true );
@@ -93,14 +124,41 @@ class Babel_Directory_Metaboxes {
         if ( $verified === '' ) {
             $verified = get_post_meta( $post->ID, '_babel_is_verified', true );
         }
+        if ( $verified === '' ) {
+            $verified = get_post_meta( $post->ID, '_bd_verificado', true );
+        }
         
         $featured    = get_post_meta( $post->ID, '_babel_featured', true );
         if ( $featured === '' ) {
             $featured = get_post_meta( $post->ID, '_babel_is_featured', true );
         }
+        if ( $featured === '' ) {
+            $featured = get_post_meta( $post->ID, '_bd_destacado', true );
+        }
 
         $gallery     = get_post_meta( $post->ID, '_babel_gallery', true );
+        if ( empty( $gallery ) ) {
+            $gallery = get_post_meta( $post->ID, '_bd_galeria', true );
+        }
+
         $hours_meta  = get_post_meta( $post->ID, '_babel_hours', true );
+        $biz_tags    = get_post_meta( $post->ID, '_babel_biz_tags', true );
+
+        // Pre-cargar todas las categorías para el autocomplete JS
+        $all_categories = get_terms( array(
+            'taxonomy'   => 'babel_category',
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ) );
+        if ( is_wp_error( $all_categories ) ) {
+            $all_categories = array();
+        }
+        // Obtener categorías YA asignadas al post
+        $assigned_cat_ids = wp_get_object_terms( $post->ID, 'babel_category', array( 'fields' => 'ids' ) );
+        if ( is_wp_error( $assigned_cat_ids ) ) {
+            $assigned_cat_ids = array();
+        }
 
         // Configurar los días de la semana y los horarios decodificados
         $days_of_week = array( 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo' );
@@ -114,6 +172,9 @@ class Babel_Directory_Metaboxes {
 
         // Obtener datos del Logotipo (Imagen destacada)
         $logo_id  = get_post_thumbnail_id( $post->ID );
+        if ( ! $logo_id ) {
+            $logo_id = get_post_meta( $post->ID, '_bd_logo_id', true );
+        }
         $logo_url = '';
         if ( $logo_id ) {
             $logo_url = wp_get_attachment_image_url( $logo_id, 'thumbnail' );
@@ -127,29 +188,43 @@ class Babel_Directory_Metaboxes {
         }
         ?>
         <style>
+            /* 0. WordPress postbox transparentizer to eliminate double border clutter */
+            #babel_business_central_panel {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            #babel_business_central_panel > .postbox-header {
+                display: none !important;
+            }
+            #babel_business_central_panel > .inside {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
             /* 1. Reset y Contenedor Principal */
             .bd-metabox-wrapper {
-                background: #f8fafc;
+                background: transparent;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 color: #334155;
                 box-sizing: border-box;
-                padding: 10px 0;
+                padding: 0;
             }
             
-            /* Pestañas / Tabs Navigation */
+            /* Pestañas / Tabs Navigation with seamless overlapping */
             .bd-tabs-nav {
                 display: flex;
-                gap: 4px;
-                border-bottom: 1px solid #cbd5e1;
+                gap: 6px;
+                border-bottom: 2px solid #cbd5e1;
                 margin: 0 0 15px 0;
                 list-style: none;
                 padding: 0;
             }
             .bd-tab-link {
-                padding: 10px 18px;
+                padding: 12px 20px;
                 cursor: pointer;
-                border-radius: 6px 6px 0 0;
-                background: #f1f5f9;
+                border-radius: 8px 8px 0 0;
+                background: #e2e8f0;
                 font-weight: 600;
                 font-size: 13px;
                 color: #64748b;
@@ -158,7 +233,10 @@ class Babel_Directory_Metaboxes {
                 transition: all 0.2s ease;
                 display: flex;
                 align-items: center;
-                gap: 6px;
+                gap: 8px;
+                margin-bottom: -2px; /* Pull down to overlay the active border line */
+                position: relative;
+                z-index: 1;
             }
             .bd-tab-link:hover {
                 background: #cbd5e1;
@@ -169,9 +247,7 @@ class Babel_Directory_Metaboxes {
                 color: #219ebc;
                 border-color: #cbd5e1;
                 border-bottom-color: #ffffff;
-                margin-bottom: -1px;
-                z-index: 2;
-                position: relative;
+                z-index: 3;
             }
             
             /* Paneles de Contenido */
@@ -241,33 +317,241 @@ class Babel_Directory_Metaboxes {
                 color: #64748b;
             }
             
-            /* WooCommerce Style Checklist */
+            /* Premium Hierarchical Category Checklist */
             .bd-category-checklist {
-                max-height: 180px;
+                max-height: 280px;
                 overflow-y: auto;
                 border: 1px solid #cbd5e1;
-                padding: 10px;
-                border-radius: 6px;
-                background: #f8fafc;
+                padding: 16px;
+                border-radius: 8px;
+                background: #ffffff;
+                box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+            }
+
+            /* ===  PREDICTIVE CATEGORY SEARCH === */
+            .bd-cat-autocomplete {
+                position: relative;
+            }
+            .bd-cat-search-wrap {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                align-items: center;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 8px 14px;
+                background: #ffffff;
+                cursor: text;
+                min-height: 46px;
+                box-sizing: border-box;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .bd-cat-search-wrap:focus-within {
+                border-color: #219ebc;
+                box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+            }
+            .bd-cat-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                background: #e0f2fe;
+                border: 1px solid #0284c7;
+                color: #0369a1;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 4px 10px 4px 12px;
+                border-radius: 20px;
+                white-space: nowrap;
+            }
+            .bd-cat-chip-x {
+                cursor: pointer;
+                font-size: 16px;
+                line-height: 1;
+                color: #0369a1;
+                background: none;
+                border: none;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                margin-left: 2px;
+            }
+            .bd-cat-chip-x:hover { color: #dc2626; }
+            .bd-cat-search-input {
+                border: none !important;
+                outline: none !important;
+                background: transparent !important;
+                padding: 2px 0 !important;
+                box-shadow: none !important;
+                font-size: 13px !important;
+                min-width: 200px;
+                flex: 1;
+                color: #334155 !important;
+            }
+            .bd-cat-dropdown {
+                position: absolute;
+                top: calc(100% + 4px);
+                left: 0;
+                right: 0;
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+                z-index: 99999;
+                max-height: 260px;
+                overflow-y: auto;
+                display: none;
+            }
+            .bd-cat-dropdown-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 16px;
+                cursor: pointer;
+                font-size: 13px;
+                color: #334155;
+                border-bottom: 1px solid #f1f5f9;
+                transition: background 0.15s;
+            }
+            .bd-cat-dropdown-item:last-child { border-bottom: none; }
+            .bd-cat-dropdown-item:hover {
+                background: #f0f9ff;
+                color: #0369a1;
+            }
+            .bd-cat-dropdown-item.is-selected {
+                background: #e0f2fe;
+                color: #0369a1;
+                font-weight: 600;
+            }
+            .bd-cat-dropdown-item .bd-cat-parent-path {
+                font-size: 11px;
+                color: #94a3b8;
+                margin-left: 8px;
+                white-space: nowrap;
+            }
+            .bd-cat-dropdown-item.is-selected .bd-cat-parent-path { color: #7dd3fc; }
+            .bd-cat-dropdown-empty {
+                padding: 14px 16px;
+                font-size: 13px;
+                color: #94a3b8;
+                font-style: italic;
+            }
+            .bd-cat-dropdown-checkmark {
+                color: #0284c7;
+                font-size: 14px;
+                flex-shrink: 0;
+            }
+
+            /* === TAGS SEO CHIP INPUT === */
+            .bd-tags-wrap {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                align-items: center;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 8px 14px;
+                background: #ffffff;
+                cursor: text;
+                min-height: 46px;
+                box-sizing: border-box;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .bd-tags-wrap:focus-within {
+                border-color: #219ebc;
+                box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+            }
+            .bd-tag-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                background: #f0fdf4;
+                border: 1px solid #16a34a;
+                color: #15803d;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 4px 10px 4px 12px;
+                border-radius: 20px;
+                white-space: nowrap;
+            }
+            .bd-tag-chip-x {
+                cursor: pointer;
+                font-size: 16px;
+                line-height: 1;
+                color: #15803d;
+                background: none;
+                border: none;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                margin-left: 2px;
+            }
+            .bd-tag-chip-x:hover { color: #dc2626; }
+            .bd-tag-input-inline {
+                border: none !important;
+                outline: none !important;
+                background: transparent !important;
+                padding: 2px 0 !important;
+                box-shadow: none !important;
+                font-size: 13px !important;
+                min-width: 200px;
+                flex: 1;
+                color: #334155 !important;
             }
             .bd-category-checklist ul {
                 list-style: none;
                 margin: 0;
-                padding-left: 20px;
+                padding: 0;
             }
-            .bd-category-checklist > ul {
-                padding-left: 0;
+            .bd-category-checklist ul.children {
+                padding-left: 24px;
+                margin-top: 8px;
+                margin-bottom: 4px;
+                border-left: 2px solid #e2e8f0; /* Connector tree line */
             }
             .bd-category-checklist li {
-                margin-bottom: 6px;
+                margin-bottom: 8px;
                 font-size: 13px;
                 color: #334155;
+                position: relative;
+            }
+            .bd-category-checklist li:last-child {
+                margin-bottom: 0;
+            }
+            .bd-category-checklist label.selectit {
                 display: flex;
                 align-items: center;
-                gap: 6px;
+                gap: 10px;
+                cursor: pointer;
+                font-weight: 500;
+                font-size: 13px;
+                padding: 8px 14px;
+                border-radius: 6px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                transition: all 0.2s ease;
+                user-select: none;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .bd-category-checklist label.selectit:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+                color: #0f172a;
             }
             .bd-category-checklist input[type="checkbox"] {
-                margin: 0;
+                margin: 0 !important;
+                width: 15px !important;
+                height: 15px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 4px !important;
+                cursor: pointer;
+            }
+            /* Highlight selected items */
+            .bd-category-checklist li.checked > label.selectit {
+                background: #e0f2fe;
+                border-color: #0284c7;
+                color: #0369a1;
+                font-weight: 600;
             }
             
             /* Toggles / Contenedor de Estados */
@@ -382,6 +666,7 @@ class Babel_Directory_Metaboxes {
             .bd-media-actions {
                 display: flex;
                 flex-direction: row;
+                flex-wrap: wrap;
                 gap: 8px;
             }
             
@@ -472,9 +757,19 @@ class Babel_Directory_Metaboxes {
                 background: #dc2626 !important;
             }
             
+            /* === GEO-STATUS INDICATOR === */
+            .bd-geo-idle    { color: #94a3b8; }
+            .bd-geo-loading { color: #f59e0b; font-style: italic; }
+            .bd-geo-ok      { color: #16a34a; font-weight: 600; }
+            .bd-geo-warn    { color: #f59e0b; font-weight: 500; }
+            .bd-geo-error   { color: #ef4444; }
+            #babel_maps.geo-loading { border-color: #f59e0b !important; }
+            #babel_maps.geo-ok      { border-color: #16a34a !important; box-shadow: 0 0 0 2px rgba(22,163,74,0.15) !important; }
+            #babel_maps.geo-warn    { border-color: #f59e0b !important; }
+
             /* Ocultamiento del Sidebar y Centrado del Panel */
             .post-type-babel_business #poststuff {
-                max-width: 1000px;
+                max-width: 1300px;
                 margin: 20px auto 0;
             }
             .post-type-babel_business #post-body {
@@ -541,24 +836,61 @@ class Babel_Directory_Metaboxes {
             <!-- PESTAÑA 1: GENERAL -->
             <div id="tab-general" class="bd-tab-panel active">
                 <div class="bd-metabox-grid">
-                    <!-- Fila 1: Nombre (8 cols) y Categorías (4 cols) -->
-                    <div class="bd-field-group bd-grid-span-8">
+                    <!-- Fila 1: Nombre del Negocio (12 cols) -->
+                    <div class="bd-field-group bd-grid-span-12">
                         <label for="_babel_biz_name"><?php esc_html_e( 'Nombre del Negocio', 'babel-directory' ); ?></label>
                         <input type="text" id="_babel_biz_name" name="_babel_biz_name" value="<?php echo esc_attr( $biz_name ); ?>" placeholder="<?php esc_attr_e( 'Ej: Cafetería Central', 'babel-directory' ); ?>" required />
                         <p class="bd-field-desc"><?php esc_html_e( 'Nombre público oficial del comercio.', 'babel-directory' ); ?></p>
                     </div>
 
-                    <div class="bd-field-group bd-grid-span-4">
+            <!-- Fila 2: BÚSQUEDA PREDICTIVA DE CATEGORÍAS -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label>🔍 <?php esc_html_e( 'Buscar Categoría', 'babel-directory' ); ?></label>
+                        <div class="bd-cat-autocomplete" id="bd-cat-autocomplete">
+                            <div class="bd-cat-search-wrap" id="bd-cat-search-wrap">
+                                <!-- chips dinámicos aquí -->
+                                <input
+                                    type="text"
+                                    id="bd-cat-search-input"
+                                    class="bd-cat-search-input"
+                                    placeholder="<?php esc_attr_e( 'Escribe para buscar...', 'babel-directory' ); ?>"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="bd-cat-dropdown" id="bd-cat-dropdown"></div>
+                        </div>
+                        <p class="bd-field-desc"><?php esc_html_e( 'Búsqueda instantánea. Los resultados se sincronizan con el listado inferior.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 3: Categorías del Negocio (listado jerárquico) -->
+                    <div class="bd-field-group bd-grid-span-12">
                         <label><?php esc_html_e( 'Categorías del Negocio', 'babel-directory' ); ?></label>
-                        <div class="bd-category-checklist">
+                        <div class="bd-category-checklist" id="bd-category-checklist">
                             <ul>
                                 <?php wp_terms_checklist( $post->ID, array( 'taxonomy' => 'babel_category' ) ); ?>
                             </ul>
                         </div>
-                        <p class="bd-field-desc"><?php esc_html_e( 'Selecciona los rubros asociados.', 'babel-directory' ); ?></p>
+                        <p class="bd-field-desc"><?php esc_html_e( 'Selecciona los rubros asociados. Puedes marcar múltiples categorías y subcategorías.', 'babel-directory' ); ?></p>
                     </div>
 
-                    <!-- Fila 2: Descripción (12 cols) -->
+                    <!-- Fila 4: Tags / Palabras Clave SEO (12 cols) -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label>🏷️ <?php esc_html_e( 'Tags / Palabras Clave SEO', 'babel-directory' ); ?></label>
+                        <div class="bd-tags-wrap" id="bd-tags-wrap">
+                            <!-- tag chips dinámicos -->
+                            <input
+                                type="text"
+                                id="bd-tag-input-inline"
+                                class="bd-tag-input-inline"
+                                placeholder="<?php esc_attr_e( 'Ej: pizzería, delivery, familiar... (Enter o coma para agregar)', 'babel-directory' ); ?>"
+                                autocomplete="off"
+                            />
+                        </div>
+                        <input type="hidden" name="babel_biz_tags" id="babel_biz_tags_hidden" value="<?php echo esc_attr( $biz_tags ); ?>" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Palabras clave para SEO y búsqueda interna. Presiona Enter o coma para agregar cada tag.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 5: Descripción (12 cols) -->
                     <div class="bd-field-group bd-grid-span-12">
                         <label for="_babel_biz_desc"><?php esc_html_e( 'Descripción del Negocio', 'babel-directory' ); ?></label>
                         <textarea id="_babel_biz_desc" name="_babel_biz_desc" rows="6" placeholder="<?php esc_attr_e( 'Describe los productos, servicios y valor agregado del negocio...', 'babel-directory' ); ?>"><?php echo esc_textarea( $biz_desc ); ?></textarea>
@@ -599,7 +931,7 @@ class Babel_Directory_Metaboxes {
                     <div class="bd-field-group bd-grid-span-6">
                         <label for="babel_maps"><?php esc_html_e( 'Enlace de Google Maps', 'babel-directory' ); ?></label>
                         <input type="url" id="babel_maps" name="babel_maps" value="<?php echo esc_url( $maps ); ?>" placeholder="Ej: https://maps.app.goo.gl/..." />
-                        <p class="bd-field-desc"><?php esc_html_e( 'Enlace directo para abrir la ubicación en Google Maps.', 'babel-directory' ); ?></p>
+                        <p id="bd-geo-status" class="bd-field-desc bd-geo-idle"><?php esc_html_e( 'Se completa automáticamente al ingresar la dirección.', 'babel-directory' ); ?></p>
                     </div>
 
                     <!-- Fila 3: Coordenadas GPS (3 cols c/u) y Sitio Web (6 cols) -->
@@ -685,8 +1017,8 @@ class Babel_Directory_Metaboxes {
                         </div>
                     </div>
 
-                    <!-- Fila 2: Logotipo (6 cols) y Galería (6 cols) -->
-                    <div class="bd-field-group bd-grid-span-6">
+                    <!-- Fila 2: Logotipo (4 cols) y Galería (8 cols) -->
+                    <div class="bd-field-group bd-grid-span-4">
                         <label><?php esc_html_e( 'Imagen Principal / Logotipo', 'babel-directory' ); ?></label>
                         <div class="bd-media-upload-container">
                             <div class="bd-media-preview-box" id="bd-logo-preview">
@@ -708,7 +1040,7 @@ class Babel_Directory_Metaboxes {
                         </div>
                     </div>
 
-                    <div class="bd-field-group bd-grid-span-6 bd-gallery-container">
+                    <div class="bd-field-group bd-grid-span-8 bd-gallery-container">
                         <label><?php esc_html_e( 'Galería de Fotos Múltiple', 'babel-directory' ); ?></label>
                         <input type="hidden" id="babel_gallery" name="babel_gallery" value="<?php echo esc_attr( $gallery ); ?>" />
                         <div class="bd-gallery-grid" id="bd-gallery-grid">
@@ -846,6 +1178,226 @@ class Babel_Directory_Metaboxes {
                     });
                 }
 
+                // --- CATEGORÍAS CHECKLIST SELECTION STYLING (sync with autocomplete) ---
+                function bdSyncChecklistHighlights() {
+                    $('.bd-category-checklist input[type="checkbox"]').each(function() {
+                        if ($(this).is(':checked')) {
+                            $(this).closest('li').addClass('checked');
+                        } else {
+                            $(this).closest('li').removeClass('checked');
+                        }
+                    });
+                }
+                bdSyncChecklistHighlights();
+
+                $(document).on('change', '.bd-category-checklist input[type="checkbox"]', function() {
+                    bdSyncChecklistHighlights();
+                });
+
+                // ===================================================
+                // PREDICTIVE CATEGORY SEARCH (WooCommerce style)
+                // ===================================================
+                var bdAllCats = <?php
+                    // Build JS array from all_categories with parent name lookup
+                    $cats_js = array();
+                    $term_map = array(); // id => name
+                    foreach ( $all_categories as $term ) {
+                        $term_map[ $term->term_id ] = $term->name;
+                    }
+                    foreach ( $all_categories as $term ) {
+                        $parent_name = '';
+                        if ( $term->parent && isset( $term_map[ $term->parent ] ) ) {
+                            $parent_name = $term_map[ $term->parent ];
+                        }
+                        $cats_js[] = array(
+                            'id'     => $term->term_id,
+                            'name'   => $term->name,
+                            'parent' => $parent_name,
+                            'slug'   => $term->slug,
+                        );
+                    }
+                    echo wp_json_encode( $cats_js );
+                ?>;
+
+                var bdSelectedCatIds = <?php echo wp_json_encode( array_values( array_map( 'intval', (array) $assigned_cat_ids ) ) ); ?>;
+
+                // Render initial chips for pre-assigned categories
+                function bdRenderCatChips() {
+                    $('#bd-cat-search-wrap .bd-cat-chip').remove();
+                    bdSelectedCatIds.forEach(function(id) {
+                        var cat = bdAllCats.find(function(c){ return c.id === id; });
+                        if (!cat) return;
+                        var chip = $('<span class="bd-cat-chip" data-id="' + id + '">' +
+                            '<span>' + cat.name + '</span>' +
+                            '<button type="button" class="bd-cat-chip-x" aria-label="Quitar">&times;</button>' +
+                        '</span>');
+                        $('#bd-cat-search-input').before(chip);
+                    });
+                }
+                bdRenderCatChips();
+
+                // Sync checkboxes to match bdSelectedCatIds
+                function bdSyncCheckboxes() {
+                    $('.bd-category-checklist input[type="checkbox"]').each(function() {
+                        var id = parseInt($(this).val(), 10);
+                        if (bdSelectedCatIds.indexOf(id) !== -1) {
+                            $(this).prop('checked', true);
+                        } else {
+                            $(this).prop('checked', false);
+                        }
+                    });
+                    bdSyncChecklistHighlights();
+                }
+
+                function bdAddCategory(id) {
+                    if (bdSelectedCatIds.indexOf(id) === -1) {
+                        bdSelectedCatIds.push(id);
+                        bdRenderCatChips();
+                        bdSyncCheckboxes();
+                    }
+                }
+
+                function bdRemoveCategory(id) {
+                    bdSelectedCatIds = bdSelectedCatIds.filter(function(i){ return i !== id; });
+                    bdRenderCatChips();
+                    bdSyncCheckboxes();
+                }
+
+                // Chip X click
+                $(document).on('click', '#bd-cat-search-wrap .bd-cat-chip-x', function() {
+                    var id = parseInt($(this).closest('.bd-cat-chip').data('id'), 10);
+                    bdRemoveCategory(id);
+                });
+
+                // Checklist checkbox change -> sync chips
+                $(document).on('change', '.bd-category-checklist input[type="checkbox"]', function() {
+                    var id = parseInt($(this).val(), 10);
+                    if ($(this).is(':checked')) {
+                        bdAddCategory(id);
+                    } else {
+                        bdRemoveCategory(id);
+                    }
+                });
+
+                // Build dropdown
+                function bdBuildDropdown(query) {
+                    var $dd = $('#bd-cat-dropdown');
+                    $dd.empty();
+                    var q = query.toLowerCase().trim();
+                    if (q.length < 1) { $dd.hide(); return; }
+
+                    var results = bdAllCats.filter(function(c) {
+                        return c.name.toLowerCase().indexOf(q) !== -1 ||
+                               c.parent.toLowerCase().indexOf(q) !== -1;
+                    });
+
+                    if (results.length === 0) {
+                        $dd.append('<div class="bd-cat-dropdown-empty">Sin resultados para "' + query + '"</div>');
+                    } else {
+                        results.forEach(function(cat) {
+                            var isSelected = bdSelectedCatIds.indexOf(cat.id) !== -1;
+                            var parentHtml = cat.parent ? '<span class="bd-cat-parent-path">' + cat.parent + ' &rsaquo;</span>' : '';
+                            var checkmark = isSelected ? '<span class="bd-cat-dropdown-checkmark">&#10003;</span>' : '<span class="bd-cat-dropdown-checkmark"></span>';
+                            var cls = isSelected ? 'bd-cat-dropdown-item is-selected' : 'bd-cat-dropdown-item';
+                            var item = $('<div class="' + cls + '" data-id="' + cat.id + '">' +
+                                '<span>' + parentHtml + cat.name + '</span>' +
+                                checkmark +
+                            '</div>');
+                            $dd.append(item);
+                        });
+                    }
+                    $dd.show();
+                }
+
+                $('#bd-cat-search-input').on('input', function() {
+                    bdBuildDropdown($(this).val());
+                }).on('keydown', function(e) {
+                    if (e.key === 'Escape') { $('#bd-cat-dropdown').hide(); $(this).val(''); }
+                });
+
+                $(document).on('click', '#bd-cat-dropdown .bd-cat-dropdown-item', function() {
+                    var id = parseInt($(this).data('id'), 10);
+                    if (bdSelectedCatIds.indexOf(id) !== -1) {
+                        bdRemoveCategory(id);
+                    } else {
+                        bdAddCategory(id);
+                    }
+                    bdBuildDropdown($('#bd-cat-search-input').val());
+                });
+
+                // Click outside closes dropdown
+                $(document).on('click', function(e) {
+                    if (!$(e.target).closest('#bd-cat-autocomplete').length) {
+                        $('#bd-cat-dropdown').hide();
+                        $('#bd-cat-search-input').val('');
+                    }
+                });
+
+                // Focus input when clicking the wrap
+                $('#bd-cat-search-wrap').on('click', function() {
+                    $('#bd-cat-search-input').focus();
+                });
+
+                // ===================================================
+                // TAGS SEO CHIP INPUT
+                // ===================================================
+                var bdTags = [];
+                var rawTags = $('#babel_biz_tags_hidden').val();
+                if (rawTags && rawTags.trim() !== '') {
+                    bdTags = rawTags.split(',').map(function(t){ return t.trim(); }).filter(function(t){ return t.length > 0; });
+                }
+
+                function bdRenderTags() {
+                    $('#bd-tags-wrap .bd-tag-chip').remove();
+                    bdTags.forEach(function(tag, idx) {
+                        var chip = $('<span class="bd-tag-chip" data-idx="' + idx + '">' +
+                            '<span>' + $('<div/>').text(tag).html() + '</span>' +
+                            '<button type="button" class="bd-tag-chip-x" aria-label="Quitar">&times;</button>' +
+                        '</span>');
+                        $('#bd-tag-input-inline').before(chip);
+                    });
+                    $('#babel_biz_tags_hidden').val(bdTags.join(','));
+                }
+                bdRenderTags();
+
+                function bdAddTag(rawVal) {
+                    var tags = rawVal.split(',');
+                    tags.forEach(function(t) {
+                        t = t.trim().toLowerCase().replace(/\s+/g, '-');
+                        if (t.length > 0 && bdTags.indexOf(t) === -1) {
+                            bdTags.push(t);
+                        }
+                    });
+                    bdRenderTags();
+                    $('#bd-tag-input-inline').val('');
+                }
+
+                $('#bd-tag-input-inline').on('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        bdAddTag($(this).val());
+                    }
+                }).on('keypress', function(e) {
+                    if (e.which === 44) { // coma
+                        e.preventDefault();
+                        bdAddTag($(this).val());
+                    }
+                }).on('blur', function() {
+                    if ($(this).val().trim().length > 0) {
+                        bdAddTag($(this).val());
+                    }
+                });
+
+                $(document).on('click', '#bd-tags-wrap .bd-tag-chip-x', function() {
+                    var idx = parseInt($(this).closest('.bd-tag-chip').data('idx'), 10);
+                    bdTags.splice(idx, 1);
+                    bdRenderTags();
+                });
+
+                $('#bd-tags-wrap').on('click', function() {
+                    $('#bd-tag-input-inline').focus();
+                });
+
                 // --- MANEJO DE SECCIÓN DE HORARIOS (DESACTIVAR AL MARCAR CERRADO) ---
                 $('.bd-hours-closed-checkbox').each(function() {
                     var $row = $(this).closest('.bd-hours-row');
@@ -862,6 +1414,99 @@ class Babel_Directory_Metaboxes {
                         $row.find('input[type="time"]').prop('disabled', false).css('opacity', '1');
                     }
                 });
+
+                // ===================================================
+                // AUTO-GEOCODIFICACIÓN POR DIRECCIÓN (Nominatim / OpenStreetMap)
+                // Sin costo, sin API Key requerida.
+                // ===================================================
+                var bdGeoTimer = null;
+
+                function bdSetGeoStatus(msg, cls) {
+                    var $s = $('#bd-geo-status');
+                    $s.text(msg).removeClass('bd-geo-idle bd-geo-loading bd-geo-ok bd-geo-warn bd-geo-error').addClass(cls);
+                }
+
+                function bdGeocode(address) {
+                    if (!address || address.length < 8) return;
+
+                    bdSetGeoStatus('⏳ Buscando ubicación…', 'bd-geo-loading');
+                    $('#babel_maps').removeClass('geo-ok geo-warn').addClass('geo-loading');
+
+                    // Auto-rellenar Maps URL inmediatamente (funciona sin API)
+                    var encodedAddr = encodeURIComponent(address);
+                    var mapsEmbedUrl = 'https://maps.google.com/maps?q=' + encodedAddr + '&t=&z=15&ie=UTF8&iwloc=&output=embed';
+                    // Solo reemplazar si el campo está vacío o era un embed autogenerado prev.
+                    var currentMaps = $('#babel_maps').val();
+                    if (!currentMaps || currentMaps.indexOf('maps.google.com/maps?q=') !== -1) {
+                        $('#babel_maps').val(mapsEmbedUrl);
+                    }
+
+                    // Geocoding con Nominatim para lat/lng preciso
+                    $.ajax({
+                        url: 'https://nominatim.openstreetmap.org/search',
+                        method: 'GET',
+                        data: {
+                            q: address,
+                            format: 'json',
+                            limit: 1,
+                            countrycodes: 'cl',
+                            addressdetails: 1
+                        },
+                        headers: { 'Accept-Language': 'es' },
+                        success: function(data) {
+                            $('#babel_maps').removeClass('geo-loading');
+                            if (data && data.length > 0) {
+                                var r = data[0];
+                                var lat = parseFloat(r.lat).toFixed(6);
+                                var lng = parseFloat(r.lon).toFixed(6);
+
+                                // Rellenar lat/lng
+                                if (!$('#babel_lat').val() || $('#babel_lat').data('auto')) {
+                                    $('#babel_lat').val(lat).data('auto', true);
+                                }
+                                if (!$('#babel_lng').val() || $('#babel_lng').data('auto')) {
+                                    $('#babel_lng').val(lng).data('auto', true);
+                                }
+
+                                // Actualizar URL de Maps con coordenadas exactas
+                                var preciseUrl = 'https://maps.google.com/maps?q=' + lat + ',' + lng + '&t=&z=17&ie=UTF8&iwloc=&output=embed';
+                                if (!$('#babel_maps').val() || $('#babel_maps').val().indexOf('maps.google.com/maps?q=') !== -1) {
+                                    $('#babel_maps').val(preciseUrl);
+                                }
+
+                                $('#babel_maps').addClass('geo-ok');
+                                var displayName = r.display_name ? r.display_name.substring(0, 70) : address;
+                                bdSetGeoStatus('✅ Encontrado: ' + displayName + (r.display_name && r.display_name.length > 70 ? '…' : ''), 'bd-geo-ok');
+                            } else {
+                                $('#babel_maps').addClass('geo-warn');
+                                bdSetGeoStatus('⚠️ No se encontró la ubicación exacta. Verifica la dirección o usa el campo Manual.', 'bd-geo-warn');
+                            }
+                        },
+                        error: function() {
+                            $('#babel_maps').removeClass('geo-loading').addClass('geo-warn');
+                            bdSetGeoStatus('⚠️ Error de conexión. El campo de Maps se prellenó con la dirección ingresada.', 'bd-geo-error');
+                        }
+                    });
+                }
+
+                // Disparar geocodificación al editar la dirección (con debounce de 900ms)
+                $('#babel_address').on('input', function() {
+                    clearTimeout(bdGeoTimer);
+                    var addr = $(this).val().trim();
+                    bdGeoTimer = setTimeout(function() {
+                        bdGeocode(addr);
+                    }, 900);
+                });
+
+                // Si ya hay dirección cargada pero no hay lat/lng, geocodificar al iniciar
+                (function() {
+                    var hasAddr = $('#babel_address').val().trim().length > 8;
+                    var hasLat  = $('#babel_lat').val().trim().length > 0;
+                    var hasMaps = $('#babel_maps').val().trim().length > 0;
+                    if (hasAddr && !hasLat && !hasMaps) {
+                        bdGeocode($('#babel_address').val().trim());
+                    }
+                })();
             });
         </script>
         <?php
@@ -911,7 +1556,9 @@ class Babel_Directory_Metaboxes {
 
         // Teléfono
         if ( isset( $_POST['babel_phone'] ) ) {
-            update_post_meta( $post_id, '_babel_phone', sanitize_text_field( wp_unslash( $_POST['babel_phone'] ) ) );
+            $phone = sanitize_text_field( wp_unslash( $_POST['babel_phone'] ) );
+            update_post_meta( $post_id, '_babel_phone', $phone );
+            update_post_meta( $post_id, '_bd_telefono', $phone );
         }
 
         // WhatsApp
@@ -919,16 +1566,21 @@ class Babel_Directory_Metaboxes {
             $whatsapp = sanitize_text_field( wp_unslash( $_POST['babel_whatsapp'] ) );
             $whatsapp = preg_replace( '/[^0-9+]/', '', $whatsapp ); // Permitir sólo números y '+'
             update_post_meta( $post_id, '_babel_whatsapp', $whatsapp );
+            update_post_meta( $post_id, '_bd_whatsapp', $whatsapp );
         }
 
         // Email Comercial
         if ( isset( $_POST['babel_email'] ) ) {
-            update_post_meta( $post_id, '_babel_email', sanitize_email( wp_unslash( $_POST['babel_email'] ) ) );
+            $email = sanitize_email( wp_unslash( $_POST['babel_email'] ) );
+            update_post_meta( $post_id, '_babel_email', $email );
+            update_post_meta( $post_id, '_bd_email', $email );
         }
 
         // Dirección Física
         if ( isset( $_POST['babel_address'] ) ) {
-            update_post_meta( $post_id, '_babel_address', sanitize_text_field( wp_unslash( $_POST['babel_address'] ) ) );
+            $address = sanitize_text_field( wp_unslash( $_POST['babel_address'] ) );
+            update_post_meta( $post_id, '_babel_address', $address );
+            update_post_meta( $post_id, '_bd_direccion', $address );
         }
 
         // Enlace de Google Maps y duplicación por retrocompatibilidad
@@ -936,6 +1588,7 @@ class Babel_Directory_Metaboxes {
             $maps = esc_url_raw( wp_unslash( $_POST['babel_maps'] ) );
             update_post_meta( $post_id, '_babel_maps', $maps );
             update_post_meta( $post_id, '_babel_gmaps', $maps );
+            update_post_meta( $post_id, '_bd_gmaps', $maps );
         }
 
         // Coordenadas Lat/Lng y duplicados
@@ -943,16 +1596,21 @@ class Babel_Directory_Metaboxes {
             $lat = sanitize_text_field( wp_unslash( $_POST['babel_lat'] ) );
             update_post_meta( $post_id, '_babel_lat', $lat );
             update_post_meta( $post_id, '_babel_latitude', $lat );
+            update_post_meta( $post_id, '_bd_latitud', $lat );
         }
         if ( isset( $_POST['babel_lng'] ) ) {
             $lng = sanitize_text_field( wp_unslash( $_POST['babel_lng'] ) );
             update_post_meta( $post_id, '_babel_lng', $lng );
             update_post_meta( $post_id, '_babel_longitude', $lng );
+            update_post_meta( $post_id, '_bd_longitud', $lng );
         }
 
         // Redes Sociales y Web
         if ( isset( $_POST['babel_website'] ) ) {
-            update_post_meta( $post_id, '_babel_website', esc_url_raw( wp_unslash( $_POST['babel_website'] ) ) );
+            $website = esc_url_raw( wp_unslash( $_POST['babel_website'] ) );
+            update_post_meta( $post_id, '_babel_website', $website );
+            update_post_meta( $post_id, '_bd_sitio_web', $website );
+            update_post_meta( $post_id, '_bd_web', $website );
         }
         if ( isset( $_POST['babel_instagram'] ) ) {
             update_post_meta( $post_id, '_babel_instagram', esc_url_raw( wp_unslash( $_POST['babel_instagram'] ) ) );
@@ -977,6 +1635,7 @@ class Babel_Directory_Metaboxes {
         // Imagen Principal / Logotipo (Post Thumbnail / Destacada)
         if ( isset( $_POST['babel_logo_id'] ) ) {
             $logo_id = intval( $_POST['babel_logo_id'] );
+            update_post_meta( $post_id, '_bd_logo_id', $logo_id );
             if ( $logo_id > 0 ) {
                 set_post_thumbnail( $post_id, $logo_id );
             } else {
@@ -986,7 +1645,9 @@ class Babel_Directory_Metaboxes {
 
         // Galería de fotos
         if ( isset( $_POST['babel_gallery'] ) ) {
-            update_post_meta( $post_id, '_babel_gallery', sanitize_text_field( wp_unslash( $_POST['babel_gallery'] ) ) );
+            $gallery = sanitize_text_field( wp_unslash( $_POST['babel_gallery'] ) );
+            update_post_meta( $post_id, '_babel_gallery', $gallery );
+            update_post_meta( $post_id, '_bd_galeria', $gallery );
         }
 
         // Horarios tipo rueda en JSON
@@ -1006,9 +1667,18 @@ class Babel_Directory_Metaboxes {
         $verified = isset( $_POST['babel_verified'] ) ? '1' : '0';
         update_post_meta( $post_id, '_babel_verified', $verified );
         update_post_meta( $post_id, '_babel_is_verified', $verified ); // Duplicación para compatibilidad
+        update_post_meta( $post_id, '_bd_verificado', $verified );
 
         $featured = isset( $_POST['babel_featured'] ) ? '1' : '0';
         update_post_meta( $post_id, '_babel_featured', $featured );
         update_post_meta( $post_id, '_babel_is_featured', $featured ); // Duplicación para compatibilidad
+        update_post_meta( $post_id, '_bd_destacado', $featured );
+
+        // Tags / Palabras Clave SEO
+        if ( isset( $_POST['babel_biz_tags'] ) ) {
+            $raw_tags   = sanitize_text_field( wp_unslash( $_POST['babel_biz_tags'] ) );
+            $tags_array = array_filter( array_map( 'sanitize_text_field', explode( ',', $raw_tags ) ) );
+            update_post_meta( $post_id, '_babel_biz_tags', implode( ',', $tags_array ) );
+        }
     }
 }

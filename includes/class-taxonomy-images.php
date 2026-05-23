@@ -10,7 +10,7 @@ if ( ! defined( "ABSPATH" ) ) {
 class BD_Taxonomy_Images {
 
     public function __construct() {
-        $taxonomies = array( "directorio_region", "directorio_categoria" );
+        $taxonomies = array( "babel_region", "babel_category" );
 
         foreach ( $taxonomies as $taxonomy ) {
             add_action( $taxonomy . "_add_form_fields", array( $this, "add_category_image" ), 10, 2 );

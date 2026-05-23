@@ -1,14 +1,48 @@
 /**
  * Babel Directory Public Script (Vanilla JS)
- * v7.0.0 — Hito 9: Control Dinámico AJAX, Debounce y Paginación SPA React-friendly.
+ * v8.0.0 — Buscador Simplificado y Moderno sin Listados Verticales.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     const searchForm = document.getElementById('babel-search-form');
     const resultsContainer = document.getElementById('babel-directory-results');
+    const keywordInput = document.getElementById('babel-search-keyword');
+    const latInput = document.getElementById('babel-search-lat');
+    const lngInput = document.getElementById('babel-search-lng');
+    const radiusInput = document.getElementById('babel-search-radius');
+    const geoBtn = document.getElementById('babel-geo-btn');
 
     if (!searchForm && !resultsContainer) {
         return;
+    }
+
+    // Parsear parámetros GET al cargar para inicializar el formulario
+    if (searchForm) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlKeyword = urlParams.get('keyword');
+        const urlLat = urlParams.get('lat');
+        const urlLng = urlParams.get('lng');
+        const urlRadius = urlParams.get('radius');
+
+        if (urlKeyword && keywordInput) {
+            keywordInput.value = urlKeyword;
+        }
+        if (urlLat && latInput) {
+            latInput.value = urlLat;
+        }
+        if (urlLng && lngInput) {
+            lngInput.value = urlLng;
+        }
+        if (urlRadius && radiusInput) {
+            radiusInput.value = urlRadius;
+        }
+
+        // Si hay coordenadas en la URL, activar visualmente el radar
+        if (urlLat && urlLng && geoBtn && keywordInput) {
+            geoBtn.classList.add('active');
+            keywordInput.placeholder = '✓ Buscando cerca de ti...';
+            keywordInput.classList.add('babel-radar-active');
+        }
     }
 
     // Estado interno de la consulta
@@ -16,11 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Helper: Crea una función con retardo (Debounce)
-     * Evita sobrecargar el servidor AR1 con ráfagas concurrentes.
      */
     function debounce(func, delay) {
         let timeoutId;
-        return function (...args) {
+        const debounced = function (...args) {
             if (timeoutId) {
                 clearTimeout(timeoutId);
             }
@@ -28,28 +61,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 func.apply(this, args);
             }, delay);
         };
+        debounced.cancel = function() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+        };
+        return debounced;
     }
 
     /**
      * Realiza la petición AJAX mediante Fetch API de forma asíncrona.
-     *
-     * @param {number} page Página a consultar.
      */
     async function performSearch(page = 1) {
         if (!resultsContainer) return;
 
         currentPaged = page;
 
-        // Añadir estado visual de carga (skeleton / spinner feeling)
+        // Añadir estado visual de carga
         resultsContainer.classList.add('babel-loading-state');
         resultsContainer.style.opacity = '0.6';
 
         // Recopilar valores del formulario de manera segura
-        const keyword = searchForm ? searchForm.querySelector('#babel-search-keyword').value : '';
-        const category = searchForm ? searchForm.querySelector('#babel-search-category').value : '';
-        const region = searchForm ? searchForm.querySelector('#babel-search-region').value : '';
+        const keywordInputEl = searchForm ? searchForm.querySelector('#babel-search-keyword') : null;
+        const keyword = keywordInputEl ? keywordInputEl.value : '';
+        
+        // Categorías y Regiones ahora son procesadas de forma inteligente a través de la keyword
+        const category = '';
+        const region = '';
+        
+        // Parámetros de geolocalización (Radar)
+        const lat = searchForm ? searchForm.querySelector('#babel-search-lat').value : '';
+        const lng = searchForm ? searchForm.querySelector('#babel-search-lng').value : '';
+        const radius = searchForm ? searchForm.querySelector('#babel-search-radius').value : '25';
 
-        // Construir datos de envío usando URLSearchParams para compatibilidad nativa con PHP $_POST
+        // Construir datos de envío
         const payload = new URLSearchParams();
         payload.append('action', 'bd_filter_listings');
         payload.append('nonce', babel_vars.nonce);
@@ -57,6 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
         payload.append('category', category);
         payload.append('region', region);
         payload.append('paged', currentPaged);
+
+        // Adjuntar geolocalización si el radar está activo
+        if (lat && lng) {
+            payload.append('lat', lat);
+            payload.append('lng', lng);
+            payload.append('radius', radius);
+        }
 
         try {
             const response = await fetch(babel_vars.ajax_url, {
@@ -74,10 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.success && result.data) {
-                // Inyección limpia y segura del HTML compilado en el backend
                 resultsContainer.innerHTML = result.data.html || '';
                 
-                // Desplazar la vista suavemente hasta los resultados en móvil o si es necesario
                 if (page > 1) {
                     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -96,33 +147,122 @@ document.addEventListener('DOMContentLoaded', () => {
     // Crear la versión debounced de la búsqueda
     const debouncedSearch = debounce(() => performSearch(1), 300);
 
-    // 1. Escuchar envío de formulario
+    // ==========================================================================
+    // 1. RADAR & GEOLOCALIZACIÓN GPS (INTEGRADO DE FORMA MODERNA)
+    // ==========================================================================
     if (searchForm) {
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            performSearch(1);
-        });
+        if (geoBtn && latInput && lngInput) {
+            geoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
 
-        // 2. Escuchar cambios interactivos en tiempo real (Selectores)
-        const categorySelect = searchForm.querySelector('#babel-search-category');
-        const regionSelect = searchForm.querySelector('#babel-search-region');
-        const keywordInput = searchForm.querySelector('#babel-search-keyword');
+                // Si ya está activo, se desactiva
+                if (geoBtn.classList.contains('active')) {
+                    latInput.value = '';
+                    lngInput.value = '';
+                    geoBtn.classList.remove('active');
+                    
+                    if (keywordInput) {
+                        keywordInput.placeholder = '¿Qué buscas y dónde? (ej. Sushi, Abogado, Providencia...)';
+                        keywordInput.classList.remove('babel-radar-active');
+                    }
+                    
+                    if (resultsContainer) {
+                        performSearch(1);
+                    } else {
+                        searchForm.submit();
+                    }
+                    return;
+                }
 
-        if (categorySelect) {
-            categorySelect.addEventListener('change', () => performSearch(1));
+                // Iniciar proceso de geolocalización
+                if (!navigator.geolocation) {
+                    alert('Tu navegador no soporta geolocalización.');
+                    return;
+                }
+
+                geoBtn.classList.add('loading');
+                if (keywordInput) {
+                    keywordInput.placeholder = 'Localizando tu posición...';
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        latInput.value = lat;
+                        lngInput.value = lng;
+
+                        geoBtn.classList.remove('loading');
+                        geoBtn.classList.add('active');
+
+                        if (keywordInput) {
+                            keywordInput.placeholder = '✓ Buscando cerca de ti...';
+                            keywordInput.classList.add('babel-radar-active');
+                        }
+
+                        // Disparar búsqueda automática
+                        if (resultsContainer) {
+                            performSearch(1);
+                        } else {
+                            searchForm.submit();
+                        }
+                    },
+                    (error) => {
+                        console.error('GPS Error:', error);
+                        geoBtn.classList.remove('loading');
+                        if (keywordInput) {
+                            keywordInput.placeholder = '¿Qué buscas y dónde? (ej. Sushi, Abogado, Providencia...)';
+                        }
+                        alert('No se pudo obtener tu ubicación. Por favor, verifica los permisos de geolocalización de tu navegador.');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    }
+                );
+            });
         }
 
-        if (regionSelect) {
-            regionSelect.addEventListener('change', () => performSearch(1));
-        }
-
-        // Búsqueda en vivo al escribir con debounce de 300ms
+        // Búsqueda en vivo en el keyword al escribir (debounced)
         if (keywordInput) {
-            keywordInput.addEventListener('input', debouncedSearch);
+            keywordInput.addEventListener('input', () => {
+                if (resultsContainer) {
+                    debouncedSearch();
+                }
+            });
+            keywordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (resultsContainer) {
+                        e.preventDefault();
+                        debouncedSearch.cancel();
+                        performSearch(1);
+                    }
+                }
+            });
         }
+
+        // Evitar envío tradicional del formulario solo si estamos en la página de resultados
+        searchForm.addEventListener('submit', (e) => {
+            if (resultsContainer) {
+                e.preventDefault();
+                debouncedSearch.cancel();
+                performSearch(1);
+            } else {
+                // Si no hay contenedor de resultados, desactivamos parámetros vacíos del radar para evitar canonical loops en WordPress
+                if (latInput && lngInput && radiusInput && (!latInput.value || !lngInput.value)) {
+                    latInput.disabled = true;
+                    lngInput.disabled = true;
+                    radiusInput.disabled = true;
+                }
+            }
+        });
     }
 
-    // 3. Paginación SPA: Interceptar clicks en enlaces de paginación inyectados dinámicamente
+    // ==========================================================================
+    // 2. PAGINACIÓN SPA DE WORDPRESS (REDIRECCIONES INTERCEPTADAS)
+    // ==========================================================================
     if (resultsContainer) {
         resultsContainer.addEventListener('click', (e) => {
             const pageLink = e.target.closest('.page-numbers, .babel-pagination-wrapper a');
@@ -130,12 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             e.preventDefault();
 
-            // WordPress formatea el enlace activo como un span.page-numbers.current, ignorarlo
             if (pageLink.classList.contains('current')) {
                 return;
             }
 
-            // Extraer el número de página de las clases de WordPress o de la URL del link
             let pageNum = 1;
             const href = pageLink.getAttribute('href');
             
@@ -144,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (match && match[1]) {
                     pageNum = parseInt(match[1], 10);
                 } else {
-                    // Si es un botón anterior o siguiente, extraer número usando su contenido textual
                     const text = pageLink.innerText.trim();
                     if (!isNaN(text) && text !== '') {
                         pageNum = parseInt(text, 10);
@@ -155,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } else {
-                // Fallback a parseo del texto directo del número
                 const text = pageLink.innerText.trim();
                 if (!isNaN(text) && text !== '') {
                     pageNum = parseInt(text, 10);
@@ -167,6 +303,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Exponer la función reset de filtros de forma global
+    window.babelResetFilters = function() {
+        if (searchForm) {
+            const keywordInput = searchForm.querySelector('#babel-search-keyword');
+            const latInput = searchForm.querySelector('#babel-search-lat');
+            const lngInput = searchForm.querySelector('#babel-search-lng');
+            const geoBtn = document.getElementById('babel-geo-btn');
+
+            if (keywordInput) {
+                keywordInput.value = '';
+                keywordInput.placeholder = '¿Qué buscas y dónde? (ej. Sushi, Abogado, Providencia...)';
+                keywordInput.classList.remove('babel-radar-active');
+            }
+            if (latInput) latInput.value = '';
+            if (lngInput) lngInput.value = '';
+            if (geoBtn) geoBtn.classList.remove('active');
+
+            performSearch(1);
+        }
+    };
 
     // Cargar resultados iniciales de forma asíncrona al cargar la página
     if (resultsContainer) {

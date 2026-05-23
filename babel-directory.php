@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 7.0.0
+ * Version: 7.0.8
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.0.0+
-define( 'BD_VERSION', '7.0.0' );
+define( 'BD_VERSION', '7.0.8' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BD_URL', plugin_dir_url( __FILE__ ) );
 
@@ -64,6 +64,8 @@ class Babel_Directory_Core {
         require_once BD_PATH . 'includes/class-ajax.php';
         require_once BD_PATH . 'includes/class-admin.php';
         require_once BD_PATH . 'includes/class-assets.php';
+        require_once BD_PATH . 'includes/class-taxonomy-images.php';
+        require_once BD_PATH . 'includes/class-shortcodes.php';
     }
 
     /**
@@ -109,6 +111,16 @@ class Babel_Directory_Core {
         // 8. Procesamiento Seguro de Envío de Negocios desde el Frontend
         if ( class_exists( 'Babel_Directory_Submission' ) ) {
             new Babel_Directory_Submission();
+        }
+
+        // 9. Soporte de Imágenes en Taxonomías
+        if ( class_exists( 'BD_Taxonomy_Images' ) ) {
+            new BD_Taxonomy_Images();
+        }
+
+        // 10. Shortcodes de Presentación (Radar y Grilla de Regiones)
+        if ( class_exists( 'Babel_Directory_Shortcodes' ) ) {
+            new Babel_Directory_Shortcodes();
         }
     }
 }

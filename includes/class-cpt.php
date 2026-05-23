@@ -19,6 +19,7 @@ class Babel_Directory_CPT {
         // Registrar taxonomías y CPT en el gancho 'init'
         add_action( 'init', array( $this, 'register_taxonomies' ), 9 );
         add_action( 'init', array( $this, 'register_cpts' ), 10 );
+        add_action( 'init', array( $this, 'register_meta_fields' ), 11 );
     }
 
     /**
@@ -74,7 +75,7 @@ class Babel_Directory_CPT {
             'exclude_from_search'   => false,
             'publicly_queryable'    => true,
             'capability_type'       => 'post',
-            'show_in_rest'          => false, // Desactivar soporte para Gutenberg y API REST de WP en este CPT
+            'show_in_rest'          => true, // Habilitar soporte REST API para Divi 5
         );
 
         register_post_type( 'babel_business', $args );
@@ -161,5 +162,54 @@ class Babel_Directory_CPT {
         );
 
         register_taxonomy( 'babel_category', array( 'babel_business' ), $args_category );
+    }
+
+    /**
+     * Registra los campos de metadatos en la REST API para Divi 5 (Dynamic Content).
+     */
+    public function register_meta_fields() {
+        $meta_keys = array(
+            '_babel_phone'       => 'string',
+            '_babel_whatsapp'    => 'string',
+            '_babel_email'       => 'string',
+            '_babel_address'     => 'string',
+            '_babel_maps'        => 'string',
+            '_babel_gmaps'       => 'string',
+            '_babel_lat'         => 'string',
+            '_babel_latitude'    => 'string',
+            '_babel_lng'         => 'string',
+            '_babel_longitude'   => 'string',
+            '_babel_website'     => 'string',
+            '_babel_instagram'   => 'string',
+            '_babel_facebook'    => 'string',
+            '_babel_linkedin'    => 'string',
+            '_babel_gallery'     => 'string',
+            '_babel_hours'       => 'string',
+            '_babel_verified'    => 'string',
+            '_babel_featured'    => 'string',
+            '_babel_biz_tags'    => 'string',
+            // Legacy keys for compatibility
+            '_bd_telefono'       => 'string',
+            '_bd_whatsapp'       => 'string',
+            '_bd_email'          => 'string',
+            '_bd_direccion'      => 'string',
+            '_bd_gmaps'          => 'string',
+            '_bd_latitud'        => 'string',
+            '_bd_longitud'       => 'string',
+            '_bd_sitio_web'      => 'string',
+            '_bd_web'            => 'string',
+            '_bd_galeria'        => 'string',
+            '_bd_verificado'     => 'string',
+            '_bd_destacado'      => 'string',
+            '_bd_logo_id'        => 'string',
+        );
+
+        foreach ( $meta_keys as $key => $type ) {
+            register_post_meta( 'babel_business', $key, array(
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => $type,
+            ) );
+        }
     }
 }

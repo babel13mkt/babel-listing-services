@@ -129,6 +129,16 @@ class Babel_Directory_Admin {
             'manage_options',
             'edit-tags.php?taxonomy=babel_region&post_type=babel_business'
         );
+
+        // 5. Guía de Shortcodes
+        add_submenu_page(
+            'bd-panel',
+            __( 'Guía de Shortcodes', 'babel-directory' ),
+            __( 'Guía de Shortcodes', 'babel-directory' ),
+            'manage_options',
+            'bd-shortcode-guide',
+            array( $this, 'render_shortcode_guide_page' )
+        );
     }
 
     /**
@@ -263,148 +273,351 @@ class Babel_Directory_Admin {
                 </div>
             </div>
 
-            <style>
-                .babel-diagnostic-panel {
-                    margin-top: 40px;
-                    background: #ffffff;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 12px;
-                    padding: 24px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-                    max-width: 1000px;
-                }
-                .babel-diagnostic-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    font-size: 20px;
-                    font-weight: 600;
-                    color: #1e293b;
-                    margin: 0 0 4px 0 !important;
-                }
-                .babel-diagnostic-title .dashicons {
-                    font-size: 24px;
-                    width: 24px;
-                    height: 24px;
-                    color: #6366f1;
-                }
-                .babel-diagnostic-subtitle {
-                    font-size: 14px;
-                    color: #64748b;
-                    margin: 0 0 24px 0 !important;
-                }
-                .babel-diagnostic-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    gap: 20px;
-                }
-                .babel-diagnostic-card {
-                    background: #f8fafc;
-                    border: 1px solid #f1f5f9;
-                    border-radius: 8px;
-                    padding: 20px;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease;
-                }
-                .babel-diagnostic-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-                }
-                .babel-card-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin-bottom: 16px;
-                    border-bottom: 1px solid #e2e8f0;
-                    padding-bottom: 10px;
-                }
-                .babel-card-header .dashicons {
-                    color: #4f46e5;
-                }
-                .babel-card-header h3 {
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: #334155;
-                    margin: 0 !important;
-                }
-                .babel-metric-item {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 12px;
-                    font-size: 13px;
-                }
-                .babel-metric-label {
-                    color: #64748b;
-                    font-weight: 500;
-                }
-                .babel-metric-value {
-                    color: #1e293b;
-                    font-weight: 600;
-                }
-                .babel-code-inline {
-                    background: #e2e8f0;
-                    color: #0f172a;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-family: monospace;
-                }
-                .babel-badge {
-                    display: inline-block;
-                    padding: 4px 8px;
-                    border-radius: 9999px;
-                    font-size: 11px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                }
-                .babel-badge-success {
-                    background: #dcfce7;
-                    color: #15803d;
-                }
-                .babel-badge-warning {
-                    background: #fef9c3;
-                    color: #a16207;
-                }
-                .babel-badge-danger {
-                    background: #fee2e2;
-                    color: #b91c1c;
-                }
-                .babel-alert-inline {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 6px;
-                    background: #fffbeb;
-                    border: 1px solid #fef3c7;
-                    border-radius: 6px;
-                    padding: 8px 12px;
-                    font-size: 12px;
-                    color: #b45309;
-                    margin-top: 12px;
-                }
-                .babel-alert-inline .dashicons {
-                    font-size: 16px;
-                    width: 16px;
-                    height: 16px;
-                    color: #d97706;
-                }
-            </style>
-            <?php
+        </div> <!-- Cierre de .wrap -->
+        <?php
+    }
+
+    /**
+     * Renderiza la página de la Guía de Shortcodes como elemento del menú de administración.
+     */
+    public function render_shortcode_guide_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
         }
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e( 'Guía de Shortcodes', 'babel-directory' ); ?></h1>
+            
+            <div class="babel-shortcode-guide-panel" style="margin-top: 20px;">
+                <h2 class="babel-guide-title">
+                    <span class="dashicons dashicons-editor-code"></span>
+                    <?php esc_html_e( 'Guía de Shortcodes', 'babel-directory' ); ?>
+                </h2>
+                <p class="babel-guide-subtitle">
+                    <?php esc_html_e( 'Copie y pegue estos códigos directamente en Divi para integrar los componentes interactivos.', 'babel-directory' ); ?>
+                </p>
+
+                <div class="babel-guide-grid">
+                    <!-- Shortcode 1: Buscador de Radar -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Buscador de Radar (Hero Section)', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Renderiza la caja de búsqueda con efecto visual de radar pulsante e integración GPS. Ideal para cabeceras.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[babel_radar_search]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-radar" onclick="babelCopyShortcode('[babel_radar_search]', 'btn-copy-radar')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 2: Grilla de Regiones -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Grilla de Regiones / Comunas', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Muestra las regiones en una cuadrícula responsiva con imágenes. Soporta personalización de columnas y filas.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[babel_region_grid columns="4" rows="2"]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-region" onclick="babelCopyShortcode('[babel_region_grid columns=\'4\' rows=\'2\']', 'btn-copy-region')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                            <div class="babel-guide-params">
+                                <span><strong>Parámetros opcionales:</strong></span>
+                                <ul>
+                                    <li><code>columns="X"</code>: Cantidad de columnas en escritorio (ej. 3, 4).</li>
+                                    <li><code>rows="Y"</code>: Cantidad de filas a mostrar (limita los resultados a X * Y).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 3: Formulario de Búsqueda AJAX -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Buscador Inteligente AJAX', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Barra de búsqueda única y moderna con geolocalización por GPS integrada para buscar negocios, categorías y comunas.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[babel_search_form]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-search" onclick="babelCopyShortcode('[babel_search_form]', 'btn-copy-search')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 4: Contenedor de Resultados -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Contenedor de Resultados AJAX', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Sección dinámica donde se cargan los resultados de búsqueda AJAX utilizando el maquetado de la biblioteca Divi.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[babel_results]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-results" onclick="babelCopyShortcode('[babel_results]', 'btn-copy-results')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 5: Barra de Filtros AJAX -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Barra de Filtros AJAX', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Barra horizontal de filtros (Buscador, Categoría, Región/Comuna, Radar Cerca de Mí) que actúa sobre el listado de resultados.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[bd_filter_bar]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-filter-bar" onclick="babelCopyShortcode('[bd_filter_bar]', 'btn-copy-filter-bar')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 6: Loop de Resultados de Archivo -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Loop de Resultados de Archivo (Divi Theme Builder)', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Muestra dinámicamente los negocios y la paginación correspondientes a la Región o Categoría actual. Diseñado para integrarse en plantillas del Generador de Temas de Divi.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[bd_archive_loop]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-archive-loop" onclick="babelCopyShortcode('[bd_archive_loop]', 'btn-copy-archive-loop')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                            <div class="babel-guide-params" style="margin-top: 10px;">
+                                <span><strong>Ejemplo de aplicación (en Divi):</strong></span>
+                                <div style="background: #e2e8f0; color: #0f172a; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-top: 5px; line-height: 1.4;">
+                                    [bd_filter_bar]<br>[bd_archive_loop]
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 7: Footer Regiones -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Footer Regiones / Comunas', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Muestra un listado de las regiones principales ordenadas alfabéticamente (removiendo automáticamente prefijos romanos como "XV - REG -"). Ideal para el pie de página.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[bd_footer_regions columns="2" rows="8"]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-footer-regions" onclick="babelCopyShortcode('[bd_footer_regions columns=\'2\' rows=\'8\']', 'btn-copy-footer-regions')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                            <div class="babel-guide-params">
+                                <span><strong>Parámetros opcionales:</strong></span>
+                                <ul>
+                                    <li><code>columns</code>: Número de columnas (Por defecto: <code>2</code>)</li>
+                                    <li><code>rows</code>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
+                                    <li><code>orderby</code>: Ordenar por (<code>name</code>, <code>count</code>, <code>id</code>. Por defecto: <code>name</code>)</li>
+                                    <li><code>order</code>: Dirección (<code>ASC</code> o <code>DESC</code>. Por defecto: <code>ASC</code>)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcode 8: Footer Categorías -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Footer Categorías de Negocio', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Muestra un listado ordenado de las categorías principales para el pie de página.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[bd_footer_categories columns="3" rows="8"]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-footer-cats" onclick="babelCopyShortcode('[bd_footer_categories columns=\'3\' rows=\'8\']', 'btn-copy-footer-cats')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                            <div class="babel-guide-params">
+                                <span><strong>Parámetros opcionales:</strong></span>
+                                <ul>
+                                    <li><code>columns</code>: Número de columnas (Por defecto: <code>3</code>)</li>
+                                    <li><code>rows</code>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
+                                    <li><code>parent</code>: ID de categoría padre (<code>0</code> para principales, o <code>any</code>. Por defecto: <code>0</code>)</li>
+                                    <li><code>orderby</code>: Ordenar por (<code>name</code>, <code>count</code>. Por defecto: <code>name</code>)</li>
+                                    <li><code>order</code>: Dirección (<code>ASC</code> o <code>DESC</code>. Por defecto: <code>ASC</code>)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function babelCopyShortcode(text, buttonId) {
+                navigator.clipboard.writeText(text).then(function() {
+                    var btn = document.getElementById(buttonId);
+                    var originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<span class="dashicons dashicons-yes"></span> Copiado';
+                    btn.classList.add('copied');
+                    setTimeout(function() {
+                        btn.innerHTML = originalHtml;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }).catch(function(err) {
+                    console.error('Error al copiar: ', err);
+                });
+            }
+        </script>
+
+        <style>
+            .babel-shortcode-guide-panel {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+                max-width: 1000px;
+            }
+            .babel-guide-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 20px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 4px 0 !important;
+            }
+            .babel-guide-title .dashicons {
+                font-size: 24px;
+                width: 24px;
+                height: 24px;
+                color: #10b981;
+            }
+            .babel-guide-subtitle {
+                font-size: 14px;
+                color: #64748b;
+                margin: 0 0 24px 0 !important;
+            }
+            .babel-guide-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+                gap: 20px;
+            }
+            @media (max-width: 600px) {
+                .babel-guide-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .babel-guide-card {
+                background: #f8fafc;
+                border: 1px solid #f1f5f9;
+                border-radius: 8px;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .babel-guide-card-header h3 {
+                font-size: 15px;
+                font-weight: 600;
+                color: #334155;
+                margin: 0 0 10px 0 !important;
+            }
+            .babel-guide-card-body p {
+                font-size: 13px;
+                color: #64748b;
+                margin: 0 0 15px 0 !important;
+                line-height: 1.5;
+            }
+            .babel-copy-box {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #0f172a;
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid #1e293b;
+                margin-top: 10px;
+            }
+            .babel-copy-box code {
+                color: #38bdf8;
+                font-family: monospace;
+                font-size: 12px;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+            .babel-copy-btn {
+                background: #3b82f6;
+                color: #ffffff;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 11px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                transition: background 0.2s ease;
+            }
+            .babel-copy-btn:hover {
+                background: #2563eb;
+            }
+            .babel-copy-btn.copied {
+                background: #10b981 !important;
+            }
+            .babel-copy-btn .dashicons {
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+            }
+            .babel-guide-params {
+                margin-top: 10px;
+                font-size: 12px;
+                color: #64748b;
+            }
+            .babel-guide-params ul {
+                margin: 5px 0 0 0 !important;
+                padding-left: 15px !important;
+                list-style-type: disc !important;
+            }
+            .babel-guide-params li {
+                margin-bottom: 4px !important;
+            }
+            .babel-guide-params code {
+                background: #e2e8f0;
+                color: #0f172a;
+                padding: 1px 4px;
+                border-radius: 3px;
+                font-size: 11px;
+            }
+        </style>
+        <?php
+    }
 
     /**
      * Corrige el resaltado del menú lateral para que Panel Babel permanezca activo
-     * al navegar por el listado, creación o taxonomías de negocios.
+     * al navegar por el listado, creación, taxonomías de negocios o guía de shortcodes.
      *
      * @param string $parent_file El archivo padre actual.
      * @return string El archivo padre filtrado.
      */
     public function fix_menu_highlighting( $parent_file ) {
-        global $current_screen;
+        global $current_screen, $plugin_page;
         
-        // Si estamos en cualquier pantalla del CPT 'babel_business' o sus taxonomías asociadas
-        if ( isset( $current_screen->post_type ) && 'babel_business' === $current_screen->post_type ) {
+        // Si estamos en cualquier pantalla del CPT 'babel_business', sus taxonomías asociadas o la guía de shortcodes
+        if ( ( isset( $current_screen->post_type ) && 'babel_business' === $current_screen->post_type ) ||
+             ( isset( $plugin_page ) && 'bd-shortcode-guide' === $plugin_page ) ) {
             return 'bd-panel';
         }
         

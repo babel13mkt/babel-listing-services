@@ -342,6 +342,63 @@ class BD_Dashboard {
                 </div>
             </div>
 
+            <div class="bd-card" style="margin-bottom:24px;">
+                <h2 style="font-size:18px; font-weight:700; margin-top:0;">📂 Listados para Footer (Regiones y Categorías)</h2>
+                <p style="color:var(--bda-text-soft);">Shortcodes independientes y optimizados para el pie de página, formateados en columnas mediante CSS nativo.</p>
+                
+                <h3 style="font-size:15px; font-weight:700; margin:16px 0 8px; color:var(--bda-text);">1. Footer Regiones: <code>[bd_footer_regions]</code></h3>
+                <p style="color:var(--bda-text-soft);">Muestra un listado de las regiones principales ordenadas alfabéticamente (removiendo automáticamente prefijos romanos como "XV - REG -").</p>
+                <h4 style="margin:8px 0 4px; font-size:13px;">Atributos soportados:</h4>
+                <ul style="list-style-type:disc; padding-left:20px; color:var(--bda-text-soft); margin-bottom:12px;">
+                    <li><strong>columns</strong>: Número de columnas (Por defecto: <code>2</code>)</li>
+                    <li><strong>rows</strong>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
+                    <li><strong>orderby</strong>: Campo de ordenación (Por defecto: <code>name</code>)</li>
+                    <li><strong>order</strong>: Dirección (<code>ASC</code> o <code>DESC</code>, Por defecto: <code>ASC</code>)</li>
+                </ul>
+                <div style="margin-bottom:16px;">
+                    <strong>Ejemplo de uso:</strong>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:6px; font-family:monospace; color:#1e293b; font-weight:600; display:block; border:1px solid #cbd5e1; margin-top:4px;">
+                        [bd_footer_regions columns="2" rows="8"]
+                    </div>
+                </div>
+
+                <h3 style="font-size:15px; font-weight:700; margin:16px 0 8px; color:var(--bda-text);">2. Footer Categorías: <code>[bd_footer_categories]</code></h3>
+                <p style="color:var(--bda-text-soft);">Muestra un listado de las categorías principales.</p>
+                <h4 style="margin:8px 0 4px; font-size:13px;">Atributos soportados:</h4>
+                <ul style="list-style-type:disc; padding-left:20px; color:var(--bda-text-soft); margin-bottom:12px;">
+                    <li><strong>columns</strong>: Número de columnas (Por defecto: <code>3</code>)</li>
+                    <li><strong>rows</strong>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
+                    <li><strong>parent</strong>: ID de la categoría padre. Usar <code>0</code> para principales, o <code>any</code> para todas. (Por defecto: <code>0</code>)</li>
+                    <li><strong>orderby</strong>: Campo de ordenación (Por defecto: <code>name</code>)</li>
+                    <li><strong>order</strong>: Dirección (<code>ASC</code> o <code>DESC</code>, Por defecto: <code>ASC</code>)</li>
+                </ul>
+                <div>
+                    <strong>Ejemplo de uso:</strong>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:6px; font-family:monospace; color:#1e293b; font-weight:600; display:block; border:1px solid #cbd5e1; margin-top:4px;">
+                        [bd_footer_categories columns="3" rows="8"]
+                    </div>
+                </div>
+            </div>
+
+            <div class="bd-card" style="margin-bottom:24px;">
+                <h2 style="font-size:18px; font-weight:700; margin-top:0;">🔄 Loop de Resultados de Archivo (Divi Theme Builder)</h2>
+                <p style="color:var(--bda-text-soft);">Muestra de forma dinámica los negocios y la paginación correspondientes a la Región o Categoría actual cuando el usuario navega por el directorio. Diseñado para integrarse en las plantillas del <strong>Generador de Temas de Divi (Theme Builder)</strong>.</p>
+                <div style="margin-bottom:16px;">
+                    <strong>Ejemplo de aplicación (en plantilla de Divi):</strong>
+                    <div style="background:#f8fafc; padding:12px; border-radius:6px; font-family:monospace; color:#0f172a; font-size:13px; line-height:1.5; border:1px solid #e2e8f0; margin-top:4px;">
+                        &lt;!-- Colocar primero el buscador y luego el listado de resultados --&gt;<br>
+                        [bd_filter_bar]<br>
+                        [bd_archive_loop]
+                    </div>
+                </div>
+                <div>
+                    <strong>Shortcode:</strong>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:6px; font-family:monospace; color:#1e293b; font-weight:600; display:inline-block; border:1px solid #cbd5e1; margin-top:4px;">
+                        [bd_archive_loop]
+                    </div>
+                </div>
+            </div>
+
         </div>
         <?php
     }

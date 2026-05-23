@@ -39,18 +39,20 @@ class Babel_Directory_Assets {
         );
 
         // Registrar el script de control público (Vanilla JS / Modern React-friendly)
-        wp_register_script(
-            'babel-public-js',
-            BD_URL . 'assets/js/babel-public.js',
-            array(),
-            BD_VERSION,
-            true // Cargar en el footer de forma asíncrona
+        wp_register_script( 
+            'babel-public-js', 
+            BD_URL . 'assets/js/babel-public.js', 
+            array(), 
+            BD_VERSION, 
+            true 
         );
 
         // Pasar variables de forma segura desde el backend a JavaScript
         wp_localize_script( 'babel-public-js', 'babel_vars', array(
-            'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'babel_search_nonce' ),
+            'ajax_url'         => admin_url( 'admin-ajax.php' ),
+            'nonce'            => wp_create_nonce( 'babel_search_nonce' ),
+            'submission_nonce' => wp_create_nonce( 'babel_submission_nonce' ),
+            'ajaxUrl'          => admin_url( 'admin-ajax.php' ), // alias para form-submission.js
         ) );
     }
 
@@ -60,80 +62,49 @@ class Babel_Directory_Assets {
      *
      * @return string HTML renderizado del formulario.
      */
-    public function render_search_form() {
+    public function render_search_form( $atts ) {
+        $atts = shortcode_atts( array(
+            'action' => home_url( '/buscar/' ),
+        ), $atts, 'babel_search_form' );
+
         // Encolar los assets en caliente solo si este shortcode es renderizado
         wp_enqueue_style( 'babel-public-css' );
         wp_enqueue_script( 'babel-public-js' );
 
         ob_start();
         ?>
-        <form id="babel-search-form" class="babel-search-form-wrapper" method="post" action="">
+        <form id="babel-search-form" class="babel-search-form-wrapper" method="get" action="<?php echo esc_url( $atts['action'] ); ?>">
             
-            <!-- Campo de Texto para Búsqueda Libre -->
+            <!-- Campo de Texto para Búsqueda Única e Inteligente -->
             <div class="babel-search-field babel-search-keyword-wrapper">
-                <label for="babel-search-keyword" class="screen-reader-text"><?php esc_html_e( 'Búsqueda libre', 'babel-directory' ); ?></label>
-                <input 
-                    type="text" 
-                    name="keyword" 
-                    id="babel-search-keyword" 
-                    placeholder="<?php esc_attr_e( '¿Qué estás buscando? (ej. Restaurante, Abogado)', 'babel-directory' ); ?>" 
-                    value="" 
-                />
+                <label for="babel-search-keyword" class="screen-reader-text"><?php esc_html_e( 'Búsqueda inteligente', 'babel-directory' ); ?></label>
+                <div class="babel-input-icon-wrapper">
+                    <svg class="babel-input-icon" viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    <input 
+                        type="text" 
+                        name="keyword" 
+                        id="babel-search-keyword" 
+                        placeholder="<?php esc_attr_e( '¿Qué buscas y dónde? (ej. Sushi, Abogado, Providencia...)', 'babel-directory' ); ?>" 
+                        value="" 
+                    />
+                </div>
             </div>
 
-            <!-- Selector de Categorías Dinámico (Jerárquico) -->
-            <div class="babel-search-field babel-search-category-wrapper">
-                <label for="babel-search-category" class="screen-reader-text"><?php esc_html_e( 'Categoría', 'babel-directory' ); ?></label>
-                <select name="category" id="babel-search-category">
-                    <option value=""><?php esc_html_e( 'Todas las Categorías', 'babel-directory' ); ?></option>
-                    <?php
-                    // Helper recursivo para renderizar opciones jerárquicas con escape de seguridad
-                    $render_hierarchy = function( $parent_id, $taxonomy, $depth = 0 ) use ( &$render_hierarchy ) {
-                        $terms = get_terms( array(
-                            'taxonomy'   => $taxonomy,
-                            'parent'     => $parent_id,
-                            'hide_empty' => false,
-                            'hierarchy'  => true,
-                        ) );
-
-                        if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
-                            foreach ( $terms as $term ) {
-                                $slug  = esc_attr( $term->slug );
-                                $class = ( $depth === 0 ) ? 'babel-opt-parent' : 'babel-opt-child';
-                                
-                                // Generar sangría visual (2 espacios duros &nbsp; por nivel de profundidad)
-                                $indent = str_repeat( '&nbsp;&nbsp;', $depth );
-                                
-                                $name = $term->name;
-                                if ( $taxonomy === 'babel_region' ) {
-                                    $name = $this->format_term_name( $name );
-                                }
-                                $name = esc_html( $name );
-
-                                echo '<option value="' . $slug . '" class="' . $class . '">' . $indent . $name . '</option>';
-
-                                // Llamada recursiva para obtener los términos hijos directos de este término
-                                $render_hierarchy( $term->term_id, $taxonomy, $depth + 1 );
-                            }
-                        }
-                    };
-
-                    // Renderizar jerarquía de categorías
-                    $render_hierarchy( 0, 'babel_category' );
-                    ?>
-                </select>
-            </div>
-
-            <!-- Selector de Regiones/Comunas Dinámico (Jerárquico) -->
-            <div class="babel-search-field babel-search-region-wrapper">
-                <label for="babel-search-region" class="screen-reader-text"><?php esc_html_e( 'Región / Comuna', 'babel-directory' ); ?></label>
-                <select name="region" id="babel-search-region">
-                    <option value=""><?php esc_html_e( 'Todo Chile', 'babel-directory' ); ?></option>
-                    <?php
-                    // Renderizar jerarquía de regiones
-                    $render_hierarchy( 0, 'babel_region' );
-                    ?>
-                </select>
+            <!-- Radar GPS de Proximidad Integrado de Forma Discreta -->
+            <div class="babel-search-field babel-search-radar-wrapper" style="flex: 0 0 auto; min-width: auto; max-width: 60px;">
+                <div class="babel-radar-control-group">
+                    <button type="button" id="babel-geo-btn" class="babel-radar-btn" title="<?php esc_attr_e( 'Buscar cerca de mí (GPS)', 'babel-directory' ); ?>">
+                        <svg class="radar-svg" viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.54-7.49-7.49H9c.46 2.28 2.22 4.04 4.5 4.5v2.99zm1-2.99c2.28-.46 4.04-2.22 4.5-4.5h3.43c-.49 3.95-3.54 7-7.49 7.49v-2.99zm5.93-8.94H17.5c-.46-2.28-2.22-4.04-4.5-4.5V2.07c3.95.49 7 3.54 7.49 7.49zM11 2.07v2.99C8.72 5.52 6.96 7.28 6.5 9.56H3.07c.49-3.95 3.54-7 7.49-7.49z"/>
+                        </svg>
+                        <span class="radar-ripple"></span>
+                    </button>
+                </div>
+                <input type="hidden" id="babel-search-lat" name="lat" value="" />
+                <input type="hidden" id="babel-search-lng" name="lng" value="" />
+                <input type="hidden" id="babel-search-radius" name="radius" value="25" />
             </div>
 
             <!-- Botón de Envío -->
@@ -161,18 +132,4 @@ class Babel_Directory_Assets {
         return '<div id="babel-directory-results" class="babel-results-container"></div>';
     }
 
-    /**
-     * Helper para formatear nombres de términos que contienen prefijos romanos (ej: REG-X).
-     *
-     * @param string $name Nombre original del término.
-     * @return string Nombre formateado de forma amigable.
-     */
-    private function format_term_name( $name ) {
-        if ( strpos( $name, 'REG-' ) === 0 ) {
-            if ( preg_match( '/^REG-([IVXLCDM]+)\s+(.*)$/', $name, $matches ) ) {
-                return $matches[1] . ' REG - ' . $matches[2];
-            }
-        }
-        return $name;
-    }
 }
