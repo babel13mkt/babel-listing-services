@@ -248,17 +248,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Evitar envío tradicional del formulario solo si estamos en la página de resultados
         searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             if (resultsContainer) {
-                e.preventDefault();
                 debouncedSearch.cancel();
                 performSearch(1);
             } else {
-                // Si no hay contenedor de resultados, desactivamos parámetros vacíos del radar para evitar canonical loops en WordPress
-                if (latInput && lngInput && radiusInput && (!latInput.value || !lngInput.value)) {
-                    latInput.disabled = true;
-                    lngInput.disabled = true;
-                    radiusInput.disabled = true;
-                }
+                // Portada u otra página sin contenedor: redirigir a /buscar/?keyword=...
+                const kw = keywordInput ? keywordInput.value.trim() : '';
+                const url = new URL('/buscar/', window.location.origin);
+                if (kw) url.searchParams.set('keyword', kw);
+                window.location.href = url.toString();
             }
         });
     }
