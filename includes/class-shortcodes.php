@@ -25,7 +25,7 @@ class Shortcodes {
         ob_start();
         ?>
         <div class="babel-search-section">
-            <form id="babel-search-form" class="babel-search-form-wrapper" autocomplete="off">
+            <form id="babel-search-form" class="babel-search-form-wrapper" action="/buscar/" method="GET" autocomplete="off">
                 <!-- Entrada de Búsqueda por Palabra Clave -->
                 <div class="babel-search-field">
                     <div class="babel-input-icon-wrapper">
