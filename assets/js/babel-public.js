@@ -86,9 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const keywordInputEl = searchForm ? searchForm.querySelector('#babel-search-keyword') : null;
         const keyword = keywordInputEl ? keywordInputEl.value : '';
         
-        // Categorías y Regiones ahora son procesadas de forma inteligente a través de la keyword
-        const category = '';
-        const region = '';
+        // Categorías y Regiones obtenidas dinámicamente desde el contenedor de resultados
+        const category = resultsContainer.getAttribute('data-category') || '';
+        const region = resultsContainer.getAttribute('data-region') || '';
         
         // Parámetros de geolocalización (Radar)
         const lat = searchForm ? searchForm.querySelector('#babel-search-lat').value : '';
@@ -306,6 +306,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Interacción de Click en Pills de Categorías (Región Template)
+    const categoryPills = document.querySelectorAll('.bd-category-pill');
+    if (categoryPills.length > 0 && resultsContainer) {
+        categoryPills.forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Desactivar todos los pills
+                categoryPills.forEach(p => p.classList.remove('active'));
+                
+                // Activar el seleccionado
+                pill.classList.add('active');
+                
+                // Obtener categoría y asignarla al contenedor
+                const selectedCat = pill.getAttribute('data-category') || '';
+                resultsContainer.setAttribute('data-category', selectedCat);
+                
+                // Disparar búsqueda AJAX
+                performSearch(1);
+            });
+        });
+    }
+
     // Exponer la función reset de filtros de forma global
     window.babelResetFilters = function() {
         if (searchForm) {
@@ -322,6 +345,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (latInput) latInput.value = '';
             if (lngInput) lngInput.value = '';
             if (geoBtn) geoBtn.classList.remove('active');
+
+            // Restablecer pills de categorías si existen
+            const categoryPillsList = document.querySelectorAll('.bd-category-pill');
+            if (categoryPillsList.length > 0) {
+                categoryPillsList.forEach(p => p.classList.remove('active'));
+                const allPill = document.querySelector('.bd-category-pill[data-category=""]');
+                if (allPill) allPill.classList.add('active');
+            }
+            if (resultsContainer) {
+                resultsContainer.setAttribute('data-category', '');
+            }
 
             performSearch(1);
         }

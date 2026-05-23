@@ -17,6 +17,7 @@ class Shortcodes {
         add_shortcode( 'bd_footer_regions', array( $this, 'render_footer_regions' ) );
         add_shortcode( 'bd_footer_categories', array( $this, 'render_footer_categories' ) );
         add_shortcode( 'bd_archive_loop', array( $this, 'render_archive_loop' ) );
+        add_shortcode( 'bd_region_template', array( $this, 'render_region_template' ) );
     }
 
     public function render_radar_search( $atts ) {
@@ -364,6 +365,174 @@ class Shortcodes {
                 'next_text' => '<i class="material-symbols-outlined">chevron_right</i>',
             ) );
             ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_region_template] para renderizar la página de región interactiva completa.
+     */
+    public function render_region_template( $atts ) {
+        wp_enqueue_style( 'babel-public-css' );
+        wp_enqueue_script( 'babel-public-js' );
+
+        $atts = shortcode_atts( array(
+            'region' => 'auto',
+        ), $atts, 'bd_region_template' );
+
+        $term = null;
+        if ( 'auto' === $atts['region'] ) {
+            $term = get_queried_object();
+        } else {
+            $term = get_term_by( 'slug', $atts['region'], 'babel_region' );
+        }
+
+        if ( ! $term || \is_wp_error( $term ) || ! is_a( $term, 'WP_Term' ) || 'babel_region' !== $term->taxonomy ) {
+            // Fallback para cuando no estamos en una página de taxonomía (ej. previsualización en página normal)
+            $terms = get_terms( array(
+                'taxonomy'   => 'babel_region',
+                'number'     => 1,
+                'hide_empty' => false,
+            ) );
+            if ( ! \is_wp_error( $terms ) && ! empty( $terms ) ) {
+                $term = $terms[0];
+            }
+        }
+
+        if ( ! $term ) {
+            return '<p>' . esc_html__( 'Región no encontrada.', 'babel-directory' ) . '</p>';
+        }
+
+        // Limpiar el nombre
+        $full_name = $term->name;
+        $clean_name = preg_replace('/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $full_name);
+        preg_match('/^([IVX]+)/i', $full_name, $matches);
+        $eyebrow = ! empty( $matches[1] ) ? sprintf( __( 'Región %s', 'babel-directory' ), $matches[1] ) : __( 'Región de Chile', 'babel-directory' );
+
+        // Obtener la imagen
+        $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
+        $image_url = '';
+        if ( $image_id ) {
+            $image_url = wp_get_attachment_image_url( $image_id, 'large' );
+        } else {
+            $image_url = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"><rect width="1200" height="400" fill="%23023047"/></svg>';
+        }
+
+        // Conteo de negocios
+        $child_ids = get_term_children( $term->term_id, 'babel_region' );
+        $term_ids = array( $term->term_id );
+        if ( ! \is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
+            $term_ids = array_merge( $term_ids, $child_ids );
+        }
+        $business_query = new \WP_Query( array(
+            'post_type'      => 'babel_business',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'no_found_rows'  => false,
+            'tax_query'      => array(
+                array(
+                    'taxonomy' => 'babel_region',
+                    'field'    => 'term_id',
+                    'terms'    => $term_ids,
+                    'operator' => 'IN',
+                ),
+            ),
+        ) );
+        $business_count = $business_query->found_posts;
+
+        // Obtener categorías de nivel superior
+        $categories = get_terms( array(
+            'taxonomy'   => 'babel_category',
+            'parent'     => 0,
+            'hide_empty' => false,
+        ) );
+
+        // Emojis de fallback para categorías principales
+        $cat_emojis = array(
+            'restaurantes'  => '🍔',
+            'comida'        => '🍔',
+            'alojamiento'   => '🏨',
+            'hoteles'       => '🏨',
+            'turismo'       => '🗺️',
+            'servicios'     => '💼',
+            'compras'       => '🛍️',
+            'tiendas'       => '🛍️',
+            'salud'         => '🏥',
+            'educación'     => '🎓',
+            'entretenimiento'=> '🎉',
+            'barberias'     => '💈',
+            'barbería'      => '💈',
+        );
+
+        ob_start();
+        ?>
+        <div class="bd-region-container">
+            <!-- Hero Section -->
+            <div class="bd-region-hero">
+                <div class="bd-region-hero-bg" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
+                <div class="bd-region-hero-overlay"></div>
+                <div class="bd-region-hero-content">
+                    <span class="bd-region-hero-eyebrow"><?php echo esc_html( $eyebrow ); ?></span>
+                    <h1 class="bd-region-hero-title"><?php echo esc_html( $clean_name ); ?></h1>
+                    <p class="bd-region-hero-count">
+                        <?php 
+                        printf( 
+                            _n( '<strong>%d</strong> negocio registrado', '<strong>%d</strong> negocios registrados', $business_count, 'babel-directory' ), 
+                            $business_count 
+                        ); 
+                        ?>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Categories Pills Section -->
+            <div class="bd-region-cats-section">
+                <div class="bd-region-cats-label"><?php esc_html_e( 'Filtrar por Categoría', 'babel-directory' ); ?></div>
+                <div class="bd-category-pills">
+                    <a class="bd-category-pill active" data-category="">
+                        <span class="bd-category-pill-icon">🌟</span>
+                        <span class="bd-category-pill-name"><?php esc_html_e( 'Todos', 'babel-directory' ); ?></span>
+                    </a>
+                    <?php if ( ! \is_wp_error( $categories ) && ! empty( $categories ) ) : ?>
+                        <?php foreach ( $categories as $cat ) : 
+                            $emoji = '🏷️';
+                            $slug_lower = strtolower( $cat->slug );
+                            foreach ( $cat_emojis as $key => $emo ) {
+                                if ( false !== strpos( $slug_lower, $key ) ) {
+                                    $emoji = $emo;
+                                    break;
+                                }
+                            }
+                        ?>
+                            <a class="bd-category-pill" data-category="<?php echo esc_attr( $cat->slug ); ?>">
+                                <span class="bd-category-pill-icon"><?php echo esc_html( $emoji ); ?></span>
+                                <span class="bd-category-pill-name"><?php echo esc_html( $cat->name ); ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Results Header Section -->
+            <div class="bd-region-results-header">
+                <h2 class="bd-region-results-title">
+                    <?php 
+                    printf( 
+                        esc_html__( 'Todos los negocios en %s', 'babel-directory' ), 
+                        esc_html( $clean_name ) 
+                    ); 
+                    ?>
+                </h2>
+            </div>
+
+            <!-- Results Wrap -->
+            <div class="bd-region-results-wrap">
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $term->slug ); ?>" data-category="">
+                    <!-- Los resultados se cargan vía AJAX/REST al cargar la página -->
+                </div>
+            </div>
         </div>
         <?php
         return ob_get_clean();

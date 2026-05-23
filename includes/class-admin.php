@@ -408,6 +408,29 @@ class Admin {
                         </div>
                     </div>
 
+                    <!-- Shortcode 9: Plantilla Completa de Región (Hero + Pills + Loop) -->
+                    <div class="babel-guide-card">
+                        <div class="babel-guide-card-header">
+                            <h3><?php esc_html_e( 'Plantilla Completa de Región (Hero + Pills + Loop)', 'babel-directory' ); ?></h3>
+                        </div>
+                        <div class="babel-guide-card-body">
+                            <p><?php esc_html_e( 'Renderiza la plantilla de página de región completa e interactiva: Hero con imagen y contador, Pills de categorías horizontales, y grilla de negocios.', 'babel-directory' ); ?></p>
+                            <div class="babel-copy-box">
+                                <code>[bd_region_template]</code>
+                                <button type="button" class="babel-copy-btn" id="btn-copy-region-template" onclick="babelCopyShortcode('[bd_region_template]', 'btn-copy-region-template')">
+                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
+                                </button>
+                            </div>
+                            <div class="babel-guide-params" style="margin-top: 10px;">
+                                <span><strong>Parámetros opcionales:</strong></span>
+                                <ul>
+                                    <li><code>region="auto"</code>: Detecta la región automáticamente (por defecto).</li>
+                                    <li><code>region="slug-de-region"</code>: Fuerza una región específica (ej. <code>region="maule"</code>).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Shortcode 7: Footer Regiones -->
                     <div class="babel-guide-card">
                         <div class="babel-guide-card-header">

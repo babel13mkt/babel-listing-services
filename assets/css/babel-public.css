@@ -1579,3 +1579,192 @@
 .bd-contact-buttons .bd-btn-phone:hover {
     background-color: #333333;
 }
+
+/* ==========================================================================
+   REGION TEMPLATE — Hero + Category Pills + Results
+   Shortcode: [bd_region_template]
+   ========================================================================== */
+
+/* --- Hero de Región --- */
+.bd-region-hero {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.bd-region-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.04);
+    transition: transform 8s ease-out;
+}
+
+.bd-region-hero:hover .bd-region-hero-bg {
+    transform: scale(1.0);
+}
+
+.bd-region-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(2, 48, 71, 0.92) 0%,
+        rgba(2, 48, 71, 0.5) 50%,
+        rgba(0, 0, 0, 0.15) 100%
+    );
+}
+
+.bd-region-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 48px 40px 40px;
+    width: 100%;
+}
+
+.bd-region-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 10px;
+}
+
+.bd-region-hero-title {
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.1;
+    margin: 0 0 8px 0;
+    padding: 0;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.bd-region-hero-count {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-weight: 400;
+}
+
+.bd-region-hero-count strong {
+    color: #7dd3fc;
+    font-weight: 700;
+}
+
+/* --- Sección de Pills de Categorías --- */
+.bd-region-cats-section {
+    padding: 28px 40px 0;
+    background: #ffffff;
+}
+
+.bd-region-cats-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 14px;
+}
+
+.bd-category-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-snap-type: x mandatory;
+}
+
+.bd-category-pills::-webkit-scrollbar {
+    display: none;
+}
+
+.bd-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #374151;
+    background: #f3f4f6;
+    border: 1.5px solid transparent;
+    border-radius: 50px;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    scroll-snap-align: start;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.bd-category-pill:hover {
+    background: #e0f2fe;
+    border-color: #38bdf8;
+    color: #0369a1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+.bd-category-pill.active {
+    background: #023047;
+    border-color: #023047;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(2, 48, 71, 0.25);
+}
+
+.bd-category-pill-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* --- Encabezado de Resultados --- */
+.bd-region-results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 40px 20px;
+    background: #ffffff;
+}
+
+.bd-region-results-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Contenedor de resultados --- */
+.bd-region-results-wrap {
+    padding: 0 40px 60px;
+    background: #f9fafb;
+    min-height: 300px;
+}
+
+/* --- Responsive Mobile --- */
+@media (max-width: 767px) {
+    .bd-region-hero { min-height: 240px; }
+
+    .bd-region-hero-content,
+    .bd-region-cats-section,
+    .bd-region-results-header,
+    .bd-region-results-wrap {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .bd-region-hero-title { font-size: 28px; }
+}
+
