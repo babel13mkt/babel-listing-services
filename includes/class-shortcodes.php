@@ -35,7 +35,7 @@ class Shortcodes {
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                         </span>
-                        <input type="text" id="babel-search-keyword" placeholder="¿Qué buscas? (ej. sushi, completos, barberías...)" />
+                        <input type="text" id="babel-search-keyword" name="keyword" placeholder="¿Qué buscas? (ej. sushi, completos, barberías...)" />
                     </div>
                 </div>
 
@@ -53,9 +53,9 @@ class Shortcodes {
                             </svg>
                             <span class="radar-ripple"></span>
                         </button>
-                        <input type="hidden" id="babel-search-lat" value="" />
-                        <input type="hidden" id="babel-search-lng" value="" />
-                        <input type="hidden" id="babel-search-radius" value="25" />
+                        <input type="hidden" id="babel-search-lat" name="lat" value="" />
+                        <input type="hidden" id="babel-search-lng" name="lng" value="" />
+                        <input type="hidden" id="babel-search-radius" name="radius" value="25" />
                     </div>
                 </div>
 
