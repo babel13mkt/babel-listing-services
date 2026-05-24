@@ -187,6 +187,169 @@ class Metaboxes {
             $gallery_ids = explode( ',', $gallery );
             $gallery_ids = array_filter( array_map( 'intval', $gallery_ids ) );
         }
+
+        // --- Fase 2 - Recuperar nuevos valores guardados con fallback seguro a llaves anteriores ---
+        $rut = get_post_meta( $post->ID, '_babel_rut', true );
+        if ( empty( $rut ) ) {
+            $rut = get_post_meta( $post->ID, '_bd_rut', true );
+        }
+
+        $razon_social = get_post_meta( $post->ID, '_babel_razon_social', true );
+        if ( empty( $razon_social ) ) {
+            $razon_social = get_post_meta( $post->ID, '_bd_razon_social', true );
+        }
+
+        $nombre_comercial = get_post_meta( $post->ID, '_babel_nombre_comercial', true );
+        if ( empty( $nombre_comercial ) ) {
+            $nombre_comercial = get_post_meta( $post->ID, '_bd_nombre_comercial', true );
+        }
+
+        $giro = get_post_meta( $post->ID, '_babel_giro', true );
+        if ( empty( $giro ) ) {
+            $giro = get_post_meta( $post->ID, '_bd_giro', true );
+        }
+
+        $patente = get_post_meta( $post->ID, '_babel_patente', true );
+        if ( empty( $patente ) ) {
+            $patente = get_post_meta( $post->ID, '_bd_patente', true );
+        }
+
+        $rep_legal = get_post_meta( $post->ID, '_babel_rep_legal', true );
+        if ( empty( $rep_legal ) ) {
+            $rep_legal = get_post_meta( $post->ID, '_bd_rep_legal', true );
+        }
+
+        $founded_year = get_post_meta( $post->ID, '_babel_founded_year', true );
+        if ( empty( $founded_year ) ) {
+            $founded_year = get_post_meta( $post->ID, '_bd_founded_year', true );
+        }
+
+        $tiktok = get_post_meta( $post->ID, '_babel_tiktok', true );
+        if ( empty( $tiktok ) ) {
+            $tiktok = get_post_meta( $post->ID, '_bd_tiktok', true );
+        }
+
+        $youtube_channel = get_post_meta( $post->ID, '_babel_youtube_channel', true );
+        if ( empty( $youtube_channel ) ) {
+            $youtube_channel = get_post_meta( $post->ID, '_bd_youtube_channel', true );
+        }
+
+        $twitter = get_post_meta( $post->ID, '_babel_twitter', true );
+        if ( empty( $twitter ) ) {
+            $twitter = get_post_meta( $post->ID, '_bd_twitter', true );
+        }
+
+        $pinterest = get_post_meta( $post->ID, '_babel_pinterest', true );
+        if ( empty( $pinterest ) ) {
+            $pinterest = get_post_meta( $post->ID, '_bd_pinterest', true );
+        }
+
+        $youtube_url = get_post_meta( $post->ID, '_babel_youtube_url', true );
+        if ( empty( $youtube_url ) ) {
+            $youtube_url = get_post_meta( $post->ID, '_bd_youtube_url', true );
+        }
+
+        $youtube_url_2 = get_post_meta( $post->ID, '_babel_youtube_url_2', true );
+        if ( empty( $youtube_url_2 ) ) {
+            $youtube_url_2 = get_post_meta( $post->ID, '_bd_youtube_url_2', true );
+        }
+
+        $parking = get_post_meta( $post->ID, '_babel_parking', true );
+        if ( empty( $parking ) ) {
+            $parking = get_post_meta( $post->ID, '_bd_parking', true );
+        }
+
+        $pet_friendly = get_post_meta( $post->ID, '_babel_pet_friendly', true );
+        if ( empty( $pet_friendly ) ) {
+            $pet_friendly = get_post_meta( $post->ID, '_bd_pet_friendly', true );
+        }
+
+        $payments_meta = get_post_meta( $post->ID, '_babel_payments', true );
+        if ( empty( $payments_meta ) ) {
+            $payments_meta = get_post_meta( $post->ID, '_bd_payments', true );
+        }
+        $payments = json_decode( $payments_meta, true );
+        if ( ! is_array( $payments ) ) {
+            $payments = array();
+        }
+
+        $accessibility = get_post_meta( $post->ID, '_babel_accessibility', true );
+        if ( empty( $accessibility ) ) {
+            $accessibility = get_post_meta( $post->ID, '_bd_accessibility', true );
+        }
+
+        $wifi = get_post_meta( $post->ID, '_babel_wifi', true );
+        if ( empty( $wifi ) ) {
+            $wifi = get_post_meta( $post->ID, '_bd_wifi', true );
+        }
+
+        $reservations = get_post_meta( $post->ID, '_babel_reservations', true );
+        if ( empty( $reservations ) ) {
+            $reservations = get_post_meta( $post->ID, '_bd_reservations', true );
+        }
+
+        $delivery = get_post_meta( $post->ID, '_babel_delivery', true );
+        if ( empty( $delivery ) ) {
+            $delivery = get_post_meta( $post->ID, '_bd_delivery', true );
+        }
+
+        $price_range = get_post_meta( $post->ID, '_babel_price_range', true );
+        if ( empty( $price_range ) ) {
+            $price_range = get_post_meta( $post->ID, '_bd_price_range', true );
+        }
+
+        $spaces_meta = get_post_meta( $post->ID, '_babel_spaces', true );
+        if ( empty( $spaces_meta ) ) {
+            $spaces_meta = get_post_meta( $post->ID, '_bd_spaces', true );
+        }
+        $spaces = json_decode( $spaces_meta, true );
+        if ( ! is_array( $spaces ) ) {
+            $spaces = array();
+        }
+
+        $biz_type = get_post_meta( $post->ID, '_babel_biz_type', true );
+        if ( empty( $biz_type ) ) {
+            $biz_type = get_post_meta( $post->ID, '_bd_biz_type', true );
+        }
+
+        $languages_meta = get_post_meta( $post->ID, '_babel_languages', true );
+        if ( empty( $languages_meta ) ) {
+            $languages_meta = get_post_meta( $post->ID, '_bd_languages', true );
+        }
+        $languages = json_decode( $languages_meta, true );
+        if ( ! is_array( $languages ) ) {
+            $languages = array();
+        }
+
+        $employees = get_post_meta( $post->ID, '_babel_employees', true );
+        if ( empty( $employees ) ) {
+            $employees = get_post_meta( $post->ID, '_bd_employees', true );
+        }
+
+        $coverage_area = get_post_meta( $post->ID, '_babel_coverage_area', true );
+        if ( empty( $coverage_area ) ) {
+            $coverage_area = get_post_meta( $post->ID, '_bd_coverage_area', true );
+        }
+
+        $menu_url = get_post_meta( $post->ID, '_babel_menu_url', true );
+        if ( empty( $menu_url ) ) {
+            $menu_url = get_post_meta( $post->ID, '_bd_menu_url', true );
+        }
+
+        $booking_url = get_post_meta( $post->ID, '_babel_booking_url', true );
+        if ( empty( $booking_url ) ) {
+            $booking_url = get_post_meta( $post->ID, '_bd_booking_url', true );
+        }
+
+        $phone_alt = get_post_meta( $post->ID, '_babel_phone_alt', true );
+        if ( empty( $phone_alt ) ) {
+            $phone_alt = get_post_meta( $post->ID, '_bd_phone_alt', true );
+        }
+
+        $email_alt = get_post_meta( $post->ID, '_babel_email_alt', true );
+        if ( empty( $email_alt ) ) {
+            $email_alt = get_post_meta( $post->ID, '_bd_email_alt', true );
+        }
         ?>
         <style>
             /* 0. WordPress postbox transparentizer to eliminate double border clutter */
@@ -821,6 +984,29 @@ class Metaboxes {
                     grid-row: auto;
                 }
             }
+
+            /* Fase 2 Premium CSS */
+            .bd-section-title {
+                grid-column: span 12;
+                margin: 25px 0 10px 0;
+                padding-bottom: 8px;
+                border-bottom: 2px solid #cbd5e1;
+                color: #219ebc;
+                font-size: 15px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .bd-checkbox-group-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                background: #f8fafc;
+                border: 1px solid #cbd5e1;
+                padding: 12px 16px;
+                border-radius: 6px;
+            }
         </style>
 
         <div class="bd-metabox-wrapper">
@@ -830,6 +1016,7 @@ class Metaboxes {
                 <li class="bd-tab-link" data-tab="tab-contacto">📞 <?php esc_html_e( 'Contacto', 'babel-directory' ); ?></li>
                 <li class="bd-tab-link" data-tab="tab-redes">🌐 <?php esc_html_e( 'Redes y Estados', 'babel-directory' ); ?></li>
                 <li class="bd-tab-link" data-tab="tab-horarios">⏰ <?php esc_html_e( 'Horarios y Medios', 'babel-directory' ); ?></li>
+                <li class="bd-tab-link" data-tab="tab-legal">🇨🇱 <?php esc_html_e( 'Legal & Comercial', 'babel-directory' ); ?></li>
             </ul>
 
             <!-- PANELES DE CONTENIDO -->
@@ -896,6 +1083,228 @@ class Metaboxes {
                         <label for="_babel_biz_desc"><?php esc_html_e( 'Descripción del Negocio', 'babel-directory' ); ?></label>
                         <textarea id="_babel_biz_desc" name="_babel_biz_desc" rows="6" placeholder="<?php esc_attr_e( 'Describe los productos, servicios y valor agregado del negocio...', 'babel-directory' ); ?>"><?php echo esc_textarea( $biz_desc ); ?></textarea>
                         <p class="bd-field-desc"><?php esc_html_e( 'Información completa del comercio. Admite texto enriquecido básico.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Fila 6: Subsección de Amenities (span 12) -->
+                    <div class="bd-section-title bd-grid-span-12">
+                        <span>🌿 Atributos & Amenities del Negocio</span>
+                    </div>
+
+                    <!-- Tipo de Negocio -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_biz_type"><?php esc_html_e( 'Tipo de Negocio', 'babel-directory' ); ?></label>
+                        <select id="_babel_biz_type" name="babel_biz_type">
+                            <option value="physical" <?php selected( $biz_type, 'physical' ); ?>><?php esc_html_e( 'Local físico', 'babel-directory' ); ?></option>
+                            <option value="online" <?php selected( $biz_type, 'online' ); ?>><?php esc_html_e( 'Solo online', 'babel-directory' ); ?></option>
+                            <option value="hybrid" <?php selected( $biz_type, 'hybrid' ); ?>><?php esc_html_e( 'Híbrido', 'babel-directory' ); ?></option>
+                            <option value="mobile" <?php selected( $biz_type, 'mobile' ); ?>><?php esc_html_e( 'Itinerante/Móvil', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Área de Cobertura (solo visible si tipo es itinerante) -->
+                    <div class="bd-field-group bd-grid-span-4" id="bd-wrapper-coverage" style="display: none;">
+                        <label for="_babel_coverage_area"><?php esc_html_e( 'Área de Cobertura', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_coverage_area" name="babel_coverage_area" value="<?php echo esc_attr( $coverage_area ); ?>" placeholder="Ej: Región Metropolitana, Valparaíso" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Especifique zonas de servicio.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Rango de Precios -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_price_range"><?php esc_html_e( 'Rango de Precios', 'babel-directory' ); ?></label>
+                        <select id="_babel_price_range" name="babel_price_range">
+                            <option value="" <?php selected( $price_range, '' ); ?>>-- Seleccionar --</option>
+                            <option value="$" <?php selected( $price_range, '$' ); ?>><?php esc_html_e( '$ Económico', 'babel-directory' ); ?></option>
+                            <option value="$$" <?php selected( $price_range, '$$' ); ?>><?php esc_html_e( '$$ Moderado', 'babel-directory' ); ?></option>
+                            <option value="$$$" <?php selected( $price_range, '$$$' ); ?>><?php esc_html_e( '$$$ Premium', 'babel-directory' ); ?></option>
+                            <option value="$$$$" <?php selected( $price_range, '$$$$' ); ?>><?php esc_html_e( '$$$$ Lujo', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Estacionamiento -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_parking"><?php esc_html_e( 'Estacionamiento', 'babel-directory' ); ?></label>
+                        <select id="_babel_parking" name="babel_parking">
+                            <option value="" <?php selected( $parking, '' ); ?>>-- Seleccionar --</option>
+                            <option value="none" <?php selected( $parking, 'none' ); ?>><?php esc_html_e( 'Sin estacionamiento', 'babel-directory' ); ?></option>
+                            <option value="street" <?php selected( $parking, 'street' ); ?>><?php esc_html_e( 'En la calle', 'babel-directory' ); ?></option>
+                            <option value="private" <?php selected( $parking, 'private' ); ?>><?php esc_html_e( 'Privado', 'babel-directory' ); ?></option>
+                            <option value="valet" <?php selected( $parking, 'valet' ); ?>><?php esc_html_e( 'Valet Parking', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Mascotas Pet Friendly -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_pet_friendly"><?php esc_html_e( 'Mascotas / Pet Friendly', 'babel-directory' ); ?></label>
+                        <select id="_babel_pet_friendly" name="babel_pet_friendly">
+                            <option value="" <?php selected( $pet_friendly, '' ); ?>>-- Seleccionar --</option>
+                            <option value="no" <?php selected( $pet_friendly, 'no' ); ?>><?php esc_html_e( 'No permitido', 'babel-directory' ); ?></option>
+                            <option value="terrace_only" <?php selected( $pet_friendly, 'terrace_only' ); ?>><?php esc_html_e( 'Solo en terraza/exterior', 'babel-directory' ); ?></option>
+                            <option value="full_access" <?php selected( $pet_friendly, 'full_access' ); ?>><?php esc_html_e( 'Permitido en todo el local', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Accesibilidad Universal -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_accessibility"><?php esc_html_e( 'Accesibilidad Universal', 'babel-directory' ); ?></label>
+                        <select id="_babel_accessibility" name="babel_accessibility">
+                            <option value="" <?php selected( $accessibility, '' ); ?>>-- Seleccionar --</option>
+                            <option value="full" <?php selected( $accessibility, 'full' ); ?>><?php esc_html_e( 'Totalmente accesible', 'babel-directory' ); ?></option>
+                            <option value="partial" <?php selected( $accessibility, 'partial' ); ?>><?php esc_html_e( 'Parcialmente accesible', 'babel-directory' ); ?></option>
+                            <option value="none" <?php selected( $accessibility, 'none' ); ?>><?php esc_html_e( 'Sin accesibilidad', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Wi-Fi -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_wifi"><?php esc_html_e( 'Wi-Fi', 'babel-directory' ); ?></label>
+                        <select id="_babel_wifi" name="babel_wifi">
+                            <option value="" <?php selected( $wifi, '' ); ?>>-- Seleccionar --</option>
+                            <option value="free" <?php selected( $wifi, 'free' ); ?>><?php esc_html_e( 'Gratuito', 'babel-directory' ); ?></option>
+                            <option value="clients_only" <?php selected( $wifi, 'clients_only' ); ?>><?php esc_html_e( 'Solo para clientes', 'babel-directory' ); ?></option>
+                            <option value="none" <?php selected( $wifi, 'none' ); ?>><?php esc_html_e( 'No disponible', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Sistema de Reservas -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_reservations"><?php esc_html_e( 'Sistema de Reservas', 'babel-directory' ); ?></label>
+                        <select id="_babel_reservations" name="babel_reservations">
+                            <option value="" <?php selected( $reservations, '' ); ?>>-- Seleccionar --</option>
+                            <option value="required" <?php selected( $reservations, 'required' ); ?>><?php esc_html_e( 'Obligatoria', 'babel-directory' ); ?></option>
+                            <option value="recommended" <?php selected( $reservations, 'recommended' ); ?>><?php esc_html_e( 'Recomendada', 'babel-directory' ); ?></option>
+                            <option value="not_needed" <?php selected( $reservations, 'not_needed' ); ?>><?php esc_html_e( 'Sin reserva necesaria', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Delivery -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_delivery"><?php esc_html_e( 'Delivery / Despacho', 'babel-directory' ); ?></label>
+                        <select id="_babel_delivery" name="babel_delivery">
+                            <option value="" <?php selected( $delivery, '' ); ?>>-- Seleccionar --</option>
+                            <option value="own" <?php selected( $delivery, 'own' ); ?>><?php esc_html_e( 'Delivery propio', 'babel-directory' ); ?></option>
+                            <option value="third_party" <?php selected( $delivery, 'third_party' ); ?>><?php esc_html_e( 'Delivery terceros', 'babel-directory' ); ?></option>
+                            <option value="pickup_only" <?php selected( $delivery, 'pickup_only' ); ?>><?php esc_html_e( 'Solo retiro en local', 'babel-directory' ); ?></option>
+                            <option value="none" <?php selected( $delivery, 'none' ); ?>><?php esc_html_e( 'Sin delivery', 'babel-directory' ); ?></option>
+                        </select>
+                    </div>
+
+                    <!-- Número de empleados -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_employees"><?php esc_html_e( 'Número de Empleados', 'babel-directory' ); ?></label>
+                        <select id="_babel_employees" name="babel_employees">
+                            <option value="" <?php selected( $employees, '' ); ?>>-- Seleccionar --</option>
+                            <option value="1-5" <?php selected( $employees, '1-5' ); ?>>1-5</option>
+                            <option value="6-20" <?php selected( $employees, '6-20' ); ?>>6-20</option>
+                            <option value="21-50" <?php selected( $employees, '21-50' ); ?>>21-50</option>
+                            <option value="50+" <?php selected( $employees, '50+' ); ?>>+50</option>
+                        </select>
+                    </div>
+
+                    <!-- Teléfono Alternativo -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_phone_alt"><?php esc_html_e( 'Teléfono Alternativo', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_phone_alt" name="babel_phone_alt" value="<?php echo esc_attr( $phone_alt ); ?>" placeholder="Ej: +56 2 2345 6789" />
+                    </div>
+
+                    <!-- Email Alternativo -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_email_alt"><?php esc_html_e( 'Email Alternativo', 'babel-directory' ); ?></label>
+                        <input type="email" id="_babel_email_alt" name="babel_email_alt" value="<?php echo esc_attr( $email_alt ); ?>" placeholder="Ej: administracion@empresa.cl" />
+                    </div>
+
+                    <!-- URL Menú/Carta PDF -->
+                    <div class="bd-field-group bd-grid-span-6" id="bd-wrapper-menu" style="display: none;">
+                        <label for="_babel_menu_url"><?php esc_html_e( 'URL Menú / Carta PDF', 'babel-directory' ); ?></label>
+                        <input type="url" id="_babel_menu_url" name="babel_menu_url" value="<?php echo esc_url( $menu_url ); ?>" placeholder="Ej: https://empresa.cl/menu.pdf" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Visible para rubros gastronómicos.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- URL Reservas Online -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="_babel_booking_url"><?php esc_html_e( 'URL Reservas Online', 'babel-directory' ); ?></label>
+                        <input type="url" id="_babel_booking_url" name="babel_booking_url" value="<?php echo esc_url( $booking_url ); ?>" placeholder="Ej: https://booksy.com/..." />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Enlace a plataforma de reservas (Booksy, Acuity, etc.).', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Métodos de Pago -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label><?php esc_html_e( 'Métodos de Pago Aceptados', 'babel-directory' ); ?></label>
+                        <div class="bd-checkbox-group-container">
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="cash" <?php checked( in_array( 'cash', $payments ), true ); ?> />
+                                <span>💵 <?php esc_html_e( 'Efectivo', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="debit" <?php checked( in_array( 'debit', $payments ), true ); ?> />
+                                <span>💳 <?php esc_html_e( 'Débito', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="credit" <?php checked( in_array( 'credit', $payments ), true ); ?> />
+                                <span>💳 <?php esc_html_e( 'Crédito', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="transfer" <?php checked( in_array( 'transfer', $payments ), true ); ?> />
+                                <span>📲 <?php esc_html_e( 'Transferencia', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="webpay" <?php checked( in_array( 'webpay', $payments ), true ); ?> />
+                                <span>🌐 <?php esc_html_e( 'Webpay', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_payments[]" value="mercadopago" <?php checked( in_array( 'mercadopago', $payments ), true ); ?> />
+                                <span>⚡ <?php esc_html_e( 'MercadoPago', 'babel-directory' ); ?></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Espacios -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label><?php esc_html_e( 'Espacios / Instalaciones', 'babel-directory' ); ?></label>
+                        <div class="bd-checkbox-group-container">
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_spaces[]" value="terrace" <?php checked( in_array( 'terrace', $spaces ), true ); ?> />
+                                <span>🪑 <?php esc_html_e( 'Terraza exterior', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_spaces[]" value="air_conditioned" <?php checked( in_array( 'air_conditioned', $spaces ), true ); ?> />
+                                <span>❄️ <?php esc_html_e( 'Aire acondicionado', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_spaces[]" value="heating" <?php checked( in_array( 'heating', $spaces ), true ); ?> />
+                                <span>🔥 <?php esc_html_e( 'Calefacción', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_spaces[]" value="smoking_area" <?php checked( in_array( 'smoking_area', $spaces ), true ); ?> />
+                                <span>🚬 <?php esc_html_e( 'Área fumadores', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_spaces[]" value="private_room" <?php checked( in_array( 'private_room', $spaces ), true ); ?> />
+                                <span>🚪 <?php esc_html_e( 'Sala privada', 'babel-directory' ); ?></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Idiomas de Atención -->
+                    <div class="bd-field-group bd-grid-span-12">
+                        <label><?php esc_html_e( 'Idiomas de Atención', 'babel-directory' ); ?></label>
+                        <div class="bd-checkbox-group-container">
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_languages[]" value="es" <?php checked( in_array( 'es', $languages ), true ); ?> />
+                                <span>🇪🇸 <?php esc_html_e( 'Español', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_languages[]" value="en" <?php checked( in_array( 'en', $languages ), true ); ?> />
+                                <span>🇬🇧 <?php esc_html_e( 'Inglés', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_languages[]" value="pt" <?php checked( in_array( 'pt', $languages ), true ); ?> />
+                                <span>🇧🇷 <?php esc_html_e( 'Portugués', 'babel-directory' ); ?></span>
+                            </label>
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" name="babel_languages[]" value="other" <?php checked( in_array( 'other', $languages ), true ); ?> />
+                                <span>🗣️ <?php esc_html_e( 'Otro', 'babel-directory' ); ?></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -971,6 +1380,27 @@ class Metaboxes {
                     <div class="bd-field-group bd-grid-span-4">
                         <label for="babel_linkedin"><?php esc_html_e( 'LinkedIn', 'babel-directory' ); ?></label>
                         <input type="url" id="babel_linkedin" name="babel_linkedin" value="<?php echo esc_url( $linkedin ); ?>" placeholder="Ej: https://linkedin.com/company/empresa" />
+                    </div>
+
+                    <!-- Fila 1b: TikTok, YouTube Canal, Twitter/X, Pinterest (3 cols c/u) -->
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_tiktok"><?php esc_html_e( 'TikTok', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_tiktok" name="babel_tiktok" value="<?php echo esc_url( $tiktok ); ?>" placeholder="Ej: https://tiktok.com/@perfil" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_youtube_channel"><?php esc_html_e( 'YouTube Canal', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_youtube_channel" name="babel_youtube_channel" value="<?php echo esc_url( $youtube_channel ); ?>" placeholder="Ej: https://youtube.com/@canal" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_twitter"><?php esc_html_e( 'Twitter / X', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_twitter" name="babel_twitter" value="<?php echo esc_url( $twitter ); ?>" placeholder="Ej: https://x.com/perfil" />
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="babel_pinterest"><?php esc_html_e( 'Pinterest', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_pinterest" name="babel_pinterest" value="<?php echo esc_url( $pinterest ); ?>" placeholder="Ej: https://pinterest.com/perfil" />
                     </div>
 
                     <!-- Fila 2: Estados (12 cols) -->
@@ -1060,6 +1490,77 @@ class Metaboxes {
                         <button type="button" class="button bd-btn-primary" id="bd-add-gallery-btn" style="align-self: flex-start;">
                             📸 <?php esc_html_e( 'Añadir Fotos', 'babel-directory' ); ?>
                         </button>
+                    </div>
+
+                    <!-- Fila 3: Videos (6 cols c/u) -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="babel_youtube_url"><?php esc_html_e( 'URL Video YouTube Principal', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_youtube_url" name="babel_youtube_url" value="<?php echo esc_url( $youtube_url ); ?>" placeholder="Ej: https://www.youtube.com/watch?v=..." />
+                        <p class="bd-field-desc"><?php esc_html_e( 'El video se embeberá automáticamente en el perfil.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="babel_youtube_url_2"><?php esc_html_e( 'URL Video YouTube 2 (Opcional)', 'babel-directory' ); ?></label>
+                        <input type="url" id="babel_youtube_url_2" name="babel_youtube_url_2" value="<?php echo esc_url($youtube_url_2); ?>" placeholder="Ej: https://www.youtube.com/watch?v=..." />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Segundo video para la galería multimedia.', 'babel-directory' ); ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 5: LEGAL & COMERCIAL -->
+            <div id="tab-legal" class="bd-tab-panel">
+                <div class="bd-metabox-grid">
+                    <div class="bd-section-title bd-grid-span-12">
+                        <span>🇨🇱 Identidad Legal (Chile)</span>
+                    </div>
+
+                    <!-- RUT -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_rut"><?php esc_html_e( 'RUT de la Empresa', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_rut" name="babel_rut" value="<?php echo esc_attr( $rut ); ?>" placeholder="Ej: 76.123.456-K" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'RUT de la empresa (auto-formato).', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Razón Social -->
+                    <div class="bd-field-group bd-grid-span-8">
+                        <label for="_babel_razon_social"><?php esc_html_e( 'Razón Social', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_razon_social" name="babel_razon_social" value="<?php echo esc_attr( $razon_social ); ?>" placeholder="Ej: Comercializadora y Servicios Limitada" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Nombre legal registrado ante el SII.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Nombre Comercial -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="_babel_nombre_comercial"><?php esc_html_e( 'Nombre Comercial', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_nombre_comercial" name="babel_nombre_comercial" value="<?php echo esc_attr( $nombre_comercial ); ?>" placeholder="Ej: Cafetería Central" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Nombre de fantasía o marca comercial.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Giro Comercial -->
+                    <div class="bd-field-group bd-grid-span-6">
+                        <label for="_babel_giro"><?php esc_html_e( 'Giro Comercial SII', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_giro" name="babel_giro" value="<?php echo esc_attr( $giro ); ?>" placeholder="Ej: Venta de café y pastelería" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Actividad económica declarada.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Patente Municipal -->
+                    <div class="bd-field-group bd-grid-span-4">
+                        <label for="_babel_patente"><?php esc_html_e( 'Patente Municipal', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_patente" name="babel_patente" value="<?php echo esc_attr( $patente ); ?>" placeholder="Ej: 12345-A" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Número de patente municipal.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Representante Legal -->
+                    <div class="bd-field-group bd-grid-span-5">
+                        <label for="_babel_rep_legal"><?php esc_html_e( 'Representante Legal', 'babel-directory' ); ?></label>
+                        <input type="text" id="_babel_rep_legal" name="babel_rep_legal" value="<?php echo esc_attr( $rep_legal ); ?>" placeholder="Ej: Juan Pérez Muñoz" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Persona natural representante de la empresa.', 'babel-directory' ); ?></p>
+                    </div>
+
+                    <!-- Año de Fundación -->
+                    <div class="bd-field-group bd-grid-span-3">
+                        <label for="_babel_founded_year"><?php esc_html_e( 'Año de Fundación', 'babel-directory' ); ?></label>
+                        <input type="number" id="_babel_founded_year" name="babel_founded_year" min="1800" max="2100" value="<?php echo esc_attr( $founded_year ); ?>" placeholder="Ej: 2015" />
+                        <p class="bd-field-desc"><?php esc_html_e( 'Año de inicio (4 dígitos).', 'babel-directory' ); ?></p>
                     </div>
                 </div>
             </div>
@@ -1248,6 +1749,9 @@ class Metaboxes {
                         }
                     });
                     bdSyncChecklistHighlights();
+                    if (typeof toggleMenuVisibility === 'function') {
+                        toggleMenuVisibility();
+                    }
                 }
 
                 function bdAddCategory(id) {
@@ -1508,6 +2012,74 @@ class Metaboxes {
                         bdGeocode($('#babel_address').val().trim());
                     }
                 })();
+
+                // ===================================================
+                // AUTO-FORMATO RUT CHILE
+                // ===================================================
+                $('#_babel_rut').on('input', function() {
+                    var rut = $(this).val().replace(/[^0-9kK]/g, '');
+                    if (rut.length > 9) {
+                        rut = rut.substring(0, 9);
+                    }
+                    if (rut.length <= 1) {
+                        $(this).val(rut.toUpperCase());
+                        return;
+                    }
+                    var dv = rut.substring(rut.length - 1).toUpperCase();
+                    var cuerpo = rut.substring(0, rut.length - 1);
+                    
+                    var formatted = '';
+                    var i = cuerpo.length;
+                    while (i > 3) {
+                        formatted = '.' + cuerpo.substring(i - 3, i) + formatted;
+                        i -= 3;
+                    }
+                    formatted = cuerpo.substring(0, i) + formatted + '-' + dv;
+                    $(this).val(formatted);
+                });
+
+                // ===================================================
+                // VISIBILIDAD CONDICIONAL: ÁREA DE COBERTURA
+                // ===================================================
+                function toggleCoverageVisibility() {
+                    var bizType = $('#_babel_biz_type').val();
+                    if (bizType === 'mobile') {
+                        $('#bd-wrapper-coverage').slideDown(200);
+                    } else {
+                        $('#bd-wrapper-coverage').slideUp(200);
+                    }
+                }
+                $('#_babel_biz_type').on('change', toggleCoverageVisibility);
+                toggleCoverageVisibility();
+
+                // ===================================================
+                // VISIBILIDAD CONDICIONAL: MENÚ/CARTA PDF
+                // ===================================================
+                var gastroKeywords = ['restaurante', 'cafetería', 'cafeteria', 'gastronomía', 'gastronomia', 'comida', 'bar', 'pub', 'pastelería', 'pasteleria', 'heladería', 'heladeria', 'gourmet', 'fuente de soda', 'pizzería', 'pizzeria', 'shack'];
+                
+                function toggleMenuVisibility() {
+                    var isGastronomy = false;
+                    $('.bd-category-checklist input[type="checkbox"]:checked').each(function() {
+                        var labelText = $(this).closest('label').text().toLowerCase();
+                        gastroKeywords.forEach(function(keyword) {
+                            if (labelText.indexOf(keyword) !== -1) {
+                                isGastronomy = true;
+                            }
+                        });
+                    });
+                    
+                    if (isGastronomy) {
+                        $('#bd-wrapper-menu').slideDown(200);
+                    } else {
+                        $('#bd-wrapper-menu').slideUp(200);
+                    }
+                }
+                
+                $(document).on('change', '.bd-category-checklist input[type="checkbox"]', function() {
+                    toggleMenuVisibility();
+                });
+                
+                setTimeout(toggleMenuVisibility, 300);
             });
         </script>
         <?php
@@ -1680,6 +2252,233 @@ class Metaboxes {
             $raw_tags   = sanitize_text_field( wp_unslash( $_POST['babel_biz_tags'] ) );
             $tags_array = array_filter( array_map( 'sanitize_text_field', explode( ',', $raw_tags ) ) );
             update_post_meta( $post_id, '_babel_biz_tags', implode( ',', $tags_array ) );
+        }
+
+        // --- Fase 2 - Guardado y sanitización de nuevos campos ---
+
+        // RUT de la Empresa
+        if ( isset( $_POST['babel_rut'] ) ) {
+            $rut_val = sanitize_text_field( wp_unslash( $_POST['babel_rut'] ) );
+            update_post_meta( $post_id, '_babel_rut', $rut_val );
+            update_post_meta( $post_id, '_bd_rut', $rut_val );
+        }
+
+        // Razón Social
+        if ( isset( $_POST['babel_razon_social'] ) ) {
+            $razon_social_val = sanitize_text_field( wp_unslash( $_POST['babel_razon_social'] ) );
+            update_post_meta( $post_id, '_babel_razon_social', $razon_social_val );
+            update_post_meta( $post_id, '_bd_razon_social', $razon_social_val );
+        }
+
+        // Nombre Comercial
+        if ( isset( $_POST['babel_nombre_comercial'] ) ) {
+            $nombre_comercial_val = sanitize_text_field( wp_unslash( $_POST['babel_nombre_comercial'] ) );
+            update_post_meta( $post_id, '_babel_nombre_comercial', $nombre_comercial_val );
+            update_post_meta( $post_id, '_bd_nombre_comercial', $nombre_comercial_val );
+        }
+
+        // Giro Comercial SII
+        if ( isset( $_POST['babel_giro'] ) ) {
+            $giro_val = sanitize_text_field( wp_unslash( $_POST['babel_giro'] ) );
+            update_post_meta( $post_id, '_babel_giro', $giro_val );
+            update_post_meta( $post_id, '_bd_giro', $giro_val );
+        }
+
+        // Patente Municipal
+        if ( isset( $_POST['babel_patente'] ) ) {
+            $patente_val = sanitize_text_field( wp_unslash( $_POST['babel_patente'] ) );
+            update_post_meta( $post_id, '_babel_patente', $patente_val );
+            update_post_meta( $post_id, '_bd_patente', $patente_val );
+        }
+
+        // Representante Legal
+        if ( isset( $_POST['babel_rep_legal'] ) ) {
+            $rep_legal_val = sanitize_text_field( wp_unslash( $_POST['babel_rep_legal'] ) );
+            update_post_meta( $post_id, '_babel_rep_legal', $rep_legal_val );
+            update_post_meta( $post_id, '_bd_rep_legal', $rep_legal_val );
+        }
+
+        // Año de Fundación
+        if ( isset( $_POST['babel_founded_year'] ) ) {
+            $founded_year_val = intval( $_POST['babel_founded_year'] );
+            update_post_meta( $post_id, '_babel_founded_year', $founded_year_val );
+            update_post_meta( $post_id, '_bd_founded_year', $founded_year_val );
+        }
+
+        // TikTok
+        if ( isset( $_POST['babel_tiktok'] ) ) {
+            $tiktok_val = esc_url_raw( wp_unslash( $_POST['babel_tiktok'] ) );
+            update_post_meta( $post_id, '_babel_tiktok', $tiktok_val );
+            update_post_meta( $post_id, '_bd_tiktok', $tiktok_val );
+        }
+
+        // YouTube Canal
+        if ( isset( $_POST['babel_youtube_channel'] ) ) {
+            $youtube_channel_val = esc_url_raw( wp_unslash( $_POST['babel_youtube_channel'] ) );
+            update_post_meta( $post_id, '_babel_youtube_channel', $youtube_channel_val );
+            update_post_meta( $post_id, '_bd_youtube_channel', $youtube_channel_val );
+        }
+
+        // Twitter/X
+        if ( isset( $_POST['babel_twitter'] ) ) {
+            $twitter_val = esc_url_raw( wp_unslash( $_POST['babel_twitter'] ) );
+            update_post_meta( $post_id, '_babel_twitter', $twitter_val );
+            update_post_meta( $post_id, '_bd_twitter', $twitter_val );
+        }
+
+        // Pinterest
+        if ( isset( $_POST['babel_pinterest'] ) ) {
+            $pinterest_val = esc_url_raw( wp_unslash( $_POST['babel_pinterest'] ) );
+            update_post_meta( $post_id, '_babel_pinterest', $pinterest_val );
+            update_post_meta( $post_id, '_bd_pinterest', $pinterest_val );
+        }
+
+        // Video YouTube Principal
+        if ( isset( $_POST['babel_youtube_url'] ) ) {
+            $youtube_url_val = esc_url_raw( wp_unslash( $_POST['babel_youtube_url'] ) );
+            update_post_meta( $post_id, '_babel_youtube_url', $youtube_url_val );
+            update_post_meta( $post_id, '_bd_youtube_url', $youtube_url_val );
+        }
+
+        // Video YouTube 2
+        if ( isset( $_POST['babel_youtube_url_2'] ) ) {
+            $youtube_url_2_val = esc_url_raw( wp_unslash( $_POST['babel_youtube_url_2'] ) );
+            update_post_meta( $post_id, '_babel_youtube_url_2', $youtube_url_2_val );
+            update_post_meta( $post_id, '_bd_youtube_url_2', $youtube_url_2_val );
+        }
+
+        // Estacionamiento
+        if ( isset( $_POST['babel_parking'] ) ) {
+            $parking_val = sanitize_text_field( wp_unslash( $_POST['babel_parking'] ) );
+            update_post_meta( $post_id, '_babel_parking', $parking_val );
+            update_post_meta( $post_id, '_bd_parking', $parking_val );
+        }
+
+        // Mascotas Pet Friendly
+        if ( isset( $_POST['babel_pet_friendly'] ) ) {
+            $pet_friendly_val = sanitize_text_field( wp_unslash( $_POST['babel_pet_friendly'] ) );
+            update_post_meta( $post_id, '_babel_pet_friendly', $pet_friendly_val );
+            update_post_meta( $post_id, '_bd_pet_friendly', $pet_friendly_val );
+        }
+
+        // Métodos de Pago (JSON array)
+        if ( isset( $_POST['babel_payments'] ) && is_array( $_POST['babel_payments'] ) ) {
+            $payments_val = array_map( 'sanitize_text_field', $_POST['babel_payments'] );
+            $payments_json = wp_json_encode( $payments_val );
+            update_post_meta( $post_id, '_babel_payments', $payments_json );
+            update_post_meta( $post_id, '_bd_payments', $payments_json );
+        } else {
+            $payments_empty = wp_json_encode( array() );
+            update_post_meta( $post_id, '_babel_payments', $payments_empty );
+            update_post_meta( $post_id, '_bd_payments', $payments_empty );
+        }
+
+        // Accesibilidad Universal
+        if ( isset( $_POST['babel_accessibility'] ) ) {
+            $accessibility_val = sanitize_text_field( wp_unslash( $_POST['babel_accessibility'] ) );
+            update_post_meta( $post_id, '_babel_accessibility', $accessibility_val );
+            update_post_meta( $post_id, '_bd_accessibility', $accessibility_val );
+        }
+
+        // Wi-Fi
+        if ( isset( $_POST['babel_wifi'] ) ) {
+            $wifi_val = sanitize_text_field( wp_unslash( $_POST['babel_wifi'] ) );
+            update_post_meta( $post_id, '_babel_wifi', $wifi_val );
+            update_post_meta( $post_id, '_bd_wifi', $wifi_val );
+        }
+
+        // Sistema de Reservas
+        if ( isset( $_POST['babel_reservations'] ) ) {
+            $reservations_val = sanitize_text_field( wp_unslash( $_POST['babel_reservations'] ) );
+            update_post_meta( $post_id, '_babel_reservations', $reservations_val );
+            update_post_meta( $post_id, '_bd_reservations', $reservations_val );
+        }
+
+        // Delivery
+        if ( isset( $_POST['babel_delivery'] ) ) {
+            $delivery_val = sanitize_text_field( wp_unslash( $_POST['babel_delivery'] ) );
+            update_post_meta( $post_id, '_babel_delivery', $delivery_val );
+            update_post_meta( $post_id, '_bd_delivery', $delivery_val );
+        }
+
+        // Rango de Precios
+        if ( isset( $_POST['babel_price_range'] ) ) {
+            $price_range_val = sanitize_text_field( wp_unslash( $_POST['babel_price_range'] ) );
+            update_post_meta( $post_id, '_babel_price_range', $price_range_val );
+            update_post_meta( $post_id, '_bd_price_range', $price_range_val );
+        }
+
+        // Espacios (JSON array)
+        if ( isset( $_POST['babel_spaces'] ) && is_array( $_POST['babel_spaces'] ) ) {
+            $spaces_val = array_map( 'sanitize_text_field', $_POST['babel_spaces'] );
+            $spaces_json = wp_json_encode( $spaces_val );
+            update_post_meta( $post_id, '_babel_spaces', $spaces_json );
+            update_post_meta( $post_id, '_bd_spaces', $spaces_json );
+        } else {
+            $spaces_empty = wp_json_encode( array() );
+            update_post_meta( $post_id, '_babel_spaces', $spaces_empty );
+            update_post_meta( $post_id, '_bd_spaces', $spaces_empty );
+        }
+
+        // Tipo de Negocio
+        if ( isset( $_POST['babel_biz_type'] ) ) {
+            $biz_type_val = sanitize_text_field( wp_unslash( $_POST['babel_biz_type'] ) );
+            update_post_meta( $post_id, '_babel_biz_type', $biz_type_val );
+            update_post_meta( $post_id, '_bd_biz_type', $biz_type_val );
+        }
+
+        // Idiomas de Atención (JSON array)
+        if ( isset( $_POST['babel_languages'] ) && is_array( $_POST['babel_languages'] ) ) {
+            $languages_val = array_map( 'sanitize_text_field', $_POST['babel_languages'] );
+            $languages_json = wp_json_encode( $languages_val );
+            update_post_meta( $post_id, '_babel_languages', $languages_json );
+            update_post_meta( $post_id, '_bd_languages', $languages_json );
+        } else {
+            $languages_empty = wp_json_encode( array() );
+            update_post_meta( $post_id, '_babel_languages', $languages_empty );
+            update_post_meta( $post_id, '_bd_languages', $languages_empty );
+        }
+
+        // Número de Empleados
+        if ( isset( $_POST['babel_employees'] ) ) {
+            $employees_val = sanitize_text_field( wp_unslash( $_POST['babel_employees'] ) );
+            update_post_meta( $post_id, '_babel_employees', $employees_val );
+            update_post_meta( $post_id, '_bd_employees', $employees_val );
+        }
+
+        // Área de Cobertura
+        if ( isset( $_POST['babel_coverage_area'] ) ) {
+            $coverage_area_val = sanitize_text_field( wp_unslash( $_POST['babel_coverage_area'] ) );
+            update_post_meta( $post_id, '_babel_coverage_area', $coverage_area_val );
+            update_post_meta( $post_id, '_bd_coverage_area', $coverage_area_val );
+        }
+
+        // URL Menú/Carta PDF
+        if ( isset( $_POST['babel_menu_url'] ) ) {
+            $menu_url_val = esc_url_raw( wp_unslash( $_POST['babel_menu_url'] ) );
+            update_post_meta( $post_id, '_babel_menu_url', $menu_url_val );
+            update_post_meta( $post_id, '_bd_menu_url', $menu_url_val );
+        }
+
+        // URL Reservas Online
+        if ( isset( $_POST['babel_booking_url'] ) ) {
+            $booking_url_val = esc_url_raw( wp_unslash( $_POST['babel_booking_url'] ) );
+            update_post_meta( $post_id, '_babel_booking_url', $booking_url_val );
+            update_post_meta( $post_id, '_bd_booking_url', $booking_url_val );
+        }
+
+        // Teléfono Alternativo
+        if ( isset( $_POST['babel_phone_alt'] ) ) {
+            $phone_alt_val = sanitize_text_field( wp_unslash( $_POST['babel_phone_alt'] ) );
+            update_post_meta( $post_id, '_babel_phone_alt', $phone_alt_val );
+            update_post_meta( $post_id, '_bd_phone_alt', $phone_alt_val );
+        }
+
+        // Email Alternativo
+        if ( isset( $_POST['babel_email_alt'] ) ) {
+            $email_alt_val = sanitize_email( wp_unslash( $_POST['babel_email_alt'] ) );
+            update_post_meta( $post_id, '_babel_email_alt', $email_alt_val );
+            update_post_meta( $post_id, '_bd_email_alt', $email_alt_val );
         }
     }
 }
