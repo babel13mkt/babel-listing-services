@@ -146,9 +146,6 @@ class Search_Index {
     }
 }
 
-/**
- * Soporte de WP-CLI para indexación masiva nativa del directorio.
- */
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     class CLI_Command {
 
@@ -160,20 +157,20 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
          *     wp babel-directory index
          */
         public function index( $args, $assoc_args ) {
-            WP_CLI::log( 'Iniciando indexación masiva de negocios...' );
+            \WP_CLI::log( 'Iniciando indexación masiva de negocios...' );
             global $wpdb;
 
             // Asegurarse de que la tabla de indexación rápida exista
-            Babel_Directory_Search_Index::create_table();
+            Search_Index::create_table();
 
             // Limpiar la tabla de registros obsoletos para asegurar integridad
             $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}bd_search_index" );
 
-            $indexer = new Babel_Directory_Search_Index();
+            $indexer = new Search_Index();
             $count   = $indexer->bulk_index_all_businesses();
 
-            WP_CLI::success( "Se indexaron {$count} negocios correctamente." );
+            \WP_CLI::success( "Se indexaron {$count} negocios correctamente." );
         }
     }
-    WP_CLI::add_command( 'babel-directory', 'Babel_Directory_CLI_Command' );
+    \WP_CLI::add_command( 'babel-directory', __NAMESPACE__ . '\CLI_Command' );
 }
