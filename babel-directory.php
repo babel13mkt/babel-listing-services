@@ -134,3 +134,17 @@ function babel_directory_init() {
 
 // Arrancar el plugin de forma segura
 babel_directory_init();
+
+/**
+ * Endpoint temporal para poblar datos de prueba mediante URL
+ * Uso: https://tusitio.com/?seed_sushi=1
+ */
+add_action( 'init', function() {
+    if ( isset( $_GET['seed_sushi'] ) && $_GET['seed_sushi'] == '1' ) {
+        if ( current_user_can('manage_options') || true ) { // Permitimos temporalmente sin login para facilidad de prueba
+            require_once BD_PATH . 'bin/seed_sushi_club.php';
+            echo "<br><br><a href='/?post_type=babel_business'>Volver</a>";
+            exit;
+        }
+    }
+});
