@@ -165,7 +165,11 @@ class Metaboxes {
         $days_of_week = array( 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo' );
         $hours = array();
         if ( ! empty( $hours_meta ) ) {
-            $hours = json_decode( $hours_meta, true );
+            if ( is_array( $hours_meta ) ) {
+                $hours = $hours_meta;
+            } else {
+                $hours = json_decode( $hours_meta, true );
+            }
         }
         if ( ! is_array( $hours ) ) {
             $hours = array();
@@ -268,7 +272,11 @@ class Metaboxes {
         if ( empty( $payments_meta ) ) {
             $payments_meta = get_post_meta( $post->ID, '_bd_payments', true );
         }
-        $payments = json_decode( $payments_meta, true );
+        if ( is_array( $payments_meta ) ) {
+            $payments = $payments_meta;
+        } else {
+            $payments = json_decode( $payments_meta, true );
+        }
         if ( ! is_array( $payments ) ) {
             $payments = array();
         }
@@ -302,7 +310,11 @@ class Metaboxes {
         if ( empty( $spaces_meta ) ) {
             $spaces_meta = get_post_meta( $post->ID, '_bd_spaces', true );
         }
-        $spaces = json_decode( $spaces_meta, true );
+        if ( is_array( $spaces_meta ) ) {
+            $spaces = $spaces_meta;
+        } else {
+            $spaces = json_decode( $spaces_meta, true );
+        }
         if ( ! is_array( $spaces ) ) {
             $spaces = array();
         }
@@ -316,7 +328,11 @@ class Metaboxes {
         if ( empty( $languages_meta ) ) {
             $languages_meta = get_post_meta( $post->ID, '_bd_languages', true );
         }
-        $languages = json_decode( $languages_meta, true );
+        if ( is_array( $languages_meta ) ) {
+            $languages = $languages_meta;
+        } else {
+            $languages = json_decode( $languages_meta, true );
+        }
         if ( ! is_array( $languages ) ) {
             $languages = array();
         }

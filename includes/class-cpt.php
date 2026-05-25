@@ -77,6 +77,7 @@ class CPT {
             'publicly_queryable'    => true,
             'capability_type'       => 'post',
             'show_in_rest'          => true, // Habilitar soporte REST API para Divi 5
+            'rewrite'               => array( 'slug' => 'negocio' ),
         );
 
         register_post_type( 'babel_business', $args );

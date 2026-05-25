@@ -4,6 +4,47 @@
  * Diseñado con respeto por la cascada visual de Divi 5 y compatibilidad asíncrona.
  */
 
+:root {
+  /* Stitch UI Design Tokens */
+  --md-sys-color-primary: #000000;
+  --md-sys-color-surface: #f9f9f9;
+  --md-sys-color-surface-container-low: #f3f3f3;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-outline-variant: #c4c7c7;
+  --md-sys-color-secondary-fixed-dim: #e9c349;
+  --md-sys-color-on-surface-variant: #444748;
+  --md-sys-color-on-surface: #1a1c1c;
+  --md-sys-color-secondary: #735c00;
+}
+
+/* Typography base */
+.bd-premium-font {
+  font-family: 'Inter', sans-serif;
+  color: var(--md-sys-color-on-surface);
+}
+.bd-display-font {
+  font-family: 'Playfair Display', serif;
+}
+.bd-label-font {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Utilitarios Estructurales */
+.bd-premium-shadow {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+.bd-glass-header {
+  background: rgba(249, 249, 249, 0.8);
+  backdrop-filter: blur(12px);
+}
+.bd-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.bd-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ==========================================================================
    1. CONTENEDOR Y GRILLA (.babel-grid-container)
    ========================================================================== */
