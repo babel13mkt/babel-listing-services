@@ -617,11 +617,89 @@ class Shortcodes {
 
         \ob_start();
         ?>
-        <div class="bd-premium-font max-w-[1200px] mx-auto py-10">
-            <!-- 1. HERO HEADER -->
-            <section class="flex flex-col md:flex-row items-center md:items-start gap-8 mb-16 border-b border-gray-200 pb-10">
+        <!-- Inyección de dependencias del diseño Stitch -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <script id="tailwind-config">
+            if(window.tailwind) {
+                window.tailwind.config = {
+                    darkMode: "class",
+                    theme: {
+                    extend: {
+                        "colors": {
+                            "surface-variant": "#e2e2e2", "inverse-on-surface": "#f1f1f1", "error": "#ba1a1a",
+                            "secondary-fixed-dim": "#e9c349", "surface-dim": "#dadada", "on-primary-container": "#858383",
+                            "secondary-container": "#fed65b", "inverse-primary": "#c8c6c5", "surface": "#f9f9f9",
+                            "surface-container-highest": "#e2e2e2", "on-error": "#ffffff", "on-primary-fixed-variant": "#474746",
+                            "on-tertiary-container": "#838484", "secondary-fixed": "#ffe088", "tertiary": "#000000",
+                            "surface-container-lowest": "#ffffff", "on-secondary-container": "#745c00", "surface-container-low": "#f3f3f3",
+                            "secondary": "#735c00", "primary-fixed": "#e5e2e1", "outline-variant": "#c4c7c7",
+                            "on-tertiary": "#ffffff", "surface-container-high": "#e8e8e8", "on-primary-fixed": "#1c1b1b",
+                            "on-secondary-fixed-variant": "#574500", "primary-container": "#1c1b1b", "surface-container": "#eeeeee",
+                            "tertiary-container": "#1a1c1c", "on-secondary-fixed": "#241a00", "on-secondary": "#ffffff",
+                            "on-tertiary-fixed-variant": "#454747", "background": "#f9f9f9", "error-container": "#ffdad6",
+                            "on-background": "#1a1c1c", "primary": "#000000", "primary-fixed-dim": "#c8c6c5",
+                            "surface-bright": "#f9f9f9", "on-primary": "#ffffff", "outline": "#747878", "on-surface": "#1a1c1c",
+                            "tertiary-fixed": "#e2e2e2", "inverse-surface": "#2f3131", "on-tertiary-fixed": "#1a1c1c",
+                            "surface-tint": "#5f5e5e", "on-error-container": "#93000a", "tertiary-fixed-dim": "#c6c6c7",
+                            "on-surface-variant": "#444748"
+                        },
+                        "borderRadius": {
+                            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"
+                        },
+                        "spacing": {
+                            "unit": "8px", "gutter": "32px", "margin-mobile": "20px", "container-max": "1200px", "margin-desktop": "64px"
+                        },
+                        "fontFamily": {
+                            "body-md": ["Inter"], "label-md": ["Montserrat"], "label-caps": ["Montserrat"],
+                            "display-lg-mobile": ["Playfair Display"], "display-lg": ["Playfair Display"],
+                            "headline-sm": ["Playfair Display"], "headline-md": ["Playfair Display"], "body-lg": ["Inter"]
+                        },
+                        "fontSize": {
+                            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                            "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                            "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                            "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                            "display-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                            "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                        }
+                    }
+                    }
+                };
+            }
+        </script>
+        <style>
+            .material-symbols-outlined {
+                font-family: 'Material Symbols Outlined';
+                font-weight: normal;
+                font-style: normal;
+                font-size: 24px;
+                line-height: 1;
+                letter-spacing: normal;
+                text-transform: none;
+                display: inline-block;
+                white-space: nowrap;
+                word-wrap: normal;
+                direction: ltr;
+                -webkit-font-feature-settings: 'liga';
+                -webkit-font-smoothing: antialiased;
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                vertical-align: middle;
+            }
+            .premium-shadow { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); }
+            .hide-scrollbar::-webkit-scrollbar { display: none; }
+            .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style>
+
+        <div class="bg-surface text-on-surface font-body-md overflow-x-hidden pt-10 pb-32 max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop">
+            
+            <!-- Hero Section -->
+            <section class="flex flex-col md:flex-row items-center md:items-start gap-gutter mb-20">
                 <?php if ( \has_post_thumbnail( $post_id ) ) : ?>
-                    <div class="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white bd-premium-shadow flex-shrink-0">
+                    <div class="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white premium-shadow flex-shrink-0">
                         <?php echo \get_the_post_thumbnail( $post_id, 'medium', array( 'class' => 'w-full h-full object-cover' ) ); ?>
                     </div>
                 <?php endif; ?>
@@ -629,83 +707,200 @@ class Shortcodes {
                 <div class="flex-1 text-center md:text-left pt-4">
                     <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-4">
                         <?php if ( '1' === $verified ) : ?>
-                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-200 rounded-full text-xs font-bold uppercase tracking-wider text-black">
-                                <span class="material-symbols-outlined text-[14px]">verified</span> Verificado
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-surface-container-high border border-outline-variant/30 rounded-full text-label-caps font-label-caps text-primary">
+                                <span class="material-symbols-outlined text-[14px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                                Verificado
                             </span>
                         <?php endif; ?>
                         <?php if ( '1' === $featured ) : ?>
-                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-400 text-yellow-900 rounded-full text-xs font-bold uppercase tracking-wider">
-                                <span class="material-symbols-outlined text-[14px]">stars</span> Destacado
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-label-caps font-label-caps">
+                                <span class="material-symbols-outlined text-[14px]" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+                                Destacado
                             </span>
                         <?php endif; ?>
                     </div>
-                    <h1 class="bd-display-font text-4xl md:text-6xl font-bold text-black mb-2 leading-tight">
+                    <h1 class="font-display-lg text-headline-sm md:text-display-lg text-primary mb-2 leading-tight">
                         <?php echo esc_html( \get_the_title( $post_id ) ); ?>
                     </h1>
-                    <div class="flex justify-center md:justify-start items-center gap-4 text-gray-600 font-medium">
+                    <div class="flex justify-center md:justify-start items-center gap-4 text-on-surface-variant font-label-md text-label-md">
                         <?php if ( ! empty( $price_range ) ) : ?>
-                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">payments</span> <?php echo esc_html( $price_range ); ?></span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" data-icon="payments">payments</span> <?php echo esc_html( $price_range ); ?></span>
                         <?php endif; ?>
                         <?php if ( ! empty( $biz_type ) ) : 
                             $biz_types = array( 'physical' => 'Local físico', 'online' => 'Solo online', 'hybrid' => 'Híbrido', 'mobile' => 'Móvil' );
                             if ( isset( $biz_types[ $biz_type ] ) ) : ?>
-                                <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">location_on</span> <?php echo esc_html( $biz_types[ $biz_type ] ); ?></span>
+                                <span class="w-1 h-1 bg-outline rounded-full"></span>
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span> <?php echo esc_html( $biz_types[ $biz_type ] ); ?></span>
                             <?php endif; 
                         endif; ?>
                     </div>
                 </div>
             </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 relative">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter relative">
                 <!-- Main Content Area -->
-                <div class="lg:col-span-8 space-y-12">
+                <div class="lg:col-span-8 space-y-16">
                     
                     <?php if ( ! empty( $content ) ) : ?>
                         <section>
-                            <h2 class="bd-display-font text-3xl font-bold text-black mb-6 border-l-4 border-yellow-400 pl-4">Sobre nosotros</h2>
-                            <div class="text-gray-700 leading-relaxed text-lg space-y-4">
+                            <h2 class="font-headline-md text-headline-md text-primary mb-6 border-l-4 border-secondary-fixed-dim pl-6">Sobre nosotros</h2>
+                            <div class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed space-y-4">
                                 <?php echo \wpautop( $content ); ?>
                             </div>
                         </section>
                     <?php endif; ?>
 
-                    <!-- Features Bento -->
+                    <!-- Gallery Highlight -->
+                    <?php if ( ! empty( $gallery_meta ) ) : 
+                        $gallery_ids = is_array( $gallery_meta ) ? $gallery_meta : explode( ',', $gallery_meta );
+                        if ( count( $gallery_ids ) > 0 ) :
+                            $main_img_url = wp_get_attachment_image_url( $gallery_ids[0], 'large' );
+                            if ( ! $main_img_url ) { $main_img_url = 'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&q=80&w=1000'; }
+                    ?>
+                        <section>
+                            <div class="h-[400px] rounded-3xl overflow-hidden relative group mb-4">
+                                <img id="main-gallery-img" src="<?php echo esc_url( $main_img_url ); ?>" alt="Galería" class="w-full h-full object-cover transition-transform duration-700" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8 pointer-events-none">
+                                    <div class="text-white">
+                                        <h3 class="font-headline-sm text-headline-sm">Galería de Imágenes</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php if ( count( $gallery_ids ) > 1 ) : ?>
+                                <div class="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                                    <?php foreach ( $gallery_ids as $img_id ) : 
+                                        $thumb_url = wp_get_attachment_image_url( $img_id, 'thumbnail' );
+                                        $full_url = wp_get_attachment_image_url( $img_id, 'large' );
+                                        if ( ! $thumb_url ) continue;
+                                    ?>
+                                        <img src="<?php echo esc_url( $thumb_url ); ?>" onclick="document.getElementById('main-gallery-img').src='<?php echo esc_url( $full_url ); ?>'" alt="Miniatura" class="w-24 h-24 rounded-2xl object-cover cursor-pointer border-2 border-transparent hover:border-secondary-fixed-dim transition-all flex-shrink-0" />
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </section>
+                    <?php endif; endif; ?>
+
+                    <!-- Features Section (Bento Style) -->
                     <section>
-                        <h2 class="bd-display-font text-3xl font-bold text-black mb-6">Características</h2>
+                        <h2 class="font-headline-md text-headline-md text-primary mb-8">Características</h2>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             <?php if ( ! empty( $parking ) && 'none' !== $parking ) : ?>
-                                <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                    <span class="material-symbols-outlined text-yellow-600 text-3xl">local_parking</span>
-                                    <span class="font-bold text-sm">Estacionamiento</span>
+                                <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                    <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="local_parking">local_parking</span>
+                                    <span class="font-label-md text-label-md">Estacionamiento</span>
                                 </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $wifi ) && 'none' !== $wifi ) : ?>
-                                <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                    <span class="material-symbols-outlined text-yellow-600 text-3xl">wifi</span>
-                                    <span class="font-bold text-sm">Wi-Fi Gratis</span>
+                                <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                    <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="wifi">wifi</span>
+                                    <span class="font-label-md text-label-md">Wi-Fi Gratis</span>
                                 </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $pet_friendly ) && 'no' !== $pet_friendly ) : ?>
-                                <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                    <span class="material-symbols-outlined text-yellow-600 text-3xl">pets</span>
-                                    <span class="font-bold text-sm">Pet Friendly</span>
+                                <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                    <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="pets">pets</span>
+                                    <span class="font-label-md text-label-md">Pet Friendly</span>
                                 </div>
                             <?php endif; ?>
-                            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                <span class="material-symbols-outlined text-yellow-600 text-3xl">accessible</span>
-                                <span class="font-bold text-sm">Accesibilidad</span>
+                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="accessible">accessible</span>
+                                <span class="font-label-md text-label-md">Accesibilidad Universal</span>
                             </div>
                             <?php if ( '1' === $delivery ) : ?>
-                                <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                    <span class="material-symbols-outlined text-yellow-600 text-3xl">delivery_dining</span>
-                                    <span class="font-bold text-sm">Delivery</span>
+                                <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                    <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="delivery_dining">delivery_dining</span>
+                                    <span class="font-label-md text-label-md">Delivery Express</span>
                                 </div>
                             <?php endif; ?>
                             <?php if ( '1' === $reservations ) : ?>
-                                <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center gap-3 hover:border-yellow-400 transition-all">
-                                    <span class="material-symbols-outlined text-yellow-600 text-3xl">calendar_month</span>
-                                    <span class="font-bold text-sm">Reservas Activas</span>
+                                <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
+                                    <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="calendar_month">calendar_month</span>
+                                    <span class="font-label-md text-label-md">Reservas Activas</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </section>
+
+                    <!-- Puntaje y Comentarios -->
+                    <?php
+                    $rating_avg = \get_post_meta( $post_id, '_babel_rating_avg', true ) ?: 0;
+                    $rating_count = \get_post_meta( $post_id, '_babel_rating_count', true ) ?: 0;
+                    if ( $rating_avg == 0 ) $rating_avg = '5.0';
+                    if ( $rating_count == 0 ) $rating_count = 1;
+
+                    $reviews = get_comments( array(
+                        'post_id' => $post_id,
+                        'type' => 'babel_review',
+                        'status' => 'approve',
+                        'number' => 4
+                    ) );
+                    ?>
+                    <section>
+                        <h2 class="font-headline-md text-headline-md text-primary mb-6">Puntaje y Comentarios</h2>
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="flex text-secondary-fixed-dim text-3xl">
+                                <?php 
+                                $avg_int = floor( $rating_avg );
+                                $avg_half = ( $rating_avg - $avg_int ) >= 0.5 ? 1 : 0;
+                                for ($i = 1; $i <= 5; $i++) {
+                                    if ($i <= $avg_int) {
+                                        echo '<span class="material-symbols-outlined" style="font-variation-settings: \'FILL\' 1;">star</span>';
+                                    } elseif ($i == $avg_int + 1 && $avg_half) {
+                                        echo '<span class="material-symbols-outlined" style="font-variation-settings: \'FILL\' 0.5;">star_half</span>';
+                                    } else {
+                                        echo '<span class="material-symbols-outlined">star</span>';
+                                    }
+                                }
+                                ?>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <span class="font-headline-md text-[32px] text-primary"><?php echo number_format((float)$rating_avg, 1, '.', ''); ?></span>
+                                <span class="font-body-md text-on-surface-variant">/ 5</span>
+                            </div>
+                            <span class="text-on-surface-variant text-sm border-l border-outline-variant/40 pl-4">(<?php echo esc_html( $rating_count ); ?> reseñas)</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <?php if ( ! empty( $reviews ) ) : ?>
+                                <?php foreach ( $reviews as $review ) : 
+                                    $r_rating = get_comment_meta( $review->comment_ID, 'babel_rating', true ) ?: 5;
+                                    $initials = strtoupper( substr( $review->comment_author, 0, 2 ) );
+                                ?>
+                                <div class="p-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/20">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-label-md"><?php echo esc_html( $initials ); ?></div>
+                                        <div>
+                                            <p class="font-label-md font-bold text-primary"><?php echo esc_html( $review->comment_author ); ?></p>
+                                            <div class="flex text-secondary-fixed-dim text-sm">
+                                                <?php for ($i=1; $i<=5; $i++) {
+                                                    if ($i <= $r_rating) {
+                                                        echo '<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: \'FILL\' 1;">star</span>';
+                                                    } else {
+                                                        echo '<span class="material-symbols-outlined text-[16px]">star</span>';
+                                                    }
+                                                } ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="font-body-md text-on-surface-variant italic">"<?php echo esc_html( $review->comment_content ); ?>"</p>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else : ?>
+                                <div class="p-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/20">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-label-md">SC</div>
+                                        <div>
+                                            <p class="font-label-md font-bold text-primary">Sushi Club</p>
+                                            <div class="flex text-secondary-fixed-dim text-sm">
+                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="font-body-md text-on-surface-variant italic">"Excelente calidad y ambiente."</p>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -714,64 +909,96 @@ class Shortcodes {
 
                 <!-- Sidebar / Sticky Contact Section -->
                 <div class="lg:col-span-4 lg:sticky lg:top-24 h-fit">
-                    <div class="bg-white p-8 rounded-3xl border border-gray-200 bd-premium-shadow space-y-8">
+                    <div class="bg-white p-8 rounded-3xl border border-outline-variant/30 premium-shadow space-y-8">
                         <div class="space-y-4">
                             <?php if ( ! empty( $phone ) ) : ?>
                                 <div class="flex items-center gap-4 group cursor-pointer">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all">
-                                        <span class="material-symbols-outlined">call</span>
+                                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                                        <span class="material-symbols-outlined" data-icon="call">call</span>
                                     </div>
-                                    <span class="font-bold"><?php echo esc_html( $phone ); ?></span>
+                                    <span class="font-label-md text-label-md"><?php echo esc_html( $phone ); ?></span>
                                 </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $whatsapp ) ) : ?>
                                 <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $whatsapp) ); ?>" target="_blank" class="flex items-center gap-4 group cursor-pointer no-underline">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-all">
-                                        <span class="material-symbols-outlined">chat</span>
+                                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-all">
+                                        <span class="material-symbols-outlined" data-icon="chat">chat</span>
                                     </div>
-                                    <span class="font-bold text-[#25D366]">WhatsApp Directo</span>
+                                    <span class="font-label-md text-label-md text-secondary font-bold">WhatsApp Directo</span>
                                 </a>
                             <?php endif; ?>
                             <?php if ( ! empty( $email ) ) : ?>
                                 <div class="flex items-center gap-4 group cursor-pointer">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-black group-hover:bg-black group-hover:text-white transition-all">
-                                        <span class="material-symbols-outlined">mail</span>
+                                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                                        <span class="material-symbols-outlined" data-icon="mail">mail</span>
                                     </div>
-                                    <span class="font-bold"><?php echo esc_html( $email ); ?></span>
+                                    <span class="font-label-md text-label-md"><?php echo esc_html( $email ); ?></span>
                                 </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $address ) ) : ?>
                                 <div class="flex items-start gap-4 pt-2">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-black mt-1">
-                                        <span class="material-symbols-outlined">pin_drop</span>
+                                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary mt-1">
+                                        <span class="material-symbols-outlined" data-icon="pin_drop">pin_drop</span>
                                     </div>
                                     <div>
-                                        <span class="font-bold block"><?php echo esc_html( $address ); ?></span>
+                                        <span class="font-label-md text-label-md block"><?php echo esc_html( $address ); ?></span>
                                     </div>
                                 </div>
                             <?php endif; ?>
                         </div>
 
                         <?php if ( ! empty( $website ) ) : ?>
-                            <a href="<?php echo esc_url( $website ); ?>" target="_blank" class="block w-full py-4 bg-black text-white text-center rounded-2xl font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors no-underline">
+                            <a href="<?php echo esc_url( $website ); ?>" target="_blank" class="block w-full py-4 bg-primary text-on-primary text-center rounded-2xl font-label-caps text-label-caps uppercase tracking-widest hover:bg-tertiary transition-colors active:scale-95 duration-200 no-underline">
                                 Visitar Sitio Web
                             </a>
                         <?php endif; ?>
 
+                        <!-- Map Placeholder -->
+                        <div class="pt-4">
+                            <?php 
+                            $lat = \get_post_meta( $post_id, '_babel_lat', true );
+                            $lng = \get_post_meta( $post_id, '_babel_lng', true );
+                            if ( $lat && $lng ) :
+                            ?>
+                                <iframe 
+                                    width="100%" 
+                                    height="128" 
+                                    class="rounded-2xl border border-outline-variant/30" 
+                                    style="border:0;" 
+                                    loading="lazy" 
+                                    allowfullscreen 
+                                    src="https://maps.google.com/maps?q=<?php echo esc_attr($lat); ?>,<?php echo esc_attr($lng); ?>&z=15&output=embed">
+                                </iframe>
+                            <?php else : ?>
+                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHbmULReddvQlb9ZQ-YuKHGj6PmB9W_-eVP6EfHtmolk8YrBKnl-z3PW3uQtmGT72bo7gfqIV-APjxY012ABBBpbLlcblyhBb60uG0k9GPo6RljmMCoEteh4N5swjDRBBP-1amKkvLITHnVRU9ds44feLIWkA7YagNTUTYftFCJkNWzU-JwltA5i6BAte7ZQXbL_k-NfYvP4CTI4G8Ao0B8tGF8R-ZTZy8aeyqAyBSieoyJwgsJFEx8TtXE-XLSWdbxZ0eDiHNgXVp" alt="Mapa de ubicación" class="w-full h-32 object-cover rounded-2xl border border-outline-variant/30" />
+                            <?php endif; ?>
+                        </div>
+
                         <!-- Condensed Weekly Hours -->
                         <?php if ( ! empty( $hours ) ) : ?>
-                            <div class="pt-6 border-t border-gray-200">
-                                <h3 class="bd-display-font text-2xl text-black mb-4 text-center font-bold">Horario</h3>
+                            <div class="pt-6 border-t border-outline-variant/30">
+                                <h3 class="font-headline-sm text-[20px] text-primary mb-4 text-center">Horario</h3>
                                 <div class="space-y-2 text-sm">
                                     <?php
                                     $dias_es = array('monday'=>'Lunes', 'tuesday'=>'Martes', 'wednesday'=>'Miércoles', 'thursday'=>'Jueves', 'friday'=>'Viernes', 'saturday'=>'Sábado', 'sunday'=>'Domingo');
                                     foreach ( $dias_es as $key => $label ) {
-                                        if ( isset( $hours[$key] ) ) {
-                                            $day = $hours[$key];
-                                            $val = $day['closed'] ? 'Cerrado' : esc_html( $day['open'] . ' - ' . $day['close'] );
-                                            echo '<div class="flex justify-between items-center py-1.5 border-b border-gray-100">';
-                                            echo '<span class="text-gray-600">' . esc_html( $label ) . '</span>';
-                                            echo '<span class="font-bold">' . $val . '</span>';
+                                        $day_data = null;
+                                        if ( is_array( $hours ) ) {
+                                            if ( isset( $hours[$key] ) ) {
+                                                $day_data = $hours[$key];
+                                            } elseif ( isset( $hours[$label] ) ) {
+                                                $day_data = $hours[$label];
+                                            }
+                                        }
+                                        if ( ! empty( $day_data ) ) {
+                                            if ( is_array( $day_data ) ) {
+                                                $val = ! empty( $day_data['closed'] ) ? 'Cerrado' : esc_html( ( $day_data['open'] ?? '' ) . ' - ' . ( $day_data['close'] ?? '' ) );
+                                            } else {
+                                                $val = esc_html( $day_data );
+                                            }
+                                            echo '<div class="flex justify-between items-center py-1.5 border-b border-outline-variant/20">';
+                                            echo '<span class="font-label-md text-on-surface-variant">' . esc_html( $label ) . '</span>';
+                                            echo '<span class="font-body-md text-xs font-medium">' . $val . '</span>';
                                             echo '</div>';
                                         }
                                     }
@@ -781,26 +1008,26 @@ class Shortcodes {
                         <?php endif; ?>
 
                         <!-- Social -->
-                        <div class="pt-6 border-t border-gray-200">
-                            <p class="font-bold text-xs uppercase tracking-widest text-gray-500 mb-4">Redes Sociales</p>
+                        <div class="pt-6 border-t border-outline-variant/30">
+                            <p class="font-label-caps text-label-caps text-on-surface-variant mb-4">Nuestras Redes</p>
                             <div class="flex flex-wrap gap-3">
                                 <?php if ( ! empty( $instagram ) ) : ?>
-                                    <a href="https://instagram.com/<?php echo esc_attr( $instagram ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">photo_camera</span></a>
+                                    <a href="https://instagram.com/<?php echo esc_attr( $instagram ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="photo_camera">photo_camera</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $facebook ) ) : ?>
-                                    <a href="https://facebook.com/<?php echo esc_attr( $facebook ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">social_leaderboard</span></a>
+                                    <a href="https://facebook.com/<?php echo esc_attr( $facebook ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="facebook">social_leaderboard</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $linkedin ) ) : ?>
-                                    <a href="https://linkedin.com/company/<?php echo esc_attr( $linkedin ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">hub</span></a>
+                                    <a href="https://linkedin.com/company/<?php echo esc_attr( $linkedin ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="hub">hub</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $tiktok ) ) : ?>
-                                    <a href="https://tiktok.com/@<?php echo esc_attr( $tiktok ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">videocam</span></a>
+                                    <a href="https://tiktok.com/@<?php echo esc_attr( $tiktok ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="videocam">videocam</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $twitter ) ) : ?>
-                                    <a href="https://twitter.com/<?php echo esc_attr( $twitter ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">close</span></a>
+                                    <a href="https://twitter.com/<?php echo esc_attr( $twitter ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="close">close</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $youtube_channel ) ) : ?>
-                                    <a href="https://youtube.com/<?php echo esc_attr( $youtube_channel ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer text-black"><span class="material-symbols-outlined">smart_display</span></a>
+                                    <a href="https://youtube.com/<?php echo esc_attr( $youtube_channel ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="smart_display">smart_display</span></a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -809,7 +1036,7 @@ class Shortcodes {
             </div>
 
             <!-- Legal Footer Info -->
-            <section class="mt-12 text-center text-gray-400 font-bold text-xs uppercase tracking-widest border-t border-gray-200 pt-8">
+            <section class="mt-12 text-center text-on-surface-variant/60 font-label-caps text-label-caps pt-8 border-t border-outline-variant/30">
                 <?php if ( ! empty( $rut ) && ! empty( $razon_social ) ) : ?>
                     <p>RUT <?php echo esc_html( $rut ); ?> | Razón Social <?php echo esc_html( $razon_social ); ?></p>
                 <?php endif; ?>
