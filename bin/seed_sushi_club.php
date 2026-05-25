@@ -1,40 +1,37 @@
 <?php
 /**
- * Script para rellenar los datos de prueba de "Sushi Club Santiago"
- * Ejecutar vía WP-CLI: wp eval-file bin/seed_sushi_club.php
+ * Script para rellenar los datos de prueba del último negocio creado.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Acceso denegado.' );
 }
 
-echo "Iniciando seeding de datos para Sushi Club Santiago...\n";
+echo "Iniciando llenado de datos para el negocio de pruebas...<br><br>";
 
-// Buscar el negocio
-$post = get_page_by_title('Sushi Club Santiago', OBJECT, 'babel_business');
+// Obtener el último negocio creado
+$args = [
+    'post_type' => 'babel_business',
+    'posts_per_page' => 1,
+    'post_status' => 'publish',
+    'orderby' => 'date',
+    'order' => 'DESC'
+];
+$posts = get_posts($args);
 
-if ( ! $post ) {
-    // Crear el negocio si no existe
-    $post_id = wp_insert_post([
-        'post_title' => 'Sushi Club Santiago',
-        'post_type' => 'babel_business',
-        'post_status' => 'publish',
-        'post_content' => 'En Sushi Club Santiago, fusionamos la precisión de la técnica tradicional japonesa con el espíritu vibrante de la vanguardia culinaria. Cada bocado es una obra de arte diseñada para deleitar los sentidos, utilizando solo los ingredientes más frescos seleccionados directamente de los mejores proveedores.
-
-Nuestra propuesta se centra en la exclusividad y la comodidad, ofreciendo un ambiente sofisticado que invita a la calma y al disfrute compartido. Desde nuestra apertura en el corazón de Providencia, nos hemos convertido en el destino predilecto para quienes buscan excelencia gastronómica en cada detalle.'
-    ]);
-    echo "Negocio creado con ID: $post_id\n";
-} else {
-    $post_id = $post->ID;
-    echo "Negocio encontrado con ID: $post_id\n";
+if ( empty($posts) ) {
+    die("No hay ningún negocio publicado para actualizar.");
 }
 
-// 1. Llenar metadata básica
+$post_id = $posts[0]->ID;
+echo "Actualizando el negocio: <strong>" . esc_html($posts[0]->post_title) . "</strong> (ID: $post_id)<br>";
+
+// 1. Llenar metadata básica (sin sobreescribir lo que ya importaba)
 $meta_data = [
     '_babel_phone' => '+56 9 1234 5678',
     '_babel_whatsapp' => '+56912345678',
-    '_babel_email' => 'contacto@sushiclub.cl',
-    '_babel_website' => 'https://sushiclub.cl',
+    '_babel_email' => 'contacto@negocioprueba.cl',
+    '_babel_website' => 'https://negocioprueba.cl',
     '_babel_address' => 'Avenida Providencia 1234, Santiago, Chile',
     '_babel_instagram' => 'sushiclub_cl',
     '_babel_facebook' => 'sushiclubsantiago',
@@ -50,7 +47,7 @@ $meta_data = [
     '_babel_price_range' => '$$ Moderado',
     '_babel_biz_type' => 'physical',
     '_babel_rut' => '76.123.456-7',
-    '_babel_razon_social' => 'Sushi Club SpA'
+    '_babel_razon_social' => 'Negocio de Prueba SpA'
 ];
 
 foreach ($meta_data as $key => $value) {
@@ -69,7 +66,7 @@ $hours = [
 ];
 update_post_meta($post_id, '_babel_hours', json_encode($hours));
 
-// 3. Crear Reviews (solo si no existen)
+// 3. Crear Reviews
 $existing_reviews = get_comments(['post_id' => $post_id, 'type' => 'babel_review']);
 if ( empty($existing_reviews) ) {
     $reviews = [
@@ -93,52 +90,34 @@ if ( empty($existing_reviews) ) {
     
     update_post_meta($post_id, '_babel_rating_avg', round($total_rating / count($reviews), 1));
     update_post_meta($post_id, '_babel_rating_count', count($reviews));
-    echo "Reviews creadas.\n";
-} else {
-    echo "Reviews ya existían.\n";
+    echo "Reseñas creadas.<br>";
 }
 
-// 4. Descargar imágenes para la galería (si no hay galería)
-require_once( ABSPATH . 'wp-admin/includes/image.php' );
-require_once( ABSPATH . 'wp-admin/includes/file.php' );
-require_once( ABSPATH . 'wp-admin/includes/media.php' );
-
+// 4. Usar imágenes existentes en la librería multimedia para la galería
 $existing_gallery = get_post_meta($post_id, '_babel_gallery', true);
 if ( empty($existing_gallery) ) {
-    echo "Descargando imágenes de prueba para la galería...\n";
-    $images = [
-        'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80', // Sushi Roll
-        'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=800&q=80', // Omakase
-        'https://images.unsplash.com/photo-1583623025817-d180a2221d0a?auto=format&fit=crop&w=800&q=80', // Nigiri
-        'https://images.unsplash.com/photo-1611143660185-83407e324021?auto=format&fit=crop&w=800&q=80' // Interior
-    ];
+    // Buscar los últimos 4 attachments que sean imágenes
+    $attachments = get_posts([
+        'post_type'      => 'attachment',
+        'post_mime_type' => 'image',
+        'post_status'    => 'inherit',
+        'posts_per_page' => 4,
+    ]);
     
-    $gallery_ids = [];
-    foreach ($images as $idx => $url) {
-        echo "Descargando imagen " . ($idx + 1) . "...\n";
-        $tmp = download_url( $url );
-        if ( is_wp_error( $tmp ) ) continue;
-        
-        $file_array = [
-            'name' => 'sushi_test_' . $idx . '.jpg',
-            'tmp_name' => $tmp
-        ];
-        
-        $id = media_handle_sideload( $file_array, $post_id );
-        if ( ! is_wp_error($id) ) {
-            $gallery_ids[] = $id;
-        } else {
-            @unlink($tmp);
+    if ( ! empty($attachments) ) {
+        $gallery_ids = [];
+        foreach ($attachments as $att) {
+            $gallery_ids[] = $att->ID;
         }
-    }
-    
-    if ( ! empty($gallery_ids) ) {
         update_post_meta($post_id, '_babel_gallery', implode(',', $gallery_ids));
-        set_post_thumbnail($post_id, $gallery_ids[0]);
-        echo "Galería poblada con " . count($gallery_ids) . " imágenes.\n";
+        
+        // Poner la primera como imagen destacada si no tiene
+        if ( ! has_post_thumbnail($post_id) ) {
+            set_post_thumbnail($post_id, $gallery_ids[0]);
+        }
+        echo "Galería llenada usando " . count($gallery_ids) . " imágenes existentes de tu WordPress.<br>";
     }
-} else {
-    echo "La galería ya tiene imágenes.\n";
 }
 
-echo "✅ Seeding finalizado con éxito.\n";
+echo "<br>✅ Datos rellenados con éxito.<br>";
+echo "<a href='" . get_permalink($post_id) . "'>Ver Negocio</a>";
