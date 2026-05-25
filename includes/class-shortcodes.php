@@ -755,7 +755,7 @@ class Shortcodes {
                         $gallery_ids = is_array( $gallery_meta ) ? $gallery_meta : explode( ',', $gallery_meta );
                         if ( count( $gallery_ids ) > 0 ) :
                             $main_img_url = wp_get_attachment_image_url( $gallery_ids[0], 'large' );
-                            if ( ! $main_img_url ) { $main_img_url = 'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&q=80&w=1000'; }
+                            if ( $main_img_url ) :
                     ?>
                         <section>
                             <div class="h-[400px] rounded-3xl overflow-hidden relative group mb-4">
@@ -778,7 +778,7 @@ class Shortcodes {
                                 </div>
                             <?php endif; ?>
                         </section>
-                    <?php endif; endif; ?>
+                    <?php endif; endif; endif; ?>
 
                     <!-- Features Section (Bento Style) -->
                     <section>
@@ -825,8 +825,6 @@ class Shortcodes {
                     <?php
                     $rating_avg = \get_post_meta( $post_id, '_babel_rating_avg', true ) ?: 0;
                     $rating_count = \get_post_meta( $post_id, '_babel_rating_count', true ) ?: 0;
-                    if ( $rating_avg == 0 ) $rating_avg = '5.0';
-                    if ( $rating_count == 0 ) $rating_count = 1;
 
                     $reviews = get_comments( array(
                         'post_id' => $post_id,
@@ -834,6 +832,8 @@ class Shortcodes {
                         'status' => 'approve',
                         'number' => 4
                     ) );
+                    
+                    if ( $rating_count > 0 || ! empty( $reviews ) ) :
                     ?>
                     <section>
                         <h2 class="font-headline-md text-headline-md text-primary mb-6">Puntaje y Comentarios</h2>
@@ -885,26 +885,10 @@ class Shortcodes {
                                     <p class="font-body-md text-on-surface-variant italic">"<?php echo esc_html( $review->comment_content ); ?>"</p>
                                 </div>
                                 <?php endforeach; ?>
-                            <?php else : ?>
-                                <div class="p-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/20">
-                                    <div class="flex items-center gap-3 mb-4">
-                                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-label-md">SC</div>
-                                        <div>
-                                            <p class="font-label-md font-bold text-primary">Sushi Club</p>
-                                            <div class="flex text-secondary-fixed-dim text-sm">
-                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p class="font-body-md text-on-surface-variant italic">"Excelente calidad y ambiente."</p>
-                                </div>
                             <?php endif; ?>
                         </div>
                     </section>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Sidebar / Sticky Contact Section -->
@@ -953,26 +937,24 @@ class Shortcodes {
                             </a>
                         <?php endif; ?>
 
-                        <!-- Map Placeholder -->
+                        <!-- Map -->
+                        <?php 
+                        $lat = \get_post_meta( $post_id, '_babel_lat', true );
+                        $lng = \get_post_meta( $post_id, '_babel_lng', true );
+                        if ( $lat && $lng ) :
+                        ?>
                         <div class="pt-4">
-                            <?php 
-                            $lat = \get_post_meta( $post_id, '_babel_lat', true );
-                            $lng = \get_post_meta( $post_id, '_babel_lng', true );
-                            if ( $lat && $lng ) :
-                            ?>
-                                <iframe 
-                                    width="100%" 
-                                    height="128" 
-                                    class="rounded-2xl border border-outline-variant/30" 
-                                    style="border:0;" 
-                                    loading="lazy" 
-                                    allowfullscreen 
-                                    src="https://maps.google.com/maps?q=<?php echo esc_attr($lat); ?>,<?php echo esc_attr($lng); ?>&z=15&output=embed">
-                                </iframe>
-                            <?php else : ?>
-                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHbmULReddvQlb9ZQ-YuKHGj6PmB9W_-eVP6EfHtmolk8YrBKnl-z3PW3uQtmGT72bo7gfqIV-APjxY012ABBBpbLlcblyhBb60uG0k9GPo6RljmMCoEteh4N5swjDRBBP-1amKkvLITHnVRU9ds44feLIWkA7YagNTUTYftFCJkNWzU-JwltA5i6BAte7ZQXbL_k-NfYvP4CTI4G8Ao0B8tGF8R-ZTZy8aeyqAyBSieoyJwgsJFEx8TtXE-XLSWdbxZ0eDiHNgXVp" alt="Mapa de ubicación" class="w-full h-32 object-cover rounded-2xl border border-outline-variant/30" />
-                            <?php endif; ?>
+                            <iframe 
+                                width="100%" 
+                                height="128" 
+                                class="rounded-2xl border border-outline-variant/30" 
+                                style="border:0;" 
+                                loading="lazy" 
+                                allowfullscreen 
+                                src="https://maps.google.com/maps?q=<?php echo esc_attr($lat); ?>,<?php echo esc_attr($lng); ?>&z=15&output=embed">
+                            </iframe>
                         </div>
+                        <?php endif; ?>
 
                         <!-- Condensed Weekly Hours -->
                         <?php if ( ! empty( $hours ) ) : ?>
