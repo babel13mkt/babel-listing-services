@@ -23,11 +23,6 @@ class Ajax {
      * Procesa la consulta AJAX de búsqueda y filtrado de negocios.
      */
     public function filter_listings() {
-        // Validación de seguridad mediante Nonce
-        if ( ! isset( $_POST['nonce'] ) || ( ! wp_verify_nonce( $_POST['nonce'], 'bd_ajax_nonce' ) && ! wp_verify_nonce( $_POST['nonce'], 'babel_search_nonce' ) ) ) {
-            wp_send_json_error( 'Acceso no autorizado por token de seguridad vencido.' );
-        }
-
         global $wpdb;
         $table_index = $wpdb->prefix . 'bd_search_index';
 
