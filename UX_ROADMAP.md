@@ -154,6 +154,8 @@ PORTADA
 | Perfil de negocio | `[bd_business_profile]` | Perfil completo: galería, horarios, contacto, mapa, reseñas |
 | REST API | `/wp-json/babel/v1/search` | Endpoint principal de búsqueda |
 | Panel Babel | WordPress admin | Formulario de alta + guía de shortcodes |
+| Unificación de diseño | UI de Tarjetas | `[bd_archive_loop]` y fallback AJAX unificados en CSS BEM |
+| SEO de Contenido | Rutas estáticas | URLs `/region/X/categoria/Y/` nativas de WP con history API SPA |
 
 ### Plantillas Divi Theme Builder Activas
 
@@ -167,22 +169,11 @@ PORTADA
 
 ### 🔴 Pendiente (Próximos pasos priorizados)
 
-#### PRIORIDAD 1 — Remediación de [bd_archive_loop] (URGENTE)
-- **Problema**: El shortcode `[bd_archive_loop]` tiene clases de Tailwind puro (`text-gray-500`, `bg-gray-100`, `text-yellow-500`) que no funcionan sin Tailwind cargado.
-- **Solución**: Reemplazar todo el HTML de la tarjeta de resultado con clases BEM propias (`.babel-biz-card`, `.babel-biz-card__title`, etc.) y sus estilos correspondientes en `babel-public.css`.
-- **Referencia visual**: Pantalla "Perfil Sushi Club - Reestructurado" en Stitch (proyecto `13440891265856203657`).
-- **El diseño de tarjeta debe incluir**: imagen de portada (o placeholder), nombre del negocio, categoría, región, precio, rating y CTA.
-
-#### PRIORIDAD 2 — SEO de Contenido
-- Las URLs `/buscar/?keyword=X` no son indexables por Google (SPA dinámica).
-- Necesitar páginas estáticas tipo `/region/maule/categoria/restaurantes/`.
-- **Solución**: Generar archive pages por taxonomía cruzada (región + categoría) con contenido semántico estático para rastreadores.
-
-#### PRIORIDAD 3 — Refinamiento Visual del Divi Theme Builder
+#### PRIORIDAD 1 — Refinamiento Visual del Divi Theme Builder
 - Las plantillas de "Páginas de Categoría" (ID 369) y "Página de Búsqueda" (ID 370) tienen la estructura técnica correcta pero necesitan refinamiento visual en el Divi Visual Builder (hero section, colores, tipografía).
 - **Acción**: Ingresar al Divi Theme Builder desde el admin de WordPress y diseñar el layout visual de cada plantilla.
 
-#### PRIORIDAD 4 — Estrategia de Contenido
+#### PRIORIDAD 2 — Estrategia de Contenido
 - Carga inicial: manual por el equipo.
 - Auto-registro: formulario frontend ya existe en Panel Babel.
 - Definir: ¿listado gratuito? ¿plan destacado pago?

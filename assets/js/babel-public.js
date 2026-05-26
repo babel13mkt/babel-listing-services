@@ -371,4 +371,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resultsContainer) {
         performSearch(1);
     }
+
+    // ==========================================================================
+    // 5. BYPASS DIVI LIGHTBOX FOR REGION CARDS
+    // ==========================================================================
+    // Divi 5 a veces intercepta los clicks en las tarjetas de región y abre un lightbox
+    // en lugar de navegar a la URL. Usamos la fase de captura para forzar la navegación.
+    document.querySelectorAll('.babel-region-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const href = card.getAttribute('href');
+            if (href) {
+                window.location.href = href;
+            }
+        }, true); // Fase de captura
+    });
 });

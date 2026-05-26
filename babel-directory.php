@@ -136,6 +136,26 @@ function babel_directory_init() {
 babel_directory_init();
 
 /**
+ * Interceptar la carga de plantillas para CPT babel_business y taxonomías de Babel.
+ * Esto independiza al plugin de las plantillas del tema activo (Divi, Gutenberg, etc.).
+ */
+add_filter( 'template_include', function( $template ) {
+    if ( is_tax( 'babel_region' ) || is_tax( 'babel_category' ) ) {
+        $plugin_template = BD_PATH . 'templates/taxonomy-babel_region.php';
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    if ( is_singular( 'babel_business' ) ) {
+        $plugin_template = BD_PATH . 'templates/single-babel_business.php';
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    return $template;
+});
+
+/**
  * Endpoint temporal para poblar datos de prueba mediante URL
  * Uso: https://tusitio.com/?seed_sushi=1
  */

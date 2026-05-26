@@ -1474,24 +1474,7 @@
    ========================================================================== */
 
 /* Shortcode: Regiones y Radar */
-/* Forzar a cualquier fila y sección de Divi que envuelva al grid a comportarse como Gutter 2 Fullwidth (95% sin márgenes) */
-.et_pb_section:has(.babel-region-grid) {
-    padding-top: 0 !important;
-    padding-bottom: 80px !important;
-}
-.et_pb_row:has(.babel-region-grid) {
-    width: 95% !important;
-    max-width: none !important;
-    padding: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-.et_pb_column:has(.babel-region-grid) {
-    padding-bottom: 0 !important;
-}
-.et_pb_module:has(.babel-region-grid) {
-    margin-bottom: 0 !important;
-}
+
 
 .babel-region-grid {
     display: grid;
