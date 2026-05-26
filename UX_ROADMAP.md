@@ -138,8 +138,6 @@ PORTADA
 
 ---
 
-## Estado de Implementación
-
 ### ✅ Completado
 
 | Componente | Shortcode | Descripción |
@@ -147,7 +145,7 @@ PORTADA
 | Buscador universal | `[babel_radar_search]` | Búsqueda keyword + GPS |
 | Grilla de 16 regiones | `[babel_region_grid]` | Con imágenes de fondo, CSS full-width |
 | Plantilla de página de región | `[bd_region_template]` | Buscador pre-filtrado + pills de categorías |
-| Loop de resultados | `[bd_archive_loop]` | Tarjetas de negocios para Divi Theme Builder |
+| Loop de resultados | `[bd_archive_loop]` | Tarjetas de negocios para Gutenberg / FSE |
 | Barra de filtros | `[bd_filter_bar]` | Región + categoría, dinámico |
 | Footer regiones | `[bd_footer_regions]` | Lista para footer |
 | Footer categorías | `[bd_footer_categories]` | Lista para footer |
@@ -156,27 +154,18 @@ PORTADA
 | Panel Babel | WordPress admin | Formulario de alta + guía de shortcodes |
 | Unificación de diseño | UI de Tarjetas | `[bd_archive_loop]` y fallback AJAX unificados en CSS BEM |
 | SEO de Contenido | Rutas estáticas | URLs `/region/X/categoria/Y/` nativas de WP con history API SPA |
-
-### Plantillas Divi Theme Builder Activas
-
-| ID | Plantilla | Cobertura |
-|---|---|---|
-| 351 | Plantilla Predeterminada | Global (fallback) |
-| 352 | Todas las Páginas de Regiones | `archive:taxonomy:babel_region:all` |
-| 369 | Páginas de Categoría | `archive:taxonomy:babel_category:all` |
-| 355 | Todos los Negocios (CPT) | `singular:post_type:babel_business:all` |
-| 370 | Página de Búsqueda | `search:all` |
+| Migración Gutenberg | Core & Portada | Migración completa de Divi 5 a Gutenberg (Twenty Twenty-Four) con plantillas PHP autónomas para máxima velocidad. |
 
 ### 🔴 Pendiente (Próximos pasos priorizados)
 
-#### PRIORIDAD 1 — Refinamiento Visual del Divi Theme Builder
-- Las plantillas de "Páginas de Categoría" (ID 369) y "Página de Búsqueda" (ID 370) tienen la estructura técnica correcta pero necesitan refinamiento visual en el Divi Visual Builder (hero section, colores, tipografía).
-- **Acción**: Ingresar al Divi Theme Builder desde el admin de WordPress y diseñar el layout visual de cada plantilla.
-
-#### PRIORIDAD 2 — Estrategia de Contenido
-- Carga inicial: manual por el equipo.
+#### PRIORIDAD 1 — Estrategia de Contenido y Carga
+- Carga inicial: manual por el equipo de comunidades y regiones de Chile.
 - Auto-registro: formulario frontend ya existe en Panel Babel.
 - Definir: ¿listado gratuito? ¿plan destacado pago?
+
+#### PRIORIDAD 2 — Preparación para Aplicación Móvil (Futura App)
+- **Desacoplamiento Headless:** Asegurar que los endpoints REST API (`/wp-json/babel/v1/search`) estén totalmente optimizados, limpios y libres de dependencias visuales de WordPress para poder alimentar de forma nativa a la futura aplicación móvil.
+- **Geolocalización GPS Avanzada:** Mantener y validar los campos de metadatos `_babel_lat` y `_babel_lng` para proveer mapas interactivos y ordenamiento por proximidad real dentro de la App móvil.
 
 ---
 
