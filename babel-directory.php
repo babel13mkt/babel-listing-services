@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 7.1.5
+ * Version: 7.1.6
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.0.0+
-define( 'BD_VERSION', '7.1.5' );
+define( 'BD_VERSION', '7.1.6' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BD_URL', plugin_dir_url( __FILE__ ) );
 
