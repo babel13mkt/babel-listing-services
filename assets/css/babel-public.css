@@ -2953,4 +2953,27 @@
     box-shadow: 0 20px 40px rgba(2, 35, 93, 0.15) !important;
 }
 
+/* Evitar bordes extraños de foco de Gutenberg en el buscador */
+.babel-custom-hero .babel-search-form-wrapper input:focus,
+.babel-custom-hero .babel-search-form-wrapper input:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Asegurar que la portada no tenga espacios en blanco superiores por debajo de la cabecera */
+.home .entry-content,
+.home .wp-block-post-content,
+.home .site-main {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.home .entry-content > .alignfull:first-child {
+    margin-top: 0 !important;
+}
+
 
