@@ -31,10 +31,10 @@ class Assets {
      * No se encolan globalmente, sino que se registran para encolado inteligente.
      */
     public function register_public_assets() {
-        // Registrar la hoja de estilos pública
+        // Registrar la hoja de estilos pública con cache-busting físico en el nombre del archivo
         wp_register_style(
             'babel-public-css',
-            BD_URL . 'assets/css/babel-public.css',
+            BD_URL . 'assets/css/babel-public-v716.css',
             array(),
             BD_VERSION
         );
