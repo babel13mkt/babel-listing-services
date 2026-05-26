@@ -31,6 +31,21 @@ class Assets {
      * No se encolan globalmente, sino que se registran para encolado inteligente.
      */
     public function register_public_assets() {
+        // Encolar fuentes del sistema de diseño Stitch globalmente
+        wp_enqueue_style(
+            'babel-google-fonts',
+            'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap',
+            array(),
+            null
+        );
+
+        wp_enqueue_style(
+            'babel-material-symbols',
+            'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
+            array(),
+            null
+        );
+
         // Registrar la hoja de estilos pública con cache-busting físico en el nombre del archivo
         wp_register_style(
             'babel-public-css',

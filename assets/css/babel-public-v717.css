@@ -2976,4 +2976,42 @@
     margin-top: 0 !important;
 }
 
+/* Cabecera Premium adaptada a ancho de página de 95% */
+header.wp-block-template-part {
+    width: 95% !important;
+    max-width: 1400px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+}
+
+header.wp-block-template-part .wp-block-group {
+    padding: 0 !important;
+}
+
+/* Estilo de enlaces de navegación de la cabecera */
+header.wp-block-template-part a {
+    font-family: 'Montserrat', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #1a1c1c !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+}
+
+header.wp-block-template-part a:hover {
+    color: var(--color-secondary, #735c00) !important;
+}
+
+/* Título del sitio si no hay logotipo asignado */
+header.wp-block-template-part .wp-block-site-title a {
+    font-family: 'Playfair Display', serif !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+}
+
 
