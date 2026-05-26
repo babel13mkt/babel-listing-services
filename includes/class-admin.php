@@ -27,59 +27,9 @@ class Admin {
      * Registra los ajustes, secciones y campos usando la Settings API de WordPress.
      */
     public function register_settings() {
-        register_setting(
-            'babel_directory_settings_group',
-            'babel_divi_grid_layout_id',
-            array(
-                'type'              => 'integer',
-                'sanitize_callback' => 'intval',
-                'default'           => 0,
-            )
-        );
-
-        add_settings_section(
-            'babel_admin_main_section',
-            __( 'Configuración de Integración con Divi 5', 'babel-directory' ),
-            array( $this, 'render_section_description' ),
-            'bd-panel'
-        );
-
-        add_settings_field(
-            'babel_divi_grid_layout_id',
-            __( 'ID del Layout de Rejilla Divi (Divi Grid Layout ID)', 'babel-directory' ),
-            array( $this, 'render_divi_layout_id_field' ),
-            'bd-panel',
-            'babel_admin_main_section'
-        );
+        // No hay ajustes globales requeridos en la arquitectura agnóstica actual.
     }
 
-    /**
-     * Renderiza la descripción de la sección principal.
-     */
-    public function render_section_description() {
-        echo '<p>' . esc_html__( 'Configure las opciones principales de integración de Babel Directory con el maquetador Divi y otros motores del sitio.', 'babel-directory' ) . '</p>';
-    }
-
-    /**
-     * Renderiza el input para configurar el ID del Layout de Divi.
-     */
-    public function render_divi_layout_id_field() {
-        $value = get_option( 'babel_divi_grid_layout_id', 0 );
-        ?>
-        <input 
-            type="number" 
-            name="babel_divi_grid_layout_id" 
-            id="babel_divi_grid_layout_id" 
-            value="<?php echo esc_attr( $value ); ?>" 
-            class="regular-text" 
-            min="0"
-            step="1"
-        />
-        <p class="description">
-            <?php esc_html_e( 'Ingrese el ID del Layout guardado en la biblioteca de Divi que se utilizará para renderizar las rejillas de resultados de negocios.', 'babel-directory' ); ?>
-        </p>
-        <?php
-    }
 
     /**
      * Registra la página de administración del plugin.

@@ -91,14 +91,43 @@ class Shortcodes {
             'parent'     => 0,
         );
 
-        if ( $limit > 0 ) {
-            $terms_args['number'] = $limit;
-        }
-
         $terms = get_terms( $terms_args );
 
         if ( \is_wp_error( $terms ) || empty( $terms ) ) {
             return '<p>No se encontraron regiones.</p>';
+        }
+
+        // Función auxiliar para convertir números romanos a enteros
+        $roman_to_int = function( $roman ) {
+            $romans = array(
+                'I' => 1, 'V' => 5, 'X' => 10, 'L' => 50, 'C' => 100, 'D' => 500, 'M' => 1000
+            );
+            $result = 0;
+            $roman = strtoupper( trim( $roman ) );
+            for ( $i = 0; $i < strlen( $roman ); $i++ ) {
+                if ( $i + 1 < strlen( $roman ) && isset( $romans[$roman[$i]], $romans[$roman[$i + 1]] ) && $romans[$roman[$i]] < $romans[$roman[$i + 1]] ) {
+                    $result -= $romans[$roman[$i]];
+                } elseif ( isset( $romans[$roman[$i]] ) ) {
+                    $result += $romans[$roman[$i]];
+                }
+            }
+            return $result;
+        };
+
+        // Ordenar las regiones geográficamente usando el número romano de la nomenclatura
+        usort( $terms, function( $a, $b ) use ( $roman_to_int ) {
+            preg_match( '/^([IVXLCDM]+)/i', $a->name, $a_matches );
+            preg_match( '/^([IVXLCDM]+)/i', $b->name, $b_matches );
+
+            $val_a = ! empty( $a_matches[1] ) ? $roman_to_int( $a_matches[1] ) : 999;
+            $val_b = ! empty( $b_matches[1] ) ? $roman_to_int( $b_matches[1] ) : 999;
+
+            return $val_a <=> $val_b;
+        } );
+
+        // Aplicar el límite después de la ordenación
+        if ( $limit > 0 && count( $terms ) > $limit ) {
+            $terms = array_slice( $terms, 0, $limit );
         }
 
         ob_start();

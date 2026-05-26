@@ -1,11 +1,12 @@
 # UX Roadmap — soydechile.cl (Babel Directory Plugin)
 
-> **Estado**: Actualizado 2026-05-26  
+> **Estado**: Actualizado 2026-05-26 — Hito 92  
 > **Aprobado por**: Andy  
 > **Arquitectura técnica**: PSR-4 + REST API WP7 · Plugin Agnóstico · Sin dependencia de tema  
 > **Repo**: github.com/babel13mkt/babel-listing-services · **Rama**: main  
 > **Producción**: soydechile.cl · Plugin activo: `babel-directory-master` en AR1  
-> **Versión actual**: 7.1.2
+> **Tema activo**: `soy-de-chile-child` v1.0.2 (Child de Twenty Twenty-Four) — **Divi 5 eliminado**  
+> **Versión actual plugin**: 7.1.6 · **Versión child theme**: 1.0.2
 
 ---
 
@@ -42,21 +43,35 @@ Estas reglas NO son negociables. Deben respetarse en TODA modificación al plugi
 Flujo obligatorio: Editar local → commit GitHub → rsync a AR1
 ```
 ```bash
+# Plugin
 rsync -avz --no-p --no-g --no-o --exclude='.git' \
   "/ruta/local/babel-directory-master/" \
   ar1:/home/soydechile/public_html/wp-content/plugins/babel-directory-master/
 
+# Child Theme
+rsync -avz --no-p --no-g --no-o \
+  "/ruta/local/soy-de-chile-child/" \
+  ar1:/home/soydechile/public_html/wp-content/themes/soy-de-chile-child/
+
 # Post-deploy SIEMPRE:
 ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/plugins/babel-directory-master/'
+ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/themes/soy-de-chile-child/'
 ```
+
+### 6. Estilos Globales van en el Child Theme, NO en el Plugin
+- Los estilos del **sitio** (header, footer, tipografía global, hero de portada) van en `soy-de-chile-child/assets/sdc-theme.css`.
+- Los estilos de los **shortcodes** (tarjetas de negocios, buscador, grilla de regiones) van en `babel-public-v717.css`.
+- **PROHIBIDO** mezclar ambos. La separación de responsabilidades es estricta.
 
 ---
 
 ## El Sistema de Diseño: Stitch Design System
 
-El diseño visual del plugin está definido en **Stitch** (herramienta de diseño de Google).  
+El diseño visual del plugin y del sitio está definido en **Stitch** (herramienta de diseño de Google).  
 **Proyecto en Stitch**: "Directorio Babel - Diseño UI" (`projects/13440891265856203657`)  
 **Pantalla de referencia principal**: "Perfil Sushi Club - Reestructurado" (`screen: 0ec94fee227b4475b0940bab3ce12968`)
+
+> ⚠️ **El rediseño de portada y cabecera (Hito 92) se implementó directamente en el child theme** por indisponibilidad temporal del MCP de Stitch. El diseño sigue el mismo sistema de tokens Charcoal/Gold del proyecto Stitch. Si Stitch está disponible en una próxima sesión, se puede consultar para iteraciones adicionales.
 
 ### Design Tokens del Sistema
 
@@ -112,7 +127,7 @@ Estas clases son NATIVAS del plugin y deben estar declaradas en `babel-public.cs
 
 ## Visión del Producto
 
-**soydechile.cl** es un superdirectorio de comercios e instituciones de todo Chile.  
+**soydechile.cl** es un superdirectorio de comercios e **instituciones** de todo Chile: negocios, escuelas, universidades, bancos, clínicas, organismos públicos y más.  
 Orientado a 3 tipos de usuario:
 
 | Usuario | Contexto | Necesidad |
@@ -120,6 +135,8 @@ Orientado a 3 tipos de usuario:
 | Chileno local | Sabe dónde está | Busca algo concreto rápido |
 | Turista planificando | En casa, antes del viaje | Explorar por región |
 | Turista en terreno | Con celular en Chile | Encontrar algo cerca via GPS |
+
+> 📱 **Futura App Móvil (en roadmap):** La arquitectura REST API del plugin está diseñada para alimentar nativamente una futura aplicación móvil. Los endpoints deben mantenerse libres de dependencias visuales de WordPress.
 
 ---
 
@@ -140,40 +157,66 @@ PORTADA
 
 ### ✅ Completado
 
-| Componente | Shortcode | Descripción |
-|---|---|---|
-| Buscador universal | `[babel_radar_search]` | Búsqueda keyword + GPS |
-| Grilla de 16 regiones | `[babel_region_grid]` | Con imágenes de fondo, CSS full-width |
-| Plantilla de página de región | `[bd_region_template]` | Buscador pre-filtrado + pills de categorías |
-| Loop de resultados | `[bd_archive_loop]` | Tarjetas de negocios para Gutenberg / FSE |
-| Barra de filtros | `[bd_filter_bar]` | Región + categoría, dinámico |
-| Footer regiones | `[bd_footer_regions]` | Lista para footer |
-| Footer categorías | `[bd_footer_categories]` | Lista para footer |
-| Perfil de negocio | `[bd_business_profile]` | Perfil completo: galería, horarios, contacto, mapa, reseñas |
-| REST API | `/wp-json/babel/v1/search` | Endpoint principal de búsqueda |
-| Panel Babel | WordPress admin | Formulario de alta + guía de shortcodes |
-| Unificación de diseño | UI de Tarjetas | `[bd_archive_loop]` y fallback AJAX unificados en CSS BEM |
-| SEO de Contenido | Rutas estáticas | URLs `/region/X/categoria/Y/` nativas de WP con history API SPA |
-| Migración Gutenberg | Core & Portada | Migración completa de Divi 5 a Gutenberg (Twenty Twenty-Four) con plantillas PHP autónomas para máxima velocidad. |
+| Hito | Componente | Shortcode / Archivo | Descripción |
+|---|---|---|---|
+| 50-76 | Buscador universal | `[babel_radar_search]` | Búsqueda keyword + GPS |
+| 54-62 | Grilla de 16 regiones | `[babel_region_grid]` | Con imágenes de fondo, CSS full-width |
+| 76 | Plantilla de página de región | `[bd_region_template]` | Buscador pre-filtrado + pills de categorías |
+| 88 | Loop de resultados | `[bd_archive_loop]` | Tarjetas de negocios BEM, unificadas con buscador AJAX |
+| 76 | Barra de filtros | `[bd_filter_bar]` | Región + categoría, dinámico |
+| 46 | Footer regiones | `[bd_footer_regions]` | Lista para footer |
+| 46 | Footer categorías | `[bd_footer_categories]` | Lista para footer |
+| 79 | Perfil de negocio | `[bd_business_profile]` | Perfil completo: galería, horarios, contacto, mapa, reseñas |
+| 74 | REST API | `/wp-json/babel/v1/search` | Endpoint principal de búsqueda, PSR-4 |
+| 74 | Panel Babel | WordPress admin | Formulario de alta + guía de shortcodes |
+| 89 | Unificación de diseño | `class-ajax.php` | Fallback AJAX y `[bd_archive_loop]` unificados en CSS BEM |
+| 90 | SEO Rutas Estáticas | `rewrite rules` | URLs `/region/X/categoria/Y/` nativas de WP con history API SPA |
+| **91** | **Migración a Gutenberg** | `babel-directory.php` + templates | **Divi 5 eliminado. Twenty Twenty-Four activo. Plantillas PHP autónomas `taxonomy-babel_region.php` y `single-babel_business.php` en el plugin.** |
+| **92** | **Rediseño Premium Portada + Header** | `soy-de-chile-child/` | **Child theme propio. Header glassmorphism fijo full-width (logo izq. / menú der.). Hero 100svh cinematográfico con eyebrow pill, tipografía Playfair Display, pills de acceso rápido, Google Fonts.** |
 
 ### 🔴 Pendiente (Próximos pasos priorizados)
 
-#### PRIORIDAD 1 — Estrategia de Contenido y Carga
+#### PRIORIDAD 1 — Iteración Visual del Child Theme
+- [ ] Subir logo oficial de "Soy de Chile" en formato SVG al Media Library y configurarlo en **Apariencia → Identidad del Sitio** para que aparezca en el header.
+- [ ] Revisar/refinar el menú de navegación en **Apariencia → Menus** (o Editor de sitio) para asegurar que los ítems sean los correctos.
+- [ ] Evaluar con Stitch (cuando esté disponible) si la portada actual sigue la línea del design system o requiere iteración.
+- [ ] Ajustar imagen de fondo del hero: la actual (`costanera_skyline.jpg`) es genérica — considerar imagen de alta resolución de Chile más representativa.
+
+#### PRIORIDAD 2 — Estrategia de Contenido y Carga
 - Carga inicial: manual por el equipo de comunidades y regiones de Chile.
 - Auto-registro: formulario frontend ya existe en Panel Babel.
 - Definir: ¿listado gratuito? ¿plan destacado pago?
+- Instituciones: escuelas, universidades, bancos y organismos públicos deben tener su flujo de alta diferenciado.
 
-#### PRIORIDAD 2 — Preparación para Aplicación Móvil (Futura App)
+#### PRIORIDAD 3 — Preparación para Aplicación Móvil (Futura App)
 - **Desacoplamiento Headless:** Asegurar que los endpoints REST API (`/wp-json/babel/v1/search`) estén totalmente optimizados, limpios y libres de dependencias visuales de WordPress para poder alimentar de forma nativa a la futura aplicación móvil.
 - **Geolocalización GPS Avanzada:** Mantener y validar los campos de metadatos `_babel_lat` y `_babel_lng` para proveer mapas interactivos y ordenamiento por proximidad real dentro de la App móvil.
+- **Design System compartido:** Los tokens CSS (`--babel-*`, `--sdc-*`) del plugin y el child theme deberán exportarse como guía de diseño para el equipo mobile.
 
 ---
 
-## Arquitectura Técnica del Plugin
+## Arquitectura Técnica Completa
 
+### Stack de Producción (AR1)
+```
+WordPress 7.x
+├── Tema Parent:  twentytwentyfour (Twenty Twenty-Four v1.5 — Block Theme / FSE)
+└── Tema Child:   soy-de-chile-child v1.0.2  ← ACTIVO
+    ├── style.css                   # Declaración del child theme
+    ├── functions.php               # Enqueue estilos + Google Fonts + JS scroll header
+    ├── assets/
+    │   └── sdc-theme.css           # ← ESTILOS GLOBALES DEL SITIO (header, hero, footer)
+    └── parts/
+        └── header.html             # Template part FSE (overrides parent)
+
+Plugin:  babel-directory-master v7.1.6
+```
+
+### Estructura del Plugin
 ```
 babel-directory-master/
 ├── babel-directory.php          # Entry point + plugin header + versión
+│                                # + filtro template_include (CPT & taxonomías autónomas)
 ├── includes/
 │   ├── autoloader.php           # PSR-4 autoloader nativo
 │   ├── class-cpt.php            # Custom Post Type: babel_business
@@ -190,13 +233,22 @@ babel-directory-master/
 │       └── class-rest-endpoints.php  # /wp-json/babel/v1/search
 ├── assets/
 │   ├── js/babel-public.js       # Vanilla JS: buscador SPA + GPS + pills
-│   └── css/babel-public.css     # ← FUENTE DE VERDAD DE TODOS LOS ESTILOS
+│   └── css/babel-public-v717.css # ← ESTILOS DE SHORTCODES (tarjetas, buscador, regiones)
 └── templates/
-    └── parts/                   # Partials de templates
+    ├── taxonomy-babel_region.php # Plantilla autónoma para /region/{slug}/
+    └── single-babel_business.php # Plantilla autónoma para /negocio/{slug}/
 ```
 
 **Namespace:** `Babel\Directory` (PSR-4)  
 **REST Endpoint:** `GET/POST /wp-json/babel/v1/search`
+
+### Separación de Responsabilidades CSS
+| Archivo | Responsabilidad |
+|---|---|
+| `sdc-theme.css` (child theme) | Header, hero portada, footer global, tipografía base, animaciones del sitio |
+| `babel-public-v717.css` (plugin) | Tarjetas de negocios, buscador, grilla de regiones, pills, filtros, perfil |
+
+> ⚠️ **Nunca mezclar.** Los estilos del sitio van en el child theme. Los estilos de los shortcodes van en el plugin.
 
 ### Meta Keys del CPT babel_business
 
@@ -234,19 +286,22 @@ _babel_rating_count     Número de reseñas
 
 ## Lo que NUNCA Hacer
 
-- ❌ No crear módulos nativos de Divi (React/TS) — el plugin debe ser agnóstico
+- ❌ No intentar activar o reintegrar Divi — fue eliminado en el Hito 91 y es innecesario
 - ❌ No usar `admin-ajax.php` como flujo principal (solo fallback legacy)
 - ❌ No hardcodear IPs, credenciales, nombres de negocios o imágenes de placeholder externas
 - ❌ No añadir dependencias de jQuery (solo Vanilla JS)
 - ❌ No modificar archivos directamente en el servidor sin rsync
 - ❌ No usar Tailwind, Bootstrap o cualquier framework CSS externo
-- ❌ No crear clases CSS sin antes definirlas en `babel-public.css`
-- ❌ No asumir que una clase existe por el nombre — verificar siempre en `babel-public.css`
+- ❌ No crear clases CSS sin antes definirlas en el archivo correcto (`sdc-theme.css` o `babel-public-v717.css`)
+- ❌ No asumir que una clase existe por el nombre — verificar siempre en el archivo correspondiente
+- ❌ No poner estilos del sitio (header, hero, layout global) dentro del plugin — van en el child theme
+- ❌ No activar Twenty Twenty-Four directamente — el tema activo es el child theme `soy-de-chile-child`
 
 ---
 
 ## Proceso de Despliegue a Producción (AR1)
 
+### A. Despliegue del Plugin (`babel-directory-master`)
 ```bash
 # 1. Verificar estado local
 cd /ruta/a/babel-directory-master
@@ -256,25 +311,60 @@ git status && git diff --stat
 git add -A && git commit -m "feat: descripción del cambio"
 git push origin main
 
-# 3. Sincronizar con AR1 (nunca modificar directamente en el servidor)
+# 3. Sincronizar con AR1
 rsync -avz --no-p --no-g --no-o --exclude='.git' \
   "/ruta/local/babel-directory-master/" \
   ar1:/home/soydechile/public_html/wp-content/plugins/babel-directory-master/
 
-# 4. Post-deploy SIEMPRE (sin esto el plugin puede desactivarse silenciosamente)
+# 4. Post-deploy: permisos (CRÍTICO — sin esto el plugin puede desactivarse silenciosamente)
 ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ && \
   find /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ -type d -exec chmod 755 {} \; && \
   find /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ -type f -exec chmod 644 {} \;'
 
-# 5. Limpiar caché de WordPress
+# 5. Limpiar caché
 ssh ar1 'wp cache flush --allow-root --path=/home/soydechile/public_html && \
   wp transient delete --all --allow-root --path=/home/soydechile/public_html'
+```
 
-# 6. Si se modificó CSS — purgar caché Divi
-ssh ar1 'wp eval "et_fb_delete_builder_assets();" --allow-root --path=/home/soydechile/public_html'
+### B. Despliegue del Child Theme (`soy-de-chile-child`)
+```bash
+# Ruta local: /Proyectos_Dev/soy-de-chile/soy-de-chile-child/
+
+# 1. Sincronizar
+rsync -avz --no-p --no-g --no-o \
+  "/ruta/local/soy-de-chile-child/" \
+  ar1:/home/soydechile/public_html/wp-content/themes/soy-de-chile-child/
+
+# 2. Post-deploy: permisos
+ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/themes/soy-de-chile-child/'
+
+# 3. Limpiar caché (invalidar CSS)
+ssh ar1 'wp cache flush --allow-root --path=/home/soydechile/public_html'
+
+# El child theme ya está activo — no hace falta activarlo de nuevo
+# Para verificar: wp theme list --allow-root --path=/home/soydechile/public_html
+```
+
+### C. Verificación rápida post-deploy
+```bash
+# HTTP 200 y clases del child theme presentes
+curl -s -o /dev/null -w "%{http_code}" https://soydechile.cl/
+curl -s https://soydechile.cl/ | grep -o 'sdc-site-header\|babel-custom-hero' | sort -u
 ```
 
 ---
 
 *Documento vivo — actualizar con cada hito completado.*  
 *Historial completo de hitos: Neo4j → `MATCH (h:Milestone) RETURN h ORDER BY h.number DESC`*
+
+---
+
+## Changelog de Hitos Técnicos Recientes
+
+| Fecha | Hito | Cambio Principal | Versión |
+|---|---|---|---|
+| 2026-05-26 | **92** | Child theme `soy-de-chile-child` creado y activado. Header glassmorphism full-width. Hero 100svh con eyebrow pill dorado, tipografía Playfair Display, Google Fonts, quick pills temáticas. | theme 1.0.2 |
+| 2026-05-26 | **91** | Migración completa de Divi 5 a Gutenberg (Twenty Twenty-Four). Plantillas autónomas `taxonomy-babel_region.php` y `single-babel_business.php` en el plugin vía `template_include`. | 7.1.6 |
+| 2026-05-26 | **90** | Rutas estáticas SEO `/region/X/categoria/Y/`. History API SPA. | 7.1.5 |
+| 2026-05-26 | **89** | Unificación tarjetas AJAX + `[bd_archive_loop]` en CSS BEM. Eliminación `.babel-premium-card`. | 7.1.4 |
+| 2026-05-26 | **88** | Reemplazo HTML Tailwind por clases BEM nativas. 25 tokens CSS `--babel-*`. Anti-IA-Drift en UX_ROADMAP. | 7.1.3 |
