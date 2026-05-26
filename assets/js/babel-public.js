@@ -322,6 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Obtener categoría y asignarla al contenedor
                 const selectedCat = pill.getAttribute('data-category') || '';
                 resultsContainer.setAttribute('data-category', selectedCat);
+
+                // Update URL for SEO and UX sin recargar la página SPA
+                const pillHref = pill.getAttribute('href');
+                if (pillHref) {
+                    window.history.pushState({ path: pillHref }, '', pillHref);
+                }
                 
                 // Disparar búsqueda AJAX
                 performSearch(1);

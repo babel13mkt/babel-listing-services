@@ -21,6 +21,25 @@ class CPT {
         add_action( 'init', array( $this, 'register_taxonomies' ), 9 );
         add_action( 'init', array( $this, 'register_cpts' ), 10 );
         add_action( 'init', array( $this, 'register_meta_fields' ), 11 );
+        add_action( 'init', array( $this, 'register_rewrite_rules' ), 12 );
+    }
+
+    /**
+     * Registra las reglas de reescritura estáticas para cruce de taxonomías.
+     */
+    public function register_rewrite_rules() {
+        // Regla con paginación
+        add_rewrite_rule(
+            '^region/([^/]+)/categoria/([^/]+)/page/([0-9]{1,})/?$',
+            'index.php?babel_region=$matches[1]&babel_category=$matches[2]&paged=$matches[3]',
+            'top'
+        );
+        // Regla sin paginación
+        add_rewrite_rule(
+            '^region/([^/]+)/categoria/([^/]+)/?$',
+            'index.php?babel_region=$matches[1]&babel_category=$matches[2]',
+            'top'
+        );
     }
 
     /**
@@ -121,7 +140,7 @@ class CPT {
             'show_tagcloud'     => true,
             'show_in_rest'      => true, // Habilita rest para soporte en Gutenberg
             'query_var'         => true,
-            'rewrite'           => array( 'slug' => 'region-negocio' ),
+            'rewrite'           => array( 'slug' => 'region' ),
         );
 
         register_taxonomy( 'babel_region', array( 'babel_business' ), $args_region );
@@ -160,7 +179,7 @@ class CPT {
             'show_tagcloud'     => true,
             'show_in_rest'      => true, // Soporte en Gutenberg
             'query_var'         => true,
-            'rewrite'           => array( 'slug' => 'categoria-negocio' ),
+            'rewrite'           => array( 'slug' => 'categoria' ),
         );
 
         register_taxonomy( 'babel_category', array( 'babel_business' ), $args_category );

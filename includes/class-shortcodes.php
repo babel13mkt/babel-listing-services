@@ -561,7 +561,8 @@ class Shortcodes {
             <div class="bd-region-cats-section">
                 <div class="bd-region-cats-label"><?php esc_html_e( 'Filtrar por Categoría', 'babel-directory' ); ?></div>
                 <div class="bd-category-pills">
-                    <a class="bd-category-pill active" data-category="">
+                    <?php $base_region_url = home_url( '/region/' . $term->slug . '/' ); ?>
+                    <a href="<?php echo esc_url( $base_region_url ); ?>" class="bd-category-pill active" data-category="">
                         <span class="bd-category-pill-icon">🌟</span>
                         <span class="bd-category-pill-name"><?php esc_html_e( 'Todos', 'babel-directory' ); ?></span>
                     </a>
@@ -576,7 +577,8 @@ class Shortcodes {
                                 }
                             }
                         ?>
-                            <a class="bd-category-pill" data-category="<?php echo esc_attr( $cat->slug ); ?>">
+                            <?php $cat_url = home_url( '/region/' . $term->slug . '/categoria/' . $cat->slug . '/' ); ?>
+                            <a href="<?php echo esc_url( $cat_url ); ?>" class="bd-category-pill" data-category="<?php echo esc_attr( $cat->slug ); ?>">
                                 <span class="bd-category-pill-icon"><?php echo esc_html( $emoji ); ?></span>
                                 <span class="bd-category-pill-name"><?php echo esc_html( $cat->name ); ?></span>
                             </a>
