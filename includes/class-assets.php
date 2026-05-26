@@ -49,7 +49,7 @@ class Assets {
         // Registrar la hoja de estilos pública con cache-busting físico en el nombre del archivo
         wp_register_style(
             'babel-public-css',
-            BD_URL . 'assets/css/babel-public-v716.css',
+            BD_URL . 'assets/css/babel-public-v717.css',
             array(),
             BD_VERSION
         );
