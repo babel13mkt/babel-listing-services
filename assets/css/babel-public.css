@@ -5,16 +5,73 @@
  */
 
 :root {
-  /* Stitch UI Design Tokens */
-  --md-sys-color-primary: #000000;
-  --md-sys-color-surface: #f9f9f9;
-  --md-sys-color-surface-container-low: #f3f3f3;
-  --md-sys-color-surface-container-lowest: #ffffff;
-  --md-sys-color-outline-variant: #c4c7c7;
-  --md-sys-color-secondary-fixed-dim: #e9c349;
-  --md-sys-color-on-surface-variant: #444748;
-  --md-sys-color-on-surface: #1a1c1c;
-  --md-sys-color-secondary: #735c00;
+  /* ============================================================
+   * Babel Directory — Design Tokens (prefijo --babel-)
+   * Basados en Stitch Design System "Directorio Babel - Diseño UI"
+   * Proyecto: projects/13440891265856203657
+   * Pantalla ref: "Perfil Sushi Club - Reestructurado"
+   * Prefijo --babel- evita colisiones con --et-* (Divi) y --wp-* (WP)
+   * ============================================================ */
+
+  /* Paleta principal — Charcoal/Gold Premium */
+  --babel-color-primary:                #000000;
+  --babel-color-on-primary:             #ffffff;
+  --babel-color-secondary:              #735c00;
+  --babel-color-on-secondary:           #ffffff;
+  --babel-color-secondary-fixed:        #ffe088;
+  --babel-color-secondary-fixed-dim:    #e9c349;
+  --babel-color-on-secondary-fixed:     #241a00;
+
+  /* Superficies */
+  --babel-color-surface:                #f9f9f9;
+  --babel-color-surface-container-lowest: #ffffff;
+  --babel-color-surface-container-low:  #f3f3f3;
+  --babel-color-surface-container:      #eeeeee;
+  --babel-color-surface-container-high: #e8e8e8;
+  --babel-color-surface-container-highest: #e2e2e2;
+  --babel-color-surface-dim:            #dadada;
+
+  /* Texto sobre superficie */
+  --babel-color-on-surface:             #1a1c1c;
+  --babel-color-on-surface-variant:     #444748;
+
+  /* Bordes */
+  --babel-color-outline:                #747878;
+  --babel-color-outline-variant:        #c4c7c7;
+
+  /* Error */
+  --babel-color-error:                  #ba1a1a;
+  --babel-color-on-error:               #ffffff;
+
+  /* Tipografías del sistema */
+  --babel-font-display:   'Playfair Display', Georgia, serif;
+  --babel-font-body:      'Inter', system-ui, sans-serif;
+  --babel-font-label:     'Montserrat', system-ui, sans-serif;
+
+  /* Espaciado base */
+  --babel-space-unit:     8px;
+  --babel-gutter:         32px;
+  --babel-margin-mobile:  20px;
+  --babel-margin-desktop: 64px;
+  --babel-container-max:  1200px;
+
+  /* Bordes redondeados */
+  --babel-radius-sm:   0.25rem;
+  --babel-radius-md:   0.5rem;
+  --babel-radius-lg:   1rem;
+  --babel-radius-xl:   1.5rem;
+  --babel-radius-full: 9999px;
+
+  /* Alias legacy (compatibilidad con clases existentes en class-shortcodes.php) */
+  --md-sys-color-primary:              var(--babel-color-primary);
+  --md-sys-color-surface:              var(--babel-color-surface);
+  --md-sys-color-surface-container-low: var(--babel-color-surface-container-low);
+  --md-sys-color-surface-container-lowest: var(--babel-color-surface-container-lowest);
+  --md-sys-color-outline-variant:      var(--babel-color-outline-variant);
+  --md-sys-color-secondary-fixed-dim:  var(--babel-color-secondary-fixed-dim);
+  --md-sys-color-on-surface-variant:   var(--babel-color-on-surface-variant);
+  --md-sys-color-on-surface:           var(--babel-color-on-surface);
+  --md-sys-color-secondary:            var(--babel-color-secondary);
 }
 
 /* Typography base */
@@ -74,6 +131,225 @@
 .babel-divi-card-wrapper {
     box-sizing: border-box;
     width: 100%;
+}
+
+/* ==========================================================================
+   BABEL BIZ CARD — Grilla y Tarjeta de Negocio ([bd_archive_loop])
+   Diseño basado en Stitch: "Perfil Sushi Club - Reestructurado"
+   SIN dependencia de Tailwind. 100% CSS nativo con tokens --babel-*.
+   ========================================================================== */
+
+/* Grilla responsiva de tarjetas */
+.sdc-grid-archive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    width: 100%;
+    padding: 8px 0;
+}
+@media (min-width: 640px) {
+    .sdc-grid-archive { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+    .sdc-grid-archive { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Tarjeta de negocio — contenedor principal */
+.babel-biz-card {
+    background: var(--babel-color-surface-container-lowest, #ffffff);
+    border: 1px solid rgba(196, 199, 199, 0.4);
+    border-radius: var(--babel-radius-lg, 1rem);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}
+.babel-biz-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.11);
+    text-decoration: none;
+}
+
+/* Zona de imagen */
+.babel-biz-card__image-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    background-color: var(--babel-color-surface-container, #eeeeee);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.babel-biz-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.45s ease;
+    display: block;
+}
+.babel-biz-card:hover .babel-biz-card__image {
+    transform: scale(1.05);
+}
+.babel-biz-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--babel-color-outline-variant, #c4c7c7);
+    font-size: 48px;
+}
+
+/* Badges flotantes sobre la imagen */
+.babel-biz-card__badges {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+.babel-biz-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--babel-radius-full, 9999px);
+    font-family: var(--babel-font-label, 'Montserrat', sans-serif);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    line-height: 1;
+}
+.babel-biz-card__badge--featured {
+    background: rgba(233, 195, 73, 0.92);
+    color: #241a00;
+}
+.babel-biz-card__badge--verified {
+    background: rgba(0, 0, 0, 0.72);
+    color: #ffffff;
+}
+.babel-biz-card__badge .material-symbols-outlined {
+    font-size: 12px;
+}
+
+/* Cuerpo de la tarjeta */
+.babel-biz-card__body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+/* Título del negocio */
+.babel-biz-card__title {
+    font-family: var(--babel-font-display, 'Playfair Display', serif);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--babel-color-primary, #000000);
+    margin: 0;
+    padding: 0;
+}
+
+/* Rating / estrellas */
+.babel-biz-card__rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--babel-font-label, 'Montserrat', sans-serif);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--babel-color-secondary-fixed-dim, #e9c349);
+}
+.babel-biz-card__rating-score {
+    color: var(--babel-color-on-surface, #1a1c1c);
+}
+.babel-biz-card__rating-count {
+    font-weight: 400;
+    color: var(--babel-color-on-surface-variant, #444748);
+    font-size: 12px;
+}
+.babel-biz-card__rating .material-symbols-outlined {
+    font-size: 15px;
+}
+
+/* Meta: región + categoría */
+.babel-biz-card__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-family: var(--babel-font-body, 'Inter', sans-serif);
+    font-size: 12px;
+    color: var(--babel-color-on-surface-variant, #444748);
+}
+.babel-biz-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.babel-biz-card__meta-item .material-symbols-outlined {
+    font-size: 14px;
+}
+.babel-biz-card__meta-sep {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--babel-color-outline-variant, #c4c7c7);
+    flex-shrink: 0;
+}
+
+/* CTA footer */
+.babel-biz-card__footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(196, 199, 199, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.babel-biz-card__price {
+    font-family: var(--babel-font-label, 'Montserrat', sans-serif);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--babel-color-on-surface-variant, #444748);
+}
+.babel-biz-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--babel-font-label, 'Montserrat', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--babel-color-primary, #000000);
+}
+.babel-biz-card__cta .material-symbols-outlined {
+    font-size: 15px;
+    transition: transform 0.2s ease;
+}
+.babel-biz-card:hover .babel-biz-card__cta .material-symbols-outlined {
+    transform: translateX(3px);
+}
+
+/* Sin resultados */
+.sdc-no-results {
+    text-align: center;
+    padding: 48px 24px;
+    font-family: var(--babel-font-body, 'Inter', sans-serif);
+    color: var(--babel-color-on-surface-variant, #444748);
+    font-size: 16px;
 }
 
 /* ==========================================================================
@@ -1200,7 +1476,8 @@
 /* Shortcode: Regiones y Radar */
 /* Forzar a cualquier fila y sección de Divi que envuelva al grid a comportarse como Gutter 2 Fullwidth (95% sin márgenes) */
 .et_pb_section:has(.babel-region-grid) {
-    padding: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 80px !important;
 }
 .et_pb_row:has(.babel-region-grid) {
     width: 95% !important;
@@ -1223,7 +1500,7 @@
     row-gap: 3%;
     width: 100%;
     padding: 0;
-    margin: 0;
+    margin: 0 0 50px 0;
 }
 .babel-region-grid[style*="--babel-grid-cols: 3"] {
     grid-template-columns: repeat(3, 30.63973%);

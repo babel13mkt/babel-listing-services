@@ -310,62 +310,121 @@ class Shortcodes {
         ?>
         <div class="sdc-grid-archive">
             <?php if ( have_posts() ) : ?>
-                <?php while ( have_posts() ) : the_post(); 
-                    
-                    $categorias = get_the_terms( get_the_ID(), 'babel_category' );
-                    $regiones = get_the_terms( get_the_ID(), 'babel_region' );
-                    
-                    $cat_name = ! empty( $categorias ) && ! \is_wp_error( $categorias ) ? $categorias[0]->name : 'Comercio';
-                    $reg_name = '';
+                <?php while ( have_posts() ) : the_post();
+
+                    $post_id   = get_the_ID();
+                    $categorias = get_the_terms( $post_id, 'babel_category' );
+                    $regiones   = get_the_terms( $post_id, 'babel_region' );
+
+                    $cat_name   = ( ! empty( $categorias ) && ! \is_wp_error( $categorias ) )
+                                    ? esc_html( $categorias[0]->name )
+                                    : '';
+                    $reg_name   = '';
                     if ( ! empty( $regiones ) && ! \is_wp_error( $regiones ) ) {
-                        // Si el término es una comuna (tiene padre), podemos mostrar su nombre.
-                        $reg_name = preg_replace('/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $regiones[0]->name);
+                        $reg_name = preg_replace( '/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $regiones[0]->name );
+                        $reg_name = esc_html( $reg_name );
                     }
+
+                    $price_range = \get_post_meta( $post_id, '_babel_price_range', true );
+                    $rating_avg  = (float) \get_post_meta( $post_id, '_babel_rating_avg', true );
+                    $rating_count = (int) \get_post_meta( $post_id, '_babel_rating_count', true );
+                    $is_featured = \get_post_meta( $post_id, '_babel_featured', true );
+                    $is_verified = \get_post_meta( $post_id, '_babel_verified', true );
+
+                    // Thumbnail: usa imagen destacada del post, sin fallbacks externos.
+                    $thumb_id  = get_post_thumbnail_id( $post_id );
+                    $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
                 ?>
-                    <article id="post-<?php the_ID(); ?>" <?php post_class('sdc-card-business bg-white rounded-2xl overflow-hidden bd-premium-shadow border border-gray-100 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 block w-full group relative flex flex-col'); ?>>
-                        <a href="<?php the_permalink(); ?>" class="block h-full no-underline flex flex-col">
-                            <!-- Cover Image -->
-                            <div class="w-full h-48 relative overflow-hidden bg-gray-100">
-                                <?php if ( has_post_thumbnail() ) : ?>
-                                    <?php the_post_thumbnail( 'medium', array('class' => 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-500') ); ?>
-                                <?php else : ?>
-                                    <img src="https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="<?php the_title_attribute(); ?>">
-                                <?php endif; ?>
-                                
-                                <!-- Floating Badge -->
-                                <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                    <?php echo esc_html( $cat_name ); ?>
+                    <a href="<?php the_permalink(); ?>" class="babel-biz-card" aria-label="<?php the_title_attribute(); ?>">
+
+                        <!-- Zona de imagen -->
+                        <div class="babel-biz-card__image-wrap">
+                            <?php if ( $thumb_url ) : ?>
+                                <img
+                                    src="<?php echo esc_url( $thumb_url ); ?>"
+                                    alt="<?php the_title_attribute(); ?>"
+                                    class="babel-biz-card__image"
+                                    loading="lazy"
+                                />
+                            <?php else : ?>
+                                <div class="babel-biz-card__placeholder">
+                                    <span class="material-symbols-outlined" style="font-size:56px;">store</span>
                                 </div>
-                            </div>
-                            
-                            <!-- Content -->
-                            <div class="p-5 flex flex-col flex-grow">
-                                <h3 class="bd-premium-font text-xl font-bold text-black mb-2 group-hover:text-yellow-600 transition-colors">
-                                    <?php the_title(); ?>
-                                </h3>
-                                <div class="text-gray-500 text-sm leading-relaxed mb-4 flex-grow">
-                                    <?php echo wp_trim_words( get_the_excerpt(), 15, '...' ); ?>
-                                </div>
-                                
-                                <!-- Footer interno -->
-                                <div class="pt-4 border-t border-gray-100 flex justify-between items-center mt-auto">
-                                    <div class="flex items-center gap-1 text-yellow-500 font-bold text-sm">
-                                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span> 4.5
-                                    </div>
-                                    <?php if ( ! empty( $reg_name ) ) : ?>
-                                        <div class="flex items-center gap-1 text-gray-400 text-xs uppercase tracking-wider font-bold">
-                                            <span class="material-symbols-outlined text-[14px]">location_on</span> <?php echo esc_html( $reg_name ); ?>
-                                        </div>
+                            <?php endif; ?>
+
+                            <!-- Badges flotantes -->
+                            <?php if ( $is_featured || $is_verified ) : ?>
+                                <div class="babel-biz-card__badges">
+                                    <?php if ( $is_featured ) : ?>
+                                        <span class="babel-biz-card__badge babel-biz-card__badge--featured">
+                                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">stars</span>
+                                            <?php esc_html_e( 'Destacado', 'babel-directory' ); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ( $is_verified ) : ?>
+                                        <span class="babel-biz-card__badge babel-biz-card__badge--verified">
+                                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">verified</span>
+                                            <?php esc_html_e( 'Verificado', 'babel-directory' ); ?>
+                                        </span>
                                     <?php endif; ?>
                                 </div>
+                            <?php endif; ?>
+                        </div><!-- /.babel-biz-card__image-wrap -->
+
+                        <!-- Cuerpo de la tarjeta -->
+                        <div class="babel-biz-card__body">
+
+                            <h3 class="babel-biz-card__title"><?php the_title(); ?></h3>
+
+                            <?php if ( $rating_count > 0 ) : ?>
+                                <div class="babel-biz-card__rating" aria-label="<?php echo esc_attr( number_format( $rating_avg, 1 ) ); ?> de 5 estrellas">
+                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;" aria-hidden="true">star</span>
+                                    <span class="babel-biz-card__rating-score"><?php echo esc_html( number_format( $rating_avg, 1 ) ); ?></span>
+                                    <span class="babel-biz-card__rating-count">(<?php echo esc_html( $rating_count ); ?>)</span>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ( $cat_name || $reg_name ) : ?>
+                                <div class="babel-biz-card__meta">
+                                    <?php if ( $cat_name ) : ?>
+                                        <span class="babel-biz-card__meta-item">
+                                            <span class="material-symbols-outlined" aria-hidden="true">category</span>
+                                            <?php echo $cat_name; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ( $cat_name && $reg_name ) : ?>
+                                        <span class="babel-biz-card__meta-sep" aria-hidden="true"></span>
+                                    <?php endif; ?>
+                                    <?php if ( $reg_name ) : ?>
+                                        <span class="babel-biz-card__meta-item">
+                                            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                                            <?php echo $reg_name; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="babel-biz-card__footer">
+                                <?php if ( $price_range ) : ?>
+                                    <span class="babel-biz-card__price"><?php echo esc_html( $price_range ); ?></span>
+                                <?php else : ?>
+                                    <span></span>
+                                <?php endif; ?>
+                                <span class="babel-biz-card__cta">
+                                    <?php esc_html_e( 'Ver perfil', 'babel-directory' ); ?>
+                                    <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                                </span>
                             </div>
-                        </a>
-                    </article>
+
+                        </div><!-- /.babel-biz-card__body -->
+
+                    </a><!-- /.babel-biz-card -->
                 <?php endwhile; ?>
             <?php else : ?>
-                <p class="sdc-no-results">No se encontraron negocios en esta región.</p>
+                <p class="sdc-no-results"><?php esc_html_e( 'No se encontraron negocios en esta categoría.', 'babel-directory' ); ?></p>
             <?php endif; ?>
         </div>
+
 
         <!-- Pagination -->
         <div class="sdc-pagination">

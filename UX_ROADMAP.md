@@ -1,15 +1,118 @@
 # UX Roadmap — soydechile.cl (Babel Directory Plugin)
 
-> **Estado**: Aprobado por Andy · **Fecha**: 2026-05-23
-> **Arquitectura técnica**: PSR-4 + REST API WP7 · Plugin Agnóstico · Sin dependencia de tema
-> **Repo**: github.com/babel13mkt/babel-listing-services · **Rama**: main
-> **Producción**: soydechile.cl · Plugin activo: `babel-directory-master`
+> **Estado**: Actualizado 2026-05-26  
+> **Aprobado por**: Andy  
+> **Arquitectura técnica**: PSR-4 + REST API WP7 · Plugin Agnóstico · Sin dependencia de tema  
+> **Repo**: github.com/babel13mkt/babel-listing-services · **Rama**: main  
+> **Producción**: soydechile.cl · Plugin activo: `babel-directory-master` en AR1  
+> **Versión actual**: 7.1.2
+
+---
+
+## ⚠️ REGLAS ABSOLUTAS (Para cualquier IA que lea este documento)
+
+Estas reglas NO son negociables. Deben respetarse en TODA modificación al plugin:
+
+### 1. El Plugin es 100% Agnóstico de Framework
+- **PROHIBIDO** usar Tailwind CSS, Bootstrap, Bulma, o cualquier framework CSS externo.
+- **PROHIBIDO** añadir `<script src="cdn.tailwindcss.com">` o similares.
+- **PROHIBIDO** usar clases utilitarias de Tailwind (`text-gray-500`, `bg-blue-600`, `flex`, `grid`, etc.) en el HTML del plugin.
+- **CORRECTO**: Usar clases BEM propias del plugin (`.babel-card`, `.babel-card__title`) + CSS en `babel-public.css`.
+
+### 2. Los Tokens de Diseño se Resuelven en CSS Nativo
+- El plugin usa clases semánticas del **Stitch Design System** que se mapean a variables CSS nativas definidas en `babel-public.css`.
+- Clases como `.bg-surface`, `.text-primary`, `.font-body-md` son **utility classes propias del plugin** definidas en `babel-public.css`, NO son Tailwind.
+- **Si una clase no está definida en `babel-public.css`, no existe.** No asumas que Tailwind la resolverá.
+
+### 3. Zero Hardcoding
+- **PROHIBIDO** hardcodear nombres de negocios, imágenes de Unsplash/Google, emails, teléfonos, o cualquier dato estático en el PHP.
+- **PROHIBIDO** hardcodear IPs, URLs de servidor, o credenciales.
+- **CORRECTO**: Todo dato se lee dinámicamente de `get_post_meta()`, `get_the_*()` o de la configuración de WordPress.
+
+### 4. Estándares WordPress 7 / PHP 8.x
+- Usar `wp_json_encode()` en lugar de `json_encode()`.
+- Siempre validar con `is_array()` antes de `json_decode()`.
+- Usar `esc_html()`, `esc_url()`, `esc_attr()` en TODO output.
+- Usar `wp_kses_post()` para contenido HTML permitido.
+- Usar `REST API` (`/wp-json/babel/v1/`) en lugar de `admin-ajax.php`.
+- **PROHIBIDO** añadir dependencias de jQuery (usar Vanilla JS).
+
+### 5. Nunca Modificar Directamente en el Servidor
+```
+Flujo obligatorio: Editar local → commit GitHub → rsync a AR1
+```
+```bash
+rsync -avz --no-p --no-g --no-o --exclude='.git' \
+  "/ruta/local/babel-directory-master/" \
+  ar1:/home/soydechile/public_html/wp-content/plugins/babel-directory-master/
+
+# Post-deploy SIEMPRE:
+ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/plugins/babel-directory-master/'
+```
+
+---
+
+## El Sistema de Diseño: Stitch Design System
+
+El diseño visual del plugin está definido en **Stitch** (herramienta de diseño de Google).  
+**Proyecto en Stitch**: "Directorio Babel - Diseño UI" (`projects/13440891265856203657`)  
+**Pantalla de referencia principal**: "Perfil Sushi Club - Reestructurado" (`screen: 0ec94fee227b4475b0940bab3ce12968`)
+
+### Design Tokens del Sistema
+
+Los siguientes tokens se resuelven como variables CSS en `babel-public.css`:
+
+```css
+/* Paleta de colores — Charcoal/Gold Premium */
+--color-primary: #000000;           /* Textos principales, botones CTA */
+--color-secondary: #735c00;         /* Acento cálido (dorado oscuro) */
+--color-secondary-fixed: #ffe088;   /* Fondo badges destacados */
+--color-secondary-fixed-dim: #e9c349; /* Iconos, estrellas, bordes activos */
+--color-surface: #f9f9f9;           /* Fondo base de la app */
+--color-surface-container-lowest: #ffffff;
+--color-surface-container-low: #f3f3f3;
+--color-surface-container: #eeeeee;
+--color-surface-container-high: #e8e8e8;
+--color-on-surface: #1a1c1c;        /* Texto sobre surface */
+--color-on-surface-variant: #444748; /* Texto secundario */
+--color-outline-variant: #c4c7c7;   /* Bordes sutiles */
+
+/* Tipografía */
+/* Display: Playfair Display (serif, premium) */
+/* Body: Inter (sans-serif, legible) */
+/* Labels: Montserrat (sans-serif, estructurado) */
+```
+
+### Clases Semánticas del Plugin (definidas en babel-public.css)
+
+Estas clases son NATIVAS del plugin y deben estar declaradas en `babel-public.css`:
+
+```
+.babel-surface         → background: var(--color-surface)
+.babel-text-primary    → color: var(--color-primary)
+.babel-text-secondary  → color: var(--color-on-surface-variant)
+.babel-card            → card base con border + shadow + rounded
+.babel-badge           → badge/pill component
+.babel-btn-primary     → botón CTA principal
+.babel-icon-btn        → botón circular con icono Material Symbol
+```
+
+### Fuentes y Recursos
+```html
+<!-- Fuentes (encoladas por class-assets.php, NO inline) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600
+  &family=Montserrat:wght@500;600;700
+  &family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+<!-- Material Symbols (iconos, encolados por class-assets.php) -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+```
 
 ---
 
 ## Visión del Producto
 
-**soydechile.cl** es un superdirectorio de comercios e instituciones de todo Chile.
+**soydechile.cl** es un superdirectorio de comercios e instituciones de todo Chile.  
 Orientado a 3 tipos de usuario:
 
 | Usuario | Contexto | Necesidad |
@@ -35,35 +138,53 @@ PORTADA
 
 ---
 
-## Decisiones de Diseño Clave
+## Estado de Implementación
 
-### ✅ Ya implementado
-- Buscador único que busca todo (keyword + geo)
-- Grilla de 16 regiones en portada con imagen de fondo
-- Shortcodes agnósticos: `[babel_radar_search]`, `[babel_region_grid]`, `[bd_archive_loop]`, `[bd_filter_bar]`, `[bd_footer_regions]`, `[bd_footer_categories]`
-- REST API endpoint: `/wp-json/babel/v1/search`
-- Panel Babel en WordPress admin con formulario de alta de negocios
-- Registro de negocios: manual (admin) + auto-registro (frontend)
+### ✅ Completado
+
+| Componente | Shortcode | Descripción |
+|---|---|---|
+| Buscador universal | `[babel_radar_search]` | Búsqueda keyword + GPS |
+| Grilla de 16 regiones | `[babel_region_grid]` | Con imágenes de fondo, CSS full-width |
+| Plantilla de página de región | `[bd_region_template]` | Buscador pre-filtrado + pills de categorías |
+| Loop de resultados | `[bd_archive_loop]` | Tarjetas de negocios para Divi Theme Builder |
+| Barra de filtros | `[bd_filter_bar]` | Región + categoría, dinámico |
+| Footer regiones | `[bd_footer_regions]` | Lista para footer |
+| Footer categorías | `[bd_footer_categories]` | Lista para footer |
+| Perfil de negocio | `[bd_business_profile]` | Perfil completo: galería, horarios, contacto, mapa, reseñas |
+| REST API | `/wp-json/babel/v1/search` | Endpoint principal de búsqueda |
+| Panel Babel | WordPress admin | Formulario de alta + guía de shortcodes |
+
+### Plantillas Divi Theme Builder Activas
+
+| ID | Plantilla | Cobertura |
+|---|---|---|
+| 351 | Plantilla Predeterminada | Global (fallback) |
+| 352 | Todas las Páginas de Regiones | `archive:taxonomy:babel_region:all` |
+| 369 | Páginas de Categoría | `archive:taxonomy:babel_category:all` |
+| 355 | Todos los Negocios (CPT) | `singular:post_type:babel_business:all` |
+| 370 | Página de Búsqueda | `search:all` |
 
 ### 🔴 Pendiente (Próximos pasos priorizados)
 
-#### PRIORIDAD 1 — Página de Región (lo más urgente)
-- Las páginas `/region/{slug}/` actualmente llegan al loop genérico de taxonomía de WP
-- **Diseño aprobado**: Buscador pre-filtrado + pills de categorías (scroll horizontal) + cards de negocios destacados
-- **Cómo construirlo**: Shortcode `[bd_filter_bar region="auto"]` que detecte la región del contexto actual + Divi Theme Builder para el layout
+#### PRIORIDAD 1 — Remediación de [bd_archive_loop] (URGENTE)
+- **Problema**: El shortcode `[bd_archive_loop]` tiene clases de Tailwind puro (`text-gray-500`, `bg-gray-100`, `text-yellow-500`) que no funcionan sin Tailwind cargado.
+- **Solución**: Reemplazar todo el HTML de la tarjeta de resultado con clases BEM propias (`.babel-biz-card`, `.babel-biz-card__title`, etc.) y sus estilos correspondientes en `babel-public.css`.
+- **Referencia visual**: Pantalla "Perfil Sushi Club - Reestructurado" en Stitch (proyecto `13440891265856203657`).
+- **El diseño de tarjeta debe incluir**: imagen de portada (o placeholder), nombre del negocio, categoría, región, precio, rating y CTA.
 
 #### PRIORIDAD 2 — SEO de Contenido
-- Las URLs `/buscar/?keyword=X` no son indexables por Google (SPA)
-- Necesitar páginas estáticas tipo `/completos/santiago/` o `/region/maule/categoria/restaurantes/`
-- Solución: generar archive pages por taxonomía cruzada (región + categoría)
+- Las URLs `/buscar/?keyword=X` no son indexables por Google (SPA dinámica).
+- Necesitar páginas estáticas tipo `/region/maule/categoria/restaurantes/`.
+- **Solución**: Generar archive pages por taxonomía cruzada (región + categoría) con contenido semántico estático para rastreadores.
 
-#### PRIORIDAD 3 — Perfil de Negocio Rico
-- Cada CPT `babel_business` necesita: fotos galería, horarios, teléfono clickeable, WhatsApp, mapa embed, reseñas
-- El CPT y metaboxes ya existen — falta el template visual (Divi Theme Builder)
+#### PRIORIDAD 3 — Refinamiento Visual del Divi Theme Builder
+- Las plantillas de "Páginas de Categoría" (ID 369) y "Página de Búsqueda" (ID 370) tienen la estructura técnica correcta pero necesitan refinamiento visual en el Divi Visual Builder (hero section, colores, tipografía).
+- **Acción**: Ingresar al Divi Theme Builder desde el admin de WordPress y diseñar el layout visual de cada plantilla.
 
 #### PRIORIDAD 4 — Estrategia de Contenido
-- Carga inicial: manual por el equipo
-- Auto-registro: formulario frontend ya existe en Panel Babel
+- Carga inicial: manual por el equipo.
+- Auto-registro: formulario frontend ya existe en Panel Babel.
 - Definir: ¿listado gratuito? ¿plan destacado pago?
 
 ---
@@ -72,13 +193,13 @@ PORTADA
 
 ```
 babel-directory-master/
-├── babel-directory.php          # Entry point + plugin header
+├── babel-directory.php          # Entry point + plugin header + versión
 ├── includes/
 │   ├── autoloader.php           # PSR-4 autoloader nativo
 │   ├── class-cpt.php            # Custom Post Type: babel_business
-│   ├── class-shortcodes.php     # Todos los shortcodes frontend
+│   ├── class-shortcodes.php     # Todos los shortcodes frontend ← ARCHIVO PRINCIPAL
 │   ├── class-ajax.php           # Lógica de filtrado (usada por REST)
-│   ├── class-assets.php         # Enqueue scripts/styles + wp_localize
+│   ├── class-assets.php         # Enqueue scripts/styles + wp_localize_script
 │   ├── class-admin.php          # Panel Babel (admin WordPress)
 │   ├── class-metaboxes.php      # Campos del perfil de negocio
 │   ├── class-submission.php     # Auto-registro frontend
@@ -88,48 +209,92 @@ babel-directory-master/
 │   └── api/
 │       └── class-rest-endpoints.php  # /wp-json/babel/v1/search
 ├── assets/
-│   ├── js/babel-public.js       # Vanilla JS: buscador SPA + GPS
-│   └── css/babel-public.css     # Estilos frontend
+│   ├── js/babel-public.js       # Vanilla JS: buscador SPA + GPS + pills
+│   └── css/babel-public.css     # ← FUENTE DE VERDAD DE TODOS LOS ESTILOS
 └── templates/
     └── parts/                   # Partials de templates
 ```
 
-**Namespace:** `Babel\Directory` (PSR-4)
+**Namespace:** `Babel\Directory` (PSR-4)  
 **REST Endpoint:** `GET/POST /wp-json/babel/v1/search`
-**Shortcodes disponibles:**
-- `[babel_radar_search]` — Buscador completo con GPS
-- `[babel_region_grid columns="4" rows="4"]` — Grilla de regiones
-- `[bd_archive_loop]` — Loop de resultados para Divi Theme Builder
-- `[bd_filter_bar]` — Barra de filtros (región + categoría)
-- `[bd_footer_regions]` — Lista de regiones para footer
-- `[bd_footer_categories]` — Lista de categorías para footer
+
+### Meta Keys del CPT babel_business
+
+Los campos del perfil de negocio se leen con `get_post_meta($post_id, $key, true)`:
+
+```
+_babel_description      Descripción larga del negocio
+_babel_phone            Teléfono (formato +56 9 XXXX XXXX)
+_babel_whatsapp         Número WhatsApp (solo dígitos)
+_babel_email            Email de contacto
+_babel_website          URL del sitio web
+_babel_address          Dirección física
+_babel_lat / _babel_lng Coordenadas para mapa embed
+_babel_price_range      Rango de precio (ej: "$$")
+_babel_biz_type         Tipo de negocio
+_babel_hours            JSON con horarios por día
+_babel_gallery          IDs de imágenes separados por coma
+_babel_amenities        JSON con amenidades/características
+_babel_instagram        Handle de Instagram (sin @)
+_babel_facebook         Slug de Facebook
+_babel_tiktok           Handle de TikTok (sin @)
+_babel_youtube_channel  URL canal YouTube
+_babel_twitter          Handle de Twitter/X (sin @)
+_babel_linkedin         Slug de LinkedIn
+_babel_razon_social     Razón social legal
+_babel_rut              RUT de la empresa
+_babel_founded_year     Año de fundación
+_babel_verified         "1" si está verificado
+_babel_featured         "1" si es negocio destacado
+_babel_rating_avg       Promedio de calificación
+_babel_rating_count     Número de reseñas
+```
 
 ---
 
-## Protocolo de Despliegue (AR1)
+## Lo que NUNCA Hacer
+
+- ❌ No crear módulos nativos de Divi (React/TS) — el plugin debe ser agnóstico
+- ❌ No usar `admin-ajax.php` como flujo principal (solo fallback legacy)
+- ❌ No hardcodear IPs, credenciales, nombres de negocios o imágenes de placeholder externas
+- ❌ No añadir dependencias de jQuery (solo Vanilla JS)
+- ❌ No modificar archivos directamente en el servidor sin rsync
+- ❌ No usar Tailwind, Bootstrap o cualquier framework CSS externo
+- ❌ No crear clases CSS sin antes definirlas en `babel-public.css`
+- ❌ No asumir que una clase existe por el nombre — verificar siempre en `babel-public.css`
+
+---
+
+## Proceso de Despliegue a Producción (AR1)
 
 ```bash
-# Desde Mac Local — requiere aprobación explícita de Andy
+# 1. Verificar estado local
+cd /ruta/a/babel-directory-master
+git status && git diff --stat
+
+# 2. Commit y push
+git add -A && git commit -m "feat: descripción del cambio"
+git push origin main
+
+# 3. Sincronizar con AR1 (nunca modificar directamente en el servidor)
 rsync -avz --no-p --no-g --no-o --exclude='.git' \
   "/ruta/local/babel-directory-master/" \
   ar1:/home/soydechile/public_html/wp-content/plugins/babel-directory-master/
 
-# Post-deploy (siempre)
-ssh ar1 'chown -R soydechile:soydechile /home/.../babel-directory-master/'
+# 4. Post-deploy SIEMPRE (sin esto el plugin puede desactivarse silenciosamente)
+ssh ar1 'chown -R soydechile:soydechile /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ && \
+  find /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ -type d -exec chmod 755 {} \; && \
+  find /home/soydechile/public_html/wp-content/plugins/babel-directory-master/ -type f -exec chmod 644 {} \;'
+
+# 5. Limpiar caché de WordPress
+ssh ar1 'wp cache flush --allow-root --path=/home/soydechile/public_html && \
+  wp transient delete --all --allow-root --path=/home/soydechile/public_html'
+
+# 6. Si se modificó CSS — purgar caché Divi
+ssh ar1 'wp eval "et_fb_delete_builder_assets();" --allow-root --path=/home/soydechile/public_html'
 ```
 
-> ⚠️ **REGLA**: Nunca modificar directamente en el servidor. Siempre: editar local → commit GitHub → rsync a AR1.
-
 ---
 
-## Lo que NO hacer
-
-- ❌ No crear módulos nativos de Divi (React/TS) — el plugin debe ser agnóstico
-- ❌ No usar `admin-ajax.php` como flujo principal (solo fallback)
-- ❌ No hardcodear IPs o credenciales en el código
-- ❌ No añadir dependencia de jQuery
-- ❌ No modificar archivos directamente en el servidor sin rsync
-
----
-
-*Documento vivo — actualizar con cada hito completado.*
+*Documento vivo — actualizar con cada hito completado.*  
+*Historial completo de hitos: Neo4j → `MATCH (h:Milestone) RETURN h ORDER BY h.number DESC`*
