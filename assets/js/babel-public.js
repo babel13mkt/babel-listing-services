@@ -88,7 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Categorías y Regiones obtenidas dinámicamente desde el contenedor de resultados
         const category = resultsContainer.getAttribute('data-category') || '';
-        const region = resultsContainer.getAttribute('data-region') || '';
+        let region = resultsContainer.getAttribute('data-region') || '';
+
+        // Si hay un selector de región interactivo, usar su valor
+        const regionSelectEl = searchForm ? searchForm.querySelector('#babel-search-region-select') : null;
+        if (regionSelectEl) {
+            region = regionSelectEl.value;
+            resultsContainer.setAttribute('data-region', region);
+        }
         
         // Parámetros de geolocalización (Radar)
         const lat = searchForm ? searchForm.querySelector('#babel-search-lat').value : '';
@@ -242,6 +249,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         debouncedSearch.cancel();
                         performSearch(1);
                     }
+                }
+            });
+        }
+
+        // Búsqueda al cambiar la región en el dropdown
+        const regionSelectInput = searchForm.querySelector('#babel-search-region-select');
+        if (regionSelectInput) {
+            regionSelectInput.addEventListener('change', () => {
+                if (resultsContainer) {
+                    performSearch(1);
                 }
             });
         }

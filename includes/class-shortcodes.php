@@ -19,31 +19,67 @@ class Shortcodes {
         add_shortcode( 'bd_archive_loop', array( $this, 'render_archive_loop' ) );
         add_shortcode( 'bd_region_template', array( $this, 'render_region_template' ) );
         add_shortcode( 'bd_business_profile', array( $this, 'render_business_profile' ) );
+        add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
     }
 
-    public function render_radar_search( $atts ) {
+    public function render_filter_bar( $atts ) {
         wp_enqueue_style( 'babel-public-css' );
         wp_enqueue_script( 'babel-public-js' );
+
+        $atts = shortcode_atts( array(
+            'region'       => '',
+            'show_results' => 'no',
+        ), $atts, 'bd_filter_bar' );
+
+        // Obtener la región actual si estamos en una página de taxonomía
+        $current_region_slug = $atts['region'];
+        if ( empty( $current_region_slug ) && is_tax( 'babel_region' ) ) {
+            $term = get_queried_object();
+            if ( $term ) {
+                $current_region_slug = $term->slug;
+            }
+        }
+
+        // Obtener todas las regiones para el dropdown
+        $regions = get_terms( array(
+            'taxonomy'   => 'babel_region',
+            'hide_empty' => false,
+            'parent'     => 0,
+        ) );
+
         ob_start();
         ?>
-        <div class="babel-search-section">
-            <form id="babel-search-form" class="babel-search-form-wrapper" action="/buscar/" method="GET" autocomplete="off">
-                <!-- Entrada de Búsqueda por Palabra Clave -->
-                <div class="babel-search-field">
-                    <div class="babel-input-icon-wrapper">
+        <div class="babel-filter-bar-section">
+            <form id="babel-search-form" class="babel-filter-bar-form" action="/buscar/" method="GET" autocomplete="off">
+                <div class="babel-filter-bar-inner" data-babel-filter="true">
+                    <!-- 1. Búsqueda libre -->
+                    <div class="babel-filter-keyword">
                         <span class="babel-input-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                         </span>
-                        <input type="text" id="babel-search-keyword" name="keyword" placeholder="¿Qué buscas? (ej. sushi, completos, barberías...)" />
+                        <input type="text" id="babel-search-keyword" name="keyword" placeholder="ej: Sushi, región metropolitana" />
                     </div>
-                </div>
 
-                <!-- Control GPS / Radar Integrado -->
-                <div class="babel-search-radar-wrapper">
-                    <div class="babel-radar-control-group">
+                    <!-- 2. Selector de Región -->
+                    <div class="babel-filter-region">
+                        <select id="babel-search-region-select" name="region">
+                            <option value="">Todas las regiones</option>
+                            <?php
+                            if ( ! \is_wp_error( $regions ) && ! empty( $regions ) ) {
+                                foreach ( $regions as $reg ) {
+                                    $selected = ( $current_region_slug === $reg->slug ) ? 'selected="selected"' : '';
+                                    echo '<option value="' . esc_attr( $reg->slug ) . '" ' . $selected . '>' . esc_html( $reg->name ) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- 3. Radar GPS -->
+                    <div class="babel-filter-radar">
                         <button type="button" id="babel-geo-btn" class="babel-radar-btn" title="Buscar cerca de mí (GPS)">
                             <svg class="radar-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -59,19 +95,26 @@ class Shortcodes {
                         <input type="hidden" id="babel-search-lng" name="lng" value="" />
                         <input type="hidden" id="babel-search-radius" name="radius" value="25" />
                     </div>
-                </div>
 
-                <!-- Botón de Búsqueda Directa -->
-                <div class="babel-search-submit-wrapper">
-                    <button type="submit" class="babel-search-submit-btn">Buscar</button>
+                    <!-- 4. Botón Buscar -->
+                    <div class="babel-filter-submit">
+                        <button type="submit" class="babel-search-submit-btn">BUSCAR</button>
+                    </div>
                 </div>
             </form>
 
             <!-- Contenedor Dinámico para Carga Asíncrona (AJAX) -->
-            <div id="babel-directory-results" class="babel-results-container"></div>
+            <!-- Usamos data-region dinámico basado en PHP para heredar el contexto -->
+            <?php if ( 'yes' === $atts['show_results'] || 'true' === $atts['show_results'] || true === $atts['show_results'] || '1' === $atts['show_results'] ) : ?>
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category=""></div>
+            <?php endif; ?>
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    public function render_radar_search( $atts ) {
+        return $this->render_filter_bar( $atts );
     }
 
     public function render_region_grid( $atts ) {

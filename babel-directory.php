@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 7.1.7
+ * Version: 7.2.0
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
 
-// Definir constantes globales de la arquitectura v7.0.0+
-define( 'BD_VERSION', '7.1.7' );
+// Definir constantes globales de la arquitectura v7.2.0+
+define( 'BD_VERSION', '7.2.2' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BD_URL', plugin_dir_url( __FILE__ ) );
 
@@ -99,6 +99,11 @@ class Babel_Directory_Core {
             new \Babel\Directory\Submission();
         }
 
+        // 12. Autenticación con Google Identity Services
+        if ( class_exists( 'Babel\Directory\Google_Auth' ) ) {
+            new \Babel\Directory\Google_Auth();
+        }
+
         // 9. Soporte de Imágenes en Taxonomías
         if ( class_exists( 'Babel\Directory\Taxonomy_Images' ) ) {
             new \Babel\Directory\Taxonomy_Images();
@@ -112,6 +117,11 @@ class Babel_Directory_Core {
         // 11. Endpoints de REST API
         if ( class_exists( '\Babel\Directory\Api\Rest_Endpoints' ) ) {
             new \Babel\Directory\Api\Rest_Endpoints();
+        }
+
+        // 13. Capa de Compatibilidad con Temas Opinionados (Divi 5, Elementor, etc.)
+        if ( class_exists( 'Babel\Directory\Divi_Compat' ) ) {
+            new \Babel\Directory\Divi_Compat();
         }
     }
 }

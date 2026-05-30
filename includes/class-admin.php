@@ -27,7 +27,60 @@ class Admin {
      * Registra los ajustes, secciones y campos usando la Settings API de WordPress.
      */
     public function register_settings() {
-        // No hay ajustes globales requeridos en la arquitectura agnóstica actual.
+        // --- Grupo de ajustes de Babel Directory ---
+        register_setting(
+            'babel_directory_settings_group',
+            'babel_google_client_id',
+            array(
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            )
+        );
+
+        // Sección: Integración con Google
+        add_settings_section(
+            'babel_google_section',
+            __( 'Integración con Google Identity Services', 'babel-directory' ),
+            array( $this, 'render_google_section_description' ),
+            'bd-settings'
+        );
+
+        // Campo: Google Client ID
+        add_settings_field(
+            'babel_google_client_id',
+            __( 'Google Client ID', 'babel-directory' ),
+            array( $this, 'render_google_client_id_field' ),
+            'bd-settings',
+            'babel_google_section'
+        );
+    }
+
+    /**
+     * Descripción de la sección Google.
+     */
+    public function render_google_section_description() {
+        echo '<p class="description">';
+        esc_html_e( 'Configura tu Google OAuth 2.0 Client ID para habilitar el login con Google en el formulario de publicación de negocios.', 'babel-directory' );
+        echo ' <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">';
+        esc_html_e( 'Obtener Client ID en Google Cloud Console &rarr;', 'babel-directory' );
+        echo '</a></p>';
+    }
+
+    /**
+     * Renderiza el campo de texto para el Google Client ID.
+     */
+    public function render_google_client_id_field() {
+        $value = get_option( 'babel_google_client_id', '' );
+        echo '<input type="text" name="babel_google_client_id" id="babel_google_client_id" value="' . esc_attr( $value ) . '" class="regular-text" placeholder="123456789-abc...apps.googleusercontent.com" />';
+        echo '<p class="description">';
+        esc_html_e( 'Copia aquí el Client ID de tu aplicación OAuth 2.0. Asegúrate de añadir tu dominio a los Orígenes de JavaScript autorizados.', 'babel-directory' );
+        echo '</p>';
+        if ( ! empty( $value ) ) {
+            echo '<p><span style="color:#10b981;font-weight:600;">&#10003; ' . esc_html__( 'Configurado', 'babel-directory' ) . '</span></p>';
+        } else {
+            echo '<p><span style="color:#ef4444;font-weight:600;">&#9888; ' . esc_html__( 'No configurado — el botón de Google no funcionará hasta configurar este valor.', 'babel-directory' ) . '</span></p>';
+        }
     }
 
 
@@ -90,6 +143,40 @@ class Admin {
             'bd-shortcode-guide',
             array( $this, 'render_shortcode_guide_page' )
         );
+
+        // 6. Configuración del Plugin (Google + integraciones)
+        add_submenu_page(
+            'bd-panel',
+            __( 'Configuración', 'babel-directory' ),
+            __( '⚙ Configuración', 'babel-directory' ),
+            'manage_options',
+            'bd-settings',
+            array( $this, 'render_settings_page' )
+        );
+    }
+
+    /**
+     * Renderiza la página de Configuración del Plugin.
+     */
+    public function render_settings_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        ?>
+        <div class="wrap">
+            <h1>
+                <span class="dashicons dashicons-admin-settings" style="font-size:24px;margin-right:8px;"></span>
+                <?php esc_html_e( 'Configuración de Babel Directory', 'babel-directory' ); ?>
+            </h1>
+            <form action="options.php" method="post" style="margin-top: 20px;">
+                <?php
+                settings_fields( 'babel_directory_settings_group' );
+                do_settings_sections( 'bd-settings' );
+                submit_button( __( 'Guardar Configuración', 'babel-directory' ) );
+                ?>
+            </form>
+        </div>
+        <?php
     }
 
     /**

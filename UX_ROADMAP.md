@@ -5,8 +5,8 @@
 > **Arquitectura técnica**: PSR-4 + REST API WP7 · Plugin Agnóstico · Sin dependencia de tema  
 > **Repo**: github.com/babel13mkt/babel-listing-services · **Rama**: main  
 > **Producción**: soydechile.cl · Plugin activo: `babel-directory-master` en AR1  
-> **Tema activo**: `soy-de-chile-child` v1.0.2 (Child de Twenty Twenty-Four) — **Divi 5 eliminado**  
-> **Versión actual plugin**: 7.1.6 · **Versión child theme**: 1.0.2
+> **Tema activo**: Divi (Theme Builder para UI estática) — **soy-de-chile-child desactivado**  
+> **Versión actual plugin**: 7.1.6 · **Versión child theme**: N/A
 
 ---
 
@@ -173,6 +173,7 @@ PORTADA
 | 90 | SEO Rutas Estáticas | `rewrite rules` | URLs `/region/X/categoria/Y/` nativas de WP con history API SPA |
 | **91** | **Migración a Gutenberg** | `babel-directory.php` + templates | **Divi 5 eliminado. Twenty Twenty-Four activo. Plantillas PHP autónomas `taxonomy-babel_region.php` y `single-babel_business.php` en el plugin.** |
 | **92** | **Rediseño Premium Portada + Header** | `soy-de-chile-child/` | **Child theme propio. Header glassmorphism fijo full-width (logo izq. / menú der.). Hero 100svh cinematográfico con eyebrow pill, tipografía Playfair Display, pills de acceso rápido, Google Fonts.** |
+| **93** | **Reintegración Divi** | `Divi Theme` | **Reversión del Hito 91 para UI estática. Divi activo como motor visual para gobernar el Header y Footer (Theme Builder). Plugin mantiene inyección de shortcodes.** |
 
 ### 🔴 Pendiente (Próximos pasos priorizados)
 
@@ -286,7 +287,7 @@ _babel_rating_count     Número de reseñas
 
 ## Lo que NUNCA Hacer
 
-- ❌ No intentar activar o reintegrar Divi — fue eliminado en el Hito 91 y es innecesario
+- ❌ No depender de Divi para lógica dinámica (usar siempre shortcodes del plugin). Divi solo gobierna Layout (Header/Footer).
 - ❌ No usar `admin-ajax.php` como flujo principal (solo fallback legacy)
 - ❌ No hardcodear IPs, credenciales, nombres de negocios o imágenes de placeholder externas
 - ❌ No añadir dependencias de jQuery (solo Vanilla JS)
@@ -363,6 +364,7 @@ curl -s https://soydechile.cl/ | grep -o 'sdc-site-header\|babel-custom-hero' | 
 
 | Fecha | Hito | Cambio Principal | Versión |
 |---|---|---|---|
+| 2026-05-29 | **93** | Reintegración parcial de Divi 5 para administrar visualmente cabeceras y pies de página (Theme Builder), desactivando `soy-de-chile-child` tras tomar snapshot de seguridad. | plugin 7.1.6 / divi |
 | 2026-05-26 | **92** | Child theme `soy-de-chile-child` creado y activado. Header glassmorphism full-width. Hero 100svh con eyebrow pill dorado, tipografía Playfair Display, Google Fonts, quick pills temáticas. | theme 1.0.2 |
 | 2026-05-26 | **91** | Migración completa de Divi 5 a Gutenberg (Twenty Twenty-Four). Plantillas autónomas `taxonomy-babel_region.php` y `single-babel_business.php` en el plugin vía `template_include`. | 7.1.6 |
 | 2026-05-26 | **90** | Rutas estáticas SEO `/region/X/categoria/Y/`. History API SPA. | 7.1.5 |

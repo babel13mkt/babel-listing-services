@@ -21,6 +21,12 @@ class Assets {
         // Registrar assets públicos en el frontend
         add_action( 'wp_enqueue_scripts', array( $this, 'register_public_assets' ) );
 
+        // CRÍTICO Divi 5: Encolar babel-public-css GLOBALMENTE aquí,
+        // no dentro del callback del shortcode. Divi 5 ejecuta los shortcodes
+        // DESPUÉS de wp_head, por lo que cualquier wp_enqueue_style() dentro
+        // de un shortcode llega demasiado tarde y el CSS nunca aparece en <head>.
+        add_action( 'wp_enqueue_scripts', array( $this, 'force_enqueue_babel_css' ), 99 );
+
         // Registrar los shortcodes oficiales del buscador
         add_shortcode( 'babel_search_form', array( $this, 'render_search_form' ) );
         add_shortcode( 'babel_results', array( $this, 'render_results_container' ) );
@@ -74,65 +80,18 @@ class Assets {
     }
 
     /**
-     * Callback para el shortcode [babel_search_form].
-     * Renderiza el formulario de búsqueda pura y semántica para integración con Divi 5.
-     *
-     * @return string HTML renderizado del formulario.
+     * Fuerza el encolado de babel-public-css GLOBALMENTE en wp_enqueue_scripts
+     * con prioridad 99 (después de que Divi registra sus propios estilos).
+     * Esto garantiza que el stylesheet llegue al <head> incluso en Divi 5,
+     * donde los shortcodes se renderizan después del cierre de wp_head.
      */
-    public function render_search_form( $atts ) {
-        $atts = shortcode_atts( array(
-            'action' => home_url( '/buscar/' ),
-        ), $atts, 'babel_search_form' );
-
-        // Encolar los assets en caliente solo si este shortcode es renderizado
+    public function force_enqueue_babel_css() {
         wp_enqueue_style( 'babel-public-css' );
         wp_enqueue_script( 'babel-public-js' );
+    }
 
-        ob_start();
-        ?>
-        <form id="babel-search-form" class="babel-search-form-wrapper" method="get" action="<?php echo esc_url( $atts['action'] ); ?>">
-            
-            <!-- Campo de Texto para Búsqueda Única e Inteligente -->
-            <div class="babel-search-field babel-search-keyword-wrapper">
-                <label for="babel-search-keyword" class="screen-reader-text"><?php esc_html_e( 'Búsqueda inteligente', 'babel-directory' ); ?></label>
-                <div class="babel-input-icon-wrapper">
-                    <svg class="babel-input-icon" viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                    </svg>
-                    <input 
-                        type="text" 
-                        name="keyword" 
-                        id="babel-search-keyword" 
-                        placeholder="<?php esc_attr_e( '¿Qué buscas y dónde? (ej. Sushi, Abogado, Providencia...)', 'babel-directory' ); ?>" 
-                        value="" 
-                    />
-                </div>
-            </div>
-
-            <!-- Radar GPS de Proximidad Integrado de Forma Discreta -->
-            <div class="babel-search-field babel-search-radar-wrapper" style="flex: 0 0 auto; min-width: auto; max-width: 60px;">
-                <div class="babel-radar-control-group">
-                    <button type="button" id="babel-geo-btn" class="babel-radar-btn" title="<?php esc_attr_e( 'Buscar cerca de mí (GPS)', 'babel-directory' ); ?>">
-                        <svg class="radar-svg" viewBox="0 0 24 24" width="18" height="18">
-                            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.54-7.49-7.49H9c.46 2.28 2.22 4.04 4.5 4.5v2.99zm1-2.99c2.28-.46 4.04-2.22 4.5-4.5h3.43c-.49 3.95-3.54 7-7.49 7.49v-2.99zm5.93-8.94H17.5c-.46-2.28-2.22-4.04-4.5-4.5V2.07c3.95.49 7 3.54 7.49 7.49zM11 2.07v2.99C8.72 5.52 6.96 7.28 6.5 9.56H3.07c.49-3.95 3.54-7 7.49-7.49z"/>
-                        </svg>
-                        <span class="radar-ripple"></span>
-                    </button>
-                </div>
-                <input type="hidden" id="babel-search-lat" name="lat" value="" />
-                <input type="hidden" id="babel-search-lng" name="lng" value="" />
-                <input type="hidden" id="babel-search-radius" name="radius" value="25" />
-            </div>
-
-            <!-- Botón de Envío -->
-            <div class="babel-search-submit-wrapper">
-                <button type="submit" id="babel-search-submit" class="babel-search-submit-btn">
-                    <?php esc_html_e( 'Buscar', 'babel-directory' ); ?>
-                </button>
-            </div>
-        </form>
-        <?php
-        return ob_get_clean();
+    public function render_search_form( $atts ) {
+        return do_shortcode( "[bd_filter_bar show_results='false']" );
     }
 
     /**
