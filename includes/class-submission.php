@@ -513,6 +513,63 @@ class Submission {
             return;
         }
 
+        // VALIDACIÓN DE ARCHIVOS SUBIDOS (Seguridad y Tamaño)
+        $allowed_mimes = array( 'image/jpeg', 'image/png', 'image/webp' );
+        $max_size      = 2 * 1024 * 1024; // 2MB
+
+        // 1. Validar Foto Principal
+        if ( ! empty( $_FILES['featured_image']['name'] ) ) {
+            $file = $_FILES['featured_image'];
+            
+            if ( $file['error'] !== UPLOAD_ERR_OK ) {
+                wp_send_json_error( array( 'message' => 'Error en la subida de la foto principal.' ) );
+                return;
+            }
+            
+            // Validar Tamaño
+            if ( $file['size'] > $max_size ) {
+                wp_send_json_error( array( 'message' => 'La foto principal excede el tamaño máximo permitido de 2MB.' ) );
+                return;
+            }
+
+            // Validar Tipo de Archivo / MIME Type
+            $file_type = wp_check_filetype( $file['name'] );
+            if ( ! in_array( $file_type['type'], $allowed_mimes, true ) ) {
+                wp_send_json_error( array( 'message' => 'La foto principal debe ser una imagen válida (JPG, PNG o WebP).' ) );
+                return;
+            }
+        }
+
+        // 2. Validar Galería Adicional
+        if ( ! empty( $_FILES['gallery_images']['name'][0] ) ) {
+            $files      = $_FILES['gallery_images'];
+            $file_count = min( count( $files['name'] ), 5 );
+
+            for ( $i = 0; $i < $file_count; $i++ ) {
+                if ( empty( $files['name'][$i] ) ) {
+                    continue;
+                }
+
+                if ( $files['error'][$i] !== UPLOAD_ERR_OK ) {
+                    wp_send_json_error( array( 'message' => 'Error en la subida de una imagen de la galería.' ) );
+                    return;
+                }
+
+                // Validar Tamaño
+                if ( $files['size'][$i] > $max_size ) {
+                    wp_send_json_error( array( 'message' => 'Una de las imágenes de la galería excede el tamaño máximo permitido de 2MB.' ) );
+                    return;
+                }
+
+                // Validar Tipo de Archivo / MIME Type
+                $file_type = wp_check_filetype( $files['name'][$i] );
+                if ( ! in_array( $file_type['type'], $allowed_mimes, true ) ) {
+                    wp_send_json_error( array( 'message' => 'Las imágenes de la galería deben ser imágenes válidas (JPG, PNG o WebP).' ) );
+                    return;
+                }
+            }
+        }
+
         $title = isset( $_POST['business_name'] ) ? sanitize_text_field( wp_unslash( $_POST['business_name'] ) ) : '';
         if ( empty( $title ) ) {
             wp_send_json_error( array( 'message' => 'El nombre del comercio es obligatorio.' ) );

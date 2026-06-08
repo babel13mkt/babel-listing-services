@@ -48,6 +48,11 @@ class Divi_Compat {
             define( 'BD_DIVI_COMPAT_ACTIVE', true );
         }
 
+        // Si el Divi Builder está activo, pausar el renderizado de shortcodes pesados
+        if ( $this->is_divi_builder_active() ) {
+            add_action( 'init', [ $this, 'register_dummy_shortcodes' ], 999 );
+        }
+
         add_action( 'wp_enqueue_scripts', [ $this, 'force_enqueue_assets' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'inject_compat_css' ], 100 );
         add_action( 'wp_head', [ $this, 'remove_divi_input_styles' ], 999 );
@@ -59,6 +64,33 @@ class Divi_Compat {
         $has_divi_functions = function_exists( 'et_divi_fonts_url' );
 
         return $is_divi_theme || $is_divi_builder || $has_divi_functions;
+    }
+
+    private function is_divi_builder_active() {
+        return ( isset( $_GET['et_fb'] ) && '1' === $_GET['et_fb'] ) || 
+               ( isset( $_POST['action'] ) && 'et_fb_retrieve_builder_data' === $_POST['action'] ) || 
+               ( function_exists( 'et_core_is_fb_enabled' ) && et_core_is_fb_enabled() );
+    }
+
+    public function register_dummy_shortcodes() {
+        $dummy_render = function( $atts, $content, $tag ) {
+            return '<div style="padding:20px;background:#f5f5f5;border:2px dashed #ccc;text-align:center;color:#666;">[' . esc_html( $tag ) . ': Renderizado pausado en Divi Builder]</div>';
+        };
+
+        $tags = [
+            'babel_radar_search',
+            'babel_region_grid',
+            'bd_footer_regions',
+            'bd_footer_categories',
+            'bd_archive_loop',
+            'bd_region_template',
+            'bd_business_profile',
+            'bd_filter_bar'
+        ];
+
+        foreach ( $tags as $tag ) {
+            add_shortcode( $tag, $dummy_render );
+        }
     }
 
     public function force_enqueue_assets() {

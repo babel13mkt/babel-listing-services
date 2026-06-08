@@ -42,6 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
             geoBtn.classList.add('active');
             keywordInput.placeholder = '✓ Buscando cerca de ti...';
             keywordInput.classList.add('babel-radar-active');
+            
+            // Intentar recuperar dirección si venimos de un reload con lat/lng
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${urlLat}&lon=${urlLng}&accept-language=es`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.display_name) {
+                        let loc = '';
+                        if (d.address) {
+                            loc = d.address.city || d.address.town || d.address.village || d.address.suburb || d.address.county || '';
+                        }
+                        if (!loc) {
+                            loc = d.display_name.split(',')[0];
+                        }
+                        keywordInput.placeholder = '✓ Cerca de: ' + loc;
+                    }
+                })
+                .catch(err => console.log('Reverse geocoding error:', err));
         }
     }
 
@@ -209,6 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (keywordInput) {
                             keywordInput.placeholder = '✓ Buscando cerca de ti...';
                             keywordInput.classList.add('babel-radar-active');
+                            
+                            // Obtener dirección (Reverse Geocoding)
+                            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`)
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (d && d.display_name) {
+                                        // Extraer parte relevante (ciudad, comuna, o la primera parte)
+                                        let loc = '';
+                                        if (d.address) {
+                                            loc = d.address.city || d.address.town || d.address.village || d.address.suburb || d.address.county || '';
+                                        }
+                                        if (!loc) {
+                                            loc = d.display_name.split(',')[0];
+                                        }
+                                        keywordInput.placeholder = '✓ Cerca de: ' + loc;
+                                    }
+                                })
+                                .catch(err => console.log('Reverse geocoding error:', err));
                         }
 
                         // Disparar búsqueda automática

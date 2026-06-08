@@ -21,6 +21,9 @@ class Assets {
         // Registrar assets públicos en el frontend
         add_action( 'wp_enqueue_scripts', array( $this, 'register_public_assets' ) );
 
+        // Registrar assets del admin SPA (Soy de Chile)
+        add_action( 'admin_enqueue_scripts', array( $this, 'register_admin_assets' ) );
+
         // CRÍTICO Divi 5: Encolar babel-public-css GLOBALMENTE aquí,
         // no dentro del callback del shortcode. Divi 5 ejecuta los shortcodes
         // DESPUÉS de wp_head, por lo que cualquier wp_enqueue_style() dentro
@@ -77,6 +80,31 @@ class Assets {
             'submission_nonce' => wp_create_nonce( 'babel_submission_nonce' ),
             'ajaxUrl'          => admin_url( 'admin-ajax.php' ), // alias para form-submission.js
         ) );
+    }
+
+    /**
+     * Registra los scripts y estilos para el panel de administración SPA "Soy de Chile".
+     */
+    public function register_admin_assets( $hook ) {
+        // Solo cargar en nuestras páginas del plugin o CPT
+        if ( strpos( $hook, 'bd-panel' ) === false && $hook !== 'post.php' && $hook !== 'post-new.php' ) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'babel-admin-css',
+            BD_URL . 'assets/css/babel-admin.css',
+            array(),
+            BD_VERSION
+        );
+
+        wp_enqueue_script(
+            'babel-admin-js',
+            BD_URL . 'assets/js/babel-admin.js',
+            array(),
+            BD_VERSION,
+            true
+        );
     }
 
     /**

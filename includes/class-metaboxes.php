@@ -2497,4 +2497,284 @@ class Metaboxes {
             update_post_meta( $post_id, '_bd_email_alt', $email_alt_val );
         }
     }
+
+    /**
+     * Renderiza el Editor de Negocios dentro de la SPA (Soy de Chile).
+     */
+    public static function render_spa_editor() {
+        ?>
+        <style>
+            .sdc-saas-container {
+                max-width: 1000px;
+                margin: 32px auto;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+                border: 1px solid var(--sdc-border, #e2e8f0);
+                overflow: hidden;
+            }
+            .sdc-hours-row {
+                display: grid;
+                grid-template-columns: 120px 1fr auto auto;
+                align-items: center;
+                gap: 16px;
+                padding: 12px 16px;
+                background: #f8fafc;
+                border-radius: 8px;
+                border: 1px solid var(--sdc-border, #e2e8f0);
+                margin-bottom: 8px;
+            }
+            .sdc-hours-day {
+                font-weight: 600;
+                color: #334155;
+                text-transform: capitalize;
+            }
+            .sdc-hours-inputs {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .sdc-hours-inputs input[type="time"] {
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-family: inherit;
+                color: #475569;
+                background: #fff;
+            }
+        </style>
+        <div class="sdc-saas-container">
+            <div class="sdc-editor-layout">
+            <!-- Tabs Internos del Editor -->
+            <div class="sdc-editor-sidebar">
+                <div class="sdc-editor-tab active" data-target="sdc-biz-general">
+                    <span class="dashicons dashicons-admin-generic"></span> General
+                </div>
+                <div class="sdc-editor-tab" data-target="sdc-biz-location">
+                    <span class="dashicons dashicons-location"></span> Ubicación
+                </div>
+                <div class="sdc-editor-tab" data-target="sdc-biz-hours">
+                    <span class="dashicons dashicons-clock"></span> Horarios
+                </div>
+                <div class="sdc-editor-tab" data-target="sdc-biz-amenities">
+                    <span class="dashicons dashicons-star-filled"></span> Comodidades
+                </div>
+                <div class="sdc-editor-tab" data-target="sdc-biz-gallery">
+                    <span class="dashicons dashicons-format-gallery"></span> Galería
+                </div>
+            </div>
+
+            <!-- Formularios -->
+            <div class="sdc-editor-main">
+                <form id="sdc-business-form">
+                    
+                    <!-- General (Scroll Largo) -->
+                    <div id="sdc-biz-general" class="sdc-editor-panel active">
+                        <h3 style="margin-top:0; border-bottom: 1px solid var(--sdc-border); padding-bottom:8px;">Información Principal</h3>
+                        
+                        <div class="sdc-form-group">
+                            <label class="sdc-label">Nombre del Negocio</label>
+                            <input type="text" id="sdc_biz_name" name="biz_name" class="sdc-input" placeholder="Ej. Restaurante El Olivo">
+                        </div>
+                        
+                        <div class="sdc-form-group">
+                            <label class="sdc-label">Descripción</label>
+                            <textarea id="sdc_biz_desc" name="biz_desc" class="sdc-input" rows="5" placeholder="Describe el negocio..."></textarea>
+                        </div>
+
+                        <div class="sdc-form-group">
+                            <label class="sdc-label">Logo del Negocio</label>
+                            <div style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer;">
+                                <span class="dashicons dashicons-upload" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
+                                <p style="margin-top: 12px; font-weight: 500;">Haz clic o arrastra el logotipo aquí</p>
+                            </div>
+                            <input type="hidden" name="biz_logo_id" id="sdc_biz_logo_id">
+                        </div>
+
+                        <style>
+                            .sdc-grid-4 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+                            @media (min-width: 768px) { .sdc-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+                            @media (min-width: 1024px) { .sdc-grid-4 { grid-template-columns: repeat(4, 1fr); } }
+                        </style>
+                        <h3 style="margin-top:32px; border-bottom: 1px solid var(--sdc-border); padding-bottom:8px;">Contacto y Redes</h3>
+                        <div class="sdc-grid-4">
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">WhatsApp</label>
+                                <input type="text" name="biz_whatsapp" class="sdc-input" placeholder="+56 9...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Teléfono Fijo</label>
+                                <input type="text" name="biz_phone" class="sdc-input" placeholder="(2) 2...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Correo Electrónico</label>
+                                <input type="email" name="biz_email" class="sdc-input" placeholder="contacto@...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Sitio Web</label>
+                                <input type="url" name="biz_website" class="sdc-input" placeholder="https://...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Instagram</label>
+                                <input type="url" name="biz_instagram" class="sdc-input" placeholder="https://instagram.com/...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Facebook</label>
+                                <input type="url" name="biz_facebook" class="sdc-input" placeholder="https://facebook.com/...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">TikTok</label>
+                                <input type="url" name="biz_tiktok" class="sdc-input" placeholder="https://tiktok.com/@...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">LinkedIn</label>
+                                <input type="url" name="biz_linkedin" class="sdc-input" placeholder="https://linkedin.com/company/...">
+                            </div>
+                        </div>
+
+                        <h3 style="margin-top:32px; border-bottom: 1px solid var(--sdc-border); padding-bottom:8px;">Datos Legales y Administrativos</h3>
+                        <div class="sdc-grid-4">
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">RUT Empresa</label>
+                                <input type="text" name="biz_rut" class="sdc-input" placeholder="76.123.456-7">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Razón Social</label>
+                                <input type="text" name="biz_razon_social" class="sdc-input" placeholder="Comercial SPA">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Giro Comercial</label>
+                                <input type="text" name="biz_giro" class="sdc-input" placeholder="Restaurante...">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Representante Legal</label>
+                                <input type="text" name="biz_rep_legal" class="sdc-input" placeholder="Nombre completo">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ubicación y Mapa -->
+                    <div id="sdc-biz-location" class="sdc-editor-panel">
+                        <h3 style="margin-top:0;">Ubicación (Auto-Mapa OpenStreetMap)</h3>
+                        
+                        <div class="sdc-form-group">
+                            <label class="sdc-label">Dirección Completa</label>
+                            <input type="text" id="sdc_biz_address" name="biz_address" class="sdc-input" placeholder="Ej. Av. Providencia 1234, Santiago">
+                            <p class="sdc-text-muted" style="font-size:12px; margin-top:4px;">El mapa se actualizará automáticamente al terminar de escribir.</p>
+                        </div>
+                        
+                        <input type="hidden" id="sdc_biz_lat" name="biz_lat">
+                        <input type="hidden" id="sdc_biz_lng" name="biz_lng">
+
+                        <div style="margin-top:16px; border:1px solid var(--sdc-border); border-radius:8px; overflow:hidden;">
+                            <iframe id="sdc_map_preview" width="100%" height="300" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-70.6693,-33.4489,-70.6393,-33.4289&layer=mapnik"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Comodidades -->
+                    <div id="sdc-biz-amenities" class="sdc-editor-panel">
+                        <h3 style="margin-top:0;">Comodidades y Servicios</h3>
+                        
+                        <div class="sdc-grid">
+                            <!-- Wi-Fi -->
+                            <div class="sdc-flex sdc-justify-between sdc-items-center" style="padding:12px; border:1px solid var(--sdc-border); border-radius:8px;">
+                                <div>
+                                    <strong>Wi-Fi Gratis</strong>
+                                    <div class="sdc-text-muted" style="font-size:12px;">Conexión gratuita para clientes</div>
+                                </div>
+                                <label class="sdc-toggle">
+                                    <input type="checkbox" name="biz_wifi" value="1">
+                                    <span class="sdc-toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Estacionamiento -->
+                            <div class="sdc-flex sdc-justify-between sdc-items-center" style="padding:12px; border:1px solid var(--sdc-border); border-radius:8px;">
+                                <div>
+                                    <strong>Estacionamiento</strong>
+                                    <div class="sdc-text-muted" style="font-size:12px;">Estacionamiento privado o cercano</div>
+                                </div>
+                                <label class="sdc-toggle">
+                                    <input type="checkbox" name="biz_parking" value="1">
+                                    <span class="sdc-toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Pet Friendly -->
+                            <div class="sdc-flex sdc-justify-between sdc-items-center" style="padding:12px; border:1px solid var(--sdc-border); border-radius:8px;">
+                                <div>
+                                    <strong>Pet Friendly</strong>
+                                    <div class="sdc-text-muted" style="font-size:12px;">Mascotas bienvenidas</div>
+                                </div>
+                                <label class="sdc-toggle">
+                                    <input type="checkbox" name="biz_pet_friendly" value="1">
+                                    <span class="sdc-toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Delivery -->
+                            <div class="sdc-flex sdc-justify-between sdc-items-center" style="padding:12px; border:1px solid var(--sdc-border); border-radius:8px;">
+                                <div>
+                                    <strong>Delivery</strong>
+                                    <div class="sdc-text-muted" style="font-size:12px;">Entrega a domicilio</div>
+                                </div>
+                                <label class="sdc-toggle">
+                                    <input type="checkbox" name="biz_delivery" value="1">
+                                    <span class="sdc-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Horarios -->
+                    <div id="sdc-biz-hours" class="sdc-editor-panel">
+                        <h3 style="margin-top:0;">Horarios de Atención</h3>
+                        <p class="sdc-text-muted" style="margin-bottom: 24px;">Configura los días y horas de apertura. Marca "Cerrado" para los días sin atención.</p>
+                        
+                        <div class="sdc-hours-grid">
+                            <?php 
+                            $days_of_week = array( 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo' );
+                            foreach ( $days_of_week as $day ) : ?>
+                                <div class="sdc-hours-row bd-hours-row">
+                                    <span class="sdc-hours-day"><?php echo esc_html( $day ); ?></span>
+                                    <div class="sdc-hours-inputs">
+                                        <input type="time" name="biz_hours[<?php echo esc_attr( $day ); ?>][open]" value="09:00" />
+                                        <span style="color:#64748b; font-size:14px;">a</span>
+                                        <input type="time" name="biz_hours[<?php echo esc_attr( $day ); ?>][close]" value="18:00" />
+                                    </div>
+                                    <label class="sdc-toggle" style="margin-left: auto;">
+                                        <input type="checkbox" class="bd-hours-closed-checkbox" name="biz_hours[<?php echo esc_attr( $day ); ?>][closed]" value="1">
+                                        <span class="sdc-toggle-slider"></span>
+                                    </label>
+                                    <span style="font-size: 13px; color: #64748b;">Cerrado</span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Galería -->
+                    <div id="sdc-biz-gallery" class="sdc-editor-panel">
+                        <h3 style="margin-top:0;">Galería de Fotos</h3>
+                        <p class="sdc-text-muted">Sube imágenes de tu local, productos o servicios.</p>
+                        
+                        <div style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 48px; text-align: center; background: #f8fafc; cursor: pointer; margin-top: 16px;">
+                            <span class="dashicons dashicons-images-alt2" style="font-size: 48px; width: 48px; height: 48px; color: var(--sdc-blue);"></span>
+                            <p style="margin-top: 16px; font-weight: 500; font-size: 16px;">Haz clic o arrastra fotos aquí</p>
+                            <p class="sdc-text-muted" style="font-size: 13px; margin-top: 4px;">Puedes subir múltiples fotos a la vez</p>
+                        </div>
+                        <input type="hidden" name="biz_gallery" id="sdc_biz_gallery">
+                    </div>
+
+                    <div class="sdc-editor-footer" style="position: sticky; bottom: 0; background: white; padding: 16px 24px; border-top: 1px solid var(--sdc-border); z-index: 10;">
+                        <button type="button" class="sdc-btn sdc-btn-primary" onclick="alert('Funcionalidad de guardado en desarrollo.')" style="width: 100%;">
+                            <span class="dashicons dashicons-saved"></span> Guardar Negocio Completamente
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+        </div>
+        <?php
+    }
 }

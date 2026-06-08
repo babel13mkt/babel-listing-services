@@ -20,6 +20,16 @@ class Search_Index {
         // Hooks de sincronización automática
         add_action( 'save_post_babel_business', array( $this, 'sync_business_to_index' ), 10, 3 );
         add_action( 'delete_post', array( $this, 'delete_business_from_index' ) );
+        
+        // Hook personalizado para sincronizar DESPUÉS de que se hayan guardado todos los metadatos en AJAX
+        add_action( 'bd_after_business_saved', array( $this, 'sync_after_ajax_save' ) );
+    }
+
+    /**
+     * Sincroniza desde el hook personalizado de la SPA
+     */
+    public function sync_after_ajax_save( $post_id ) {
+        $this->sync_business_to_index( $post_id, get_post( $post_id ), true );
     }
 
     /**

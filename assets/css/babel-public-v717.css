@@ -3115,6 +3115,13 @@ header.wp-block-template-part .wp-block-site-title a {
 
 /* ── Subcomponentes (especificidad 0,2,x) ─────────────────── */
 
+.babel-filter-bar-inner .babel-filter-keyword {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
 .babel-filter-bar-inner .babel-filter-keyword input,
 .babel-filter-bar-inner .babel-filter-keyword input[type="text"],
 .babel-filter-bar-inner .babel-filter-keyword input[type="search"] {
@@ -3306,5 +3313,15 @@ header.wp-block-template-part .wp-block-site-title a {
     .babel-filter-bar-inner .babel-filter-submit .babel-search-submit-btn {
         width: 100% !important;
         justify-content: center !important;
+    }
+
+    /* Sticky Search Móvil */
+    .babel-filter-bar-section {
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 999 !important;
+        /* Sombra leve al hacer scroll y anclarse */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
 }

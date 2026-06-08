@@ -2,8 +2,8 @@
 namespace Babel\Directory;
 
 /**
- * Panel de Administración y Configuración Integral (Babel_Directory_Admin)
- * v7.0.0 — Hito 10: Configuración Administrativa Integral (ID de Layout de Divi & Settings API)
+ * Panel de Administración y Configuración Integral SPA (Babel_Directory_Admin)
+ * v8.0.0 — Hito 11: Single Page Application "Soy de Chile"
  *
  * @package Babel_Directory
  */
@@ -11,6 +11,7 @@ namespace Babel\Directory;
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Salir si se accede directamente.
 }
+
 class Admin {
 
     /**
@@ -20,14 +21,16 @@ class Admin {
     public function __construct() {
         add_action( 'admin_init', array( $this, 'register_settings' ) );
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
-        add_filter( 'parent_file', array( $this, 'fix_menu_highlighting' ) );
+        
+        // AJAX Endpoints SPA
+        add_action( 'wp_ajax_sdc_save_settings', array( $this, 'ajax_save_settings' ) );
+        add_action( 'wp_ajax_sdc_save_business', array( $this, 'ajax_save_business' ) );
     }
 
     /**
      * Registra los ajustes, secciones y campos usando la Settings API de WordPress.
      */
     public function register_settings() {
-        // --- Grupo de ajustes de Babel Directory ---
         register_setting(
             'babel_directory_settings_group',
             'babel_google_client_id',
@@ -38,7 +41,6 @@ class Admin {
             )
         );
 
-        // Sección: Integración con Google
         add_settings_section(
             'babel_google_section',
             __( 'Integración con Google Identity Services', 'babel-directory' ),
@@ -46,7 +48,6 @@ class Admin {
             'bd-settings'
         );
 
-        // Campo: Google Client ID
         add_settings_field(
             'babel_google_client_id',
             __( 'Google Client ID', 'babel-directory' ),
@@ -56,632 +57,333 @@ class Admin {
         );
     }
 
-    /**
-     * Descripción de la sección Google.
-     */
     public function render_google_section_description() {
-        echo '<p class="description">';
-        esc_html_e( 'Configura tu Google OAuth 2.0 Client ID para habilitar el login con Google en el formulario de publicación de negocios.', 'babel-directory' );
-        echo ' <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">';
-        esc_html_e( 'Obtener Client ID en Google Cloud Console &rarr;', 'babel-directory' );
+        echo '<p class="sdc-text-muted" style="margin-bottom:12px;">';
+        esc_html_e( 'Configura tu Google OAuth 2.0 Client ID para habilitar el login con Google en el formulario de publicación.', 'babel-directory' );
+        echo ' <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style="color:var(--sdc-blue);text-decoration:none;">';
+        esc_html_e( 'Obtener Client ID &rarr;', 'babel-directory' );
         echo '</a></p>';
     }
 
-    /**
-     * Renderiza el campo de texto para el Google Client ID.
-     */
     public function render_google_client_id_field() {
         $value = get_option( 'babel_google_client_id', '' );
-        echo '<input type="text" name="babel_google_client_id" id="babel_google_client_id" value="' . esc_attr( $value ) . '" class="regular-text" placeholder="123456789-abc...apps.googleusercontent.com" />';
-        echo '<p class="description">';
-        esc_html_e( 'Copia aquí el Client ID de tu aplicación OAuth 2.0. Asegúrate de añadir tu dominio a los Orígenes de JavaScript autorizados.', 'babel-directory' );
-        echo '</p>';
-        if ( ! empty( $value ) ) {
-            echo '<p><span style="color:#10b981;font-weight:600;">&#10003; ' . esc_html__( 'Configurado', 'babel-directory' ) . '</span></p>';
-        } else {
-            echo '<p><span style="color:#ef4444;font-weight:600;">&#9888; ' . esc_html__( 'No configurado — el botón de Google no funcionará hasta configurar este valor.', 'babel-directory' ) . '</span></p>';
+        echo '<input type="text" name="babel_google_client_id" id="babel_google_client_id" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="123456789-abc...apps.googleusercontent.com" />';
+    }
+
+    /**
+     * Guardado de configuración vía AJAX para la SPA.
+     */
+    public function ajax_save_settings() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Permisos insuficientes.' );
         }
+        
+        if ( isset( $_POST['babel_google_client_id'] ) ) {
+            update_option( 'babel_google_client_id', sanitize_text_field( wp_unslash( $_POST['babel_google_client_id'] ) ) );
+        }
+        
+        wp_send_json_success( 'Guardado correctamente.' );
+    }
+
+    /**
+     * Guarda los datos del Editor de Negocios de la SPA
+     */
+    public function ajax_save_business() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( 'Permisos insuficientes.' );
+        }
+
+        $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+        $title   = isset( $_POST['biz_name'] ) ? sanitize_text_field( wp_unslash( $_POST['biz_name'] ) ) : 'Nuevo Negocio';
+        $content = isset( $_POST['biz_desc'] ) ? sanitize_textarea_field( wp_unslash( $_POST['biz_desc'] ) ) : '';
+
+        if ( $post_id ) {
+            wp_update_post( array(
+                'ID'           => $post_id,
+                'post_title'   => $title,
+                'post_content' => $content,
+            ) );
+        } else {
+            $post_id = wp_insert_post( array(
+                'post_type'    => 'babel_business',
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_status'  => 'publish', // Autopublicar desde la SPA del admin
+            ) );
+        }
+
+        if ( is_wp_error( $post_id ) ) {
+            wp_send_json_error( 'Error al crear el negocio.' );
+        }
+
+        // Mapeo de campos de la UI a los Meta Keys del post
+        $meta_fields = array(
+            'biz_logo_id'      => array( '_bd_logo_id', '_thumbnail_id' ),
+            'biz_whatsapp'     => array( '_babel_whatsapp', '_bd_whatsapp' ),
+            'biz_phone'        => array( '_babel_phone', '_bd_telefono' ),
+            'biz_email'        => array( '_babel_email', '_bd_email' ),
+            'biz_website'      => array( '_babel_website', '_bd_sitio_web', '_bd_web' ),
+            'biz_instagram'    => array( '_babel_instagram' ),
+            'biz_facebook'     => array( '_babel_facebook' ),
+            'biz_tiktok'       => array( '_babel_tiktok' ),
+            'biz_linkedin'     => array( '_babel_linkedin' ),
+            'biz_rut'          => array( '_babel_rut', '_bd_rut' ),
+            'biz_razon_social' => array( '_babel_razon_social', '_bd_razon_social' ),
+            'biz_giro'         => array( '_babel_giro', '_bd_giro' ),
+            'biz_rep_legal'    => array( '_babel_rep_legal', '_bd_rep_legal' ),
+            'biz_gallery'      => array( '_babel_gallery', '_bd_galeria' ),
+            'biz_address'      => array( '_babel_address', '_bd_direccion' ),
+            'biz_lat'          => array( '_babel_lat', '_babel_latitude', '_bd_latitud' ),
+            'biz_lng'          => array( '_babel_lng', '_babel_longitude', '_bd_longitud' ),
+            'biz_wifi'         => array( '_babel_wifi', '_bd_wifi' ),
+            'biz_parking'      => array( '_babel_parking', '_bd_estacionamiento' ),
+            'biz_pet_friendly' => array( '_babel_pet_friendly' ),
+            'biz_delivery'     => array( '_babel_delivery' )
+        );
+
+        foreach ( $meta_fields as $post_key => $meta_keys ) {
+            if ( isset( $_POST[ $post_key ] ) ) {
+                $val = wp_unslash( $_POST[ $post_key ] );
+                
+                // Sanitización básica
+                if ( in_array( $post_key, array('biz_website', 'biz_instagram', 'biz_facebook', 'biz_tiktok', 'biz_linkedin') ) ) {
+                    $val = esc_url_raw( $val );
+                } elseif ( $post_key === 'biz_email' ) {
+                    $val = sanitize_email( $val );
+                } else {
+                    $val = sanitize_text_field( $val );
+                }
+
+                foreach ( $meta_keys as $meta_key ) {
+                    update_post_meta( $post_id, $meta_key, $val );
+                }
+            }
+        }
+
+        // Disparar un hook personalizado para que otros módulos (como el motor de búsqueda)
+        // sepan que el negocio y TODOS sus metadatos ya están listos en la BD.
+        do_action( 'bd_after_business_saved', $post_id );
+
+        wp_send_json_success( array( 'post_id' => $post_id ) );
     }
 
 
     /**
-     * Registra la página de administración del plugin.
+     * Registra la página de administración única de la SPA.
      */
     public function add_admin_menu() {
+        // Menú principal único
         add_menu_page(
-            __( 'Panel Babel', 'babel-directory' ),
-            __( 'Panel Babel', 'babel-directory' ),
+            __( 'Soy de Chile', 'babel-directory' ),
+            __( 'Soy de Chile', 'babel-directory' ),
             'manage_options',
             'bd-panel',
-            array( $this, 'render_admin_page' ),
-            'dashicons-layout',
+            array( $this, 'render_spa_page' ),
+            'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2L2 22h20L12 2z"/></svg>'), // Placeholder flag icon
             3
         );
-
-        // 1. Todos los Negocios CPT
-        add_submenu_page(
-            'bd-panel',
-            __( 'Todos los Negocios', 'babel-directory' ),
-            __( 'Todos los Negocios', 'babel-directory' ),
-            'manage_options',
-            'edit.php?post_type=babel_business'
-        );
-
-        // 2. Añadir Nuevo Negocio
-        add_submenu_page(
-            'bd-panel',
-            __( 'Añadir Nuevo', 'babel-directory' ),
-            __( 'Añadir Nuevo', 'babel-directory' ),
-            'manage_options',
-            'post-new.php?post_type=babel_business'
-        );
-
-        // 3. Categorías de Negocio
-        add_submenu_page(
-            'bd-panel',
-            __( 'Categorías', 'babel-directory' ),
-            __( 'Categorías', 'babel-directory' ),
-            'manage_options',
-            'edit-tags.php?taxonomy=babel_category&post_type=babel_business'
-        );
-
-        // 4. Regiones/Comunas
-        add_submenu_page(
-            'bd-panel',
-            __( 'Regiones/Comunas', 'babel-directory' ),
-            __( 'Regiones/Comunas', 'babel-directory' ),
-            'manage_options',
-            'edit-tags.php?taxonomy=babel_region&post_type=babel_business'
-        );
-
-        // 5. Guía de Shortcodes
-        add_submenu_page(
-            'bd-panel',
-            __( 'Guía de Shortcodes', 'babel-directory' ),
-            __( 'Guía de Shortcodes', 'babel-directory' ),
-            'manage_options',
-            'bd-shortcode-guide',
-            array( $this, 'render_shortcode_guide_page' )
-        );
-
-        // 6. Configuración del Plugin (Google + integraciones)
-        add_submenu_page(
-            'bd-panel',
-            __( 'Configuración', 'babel-directory' ),
-            __( '⚙ Configuración', 'babel-directory' ),
-            'manage_options',
-            'bd-settings',
-            array( $this, 'render_settings_page' )
-        );
+        
+        // Removemos los submenús redundantes (el CPT 'babel_business' sigue registrado y accesible por URL directa si hiciera falta, pero priorizamos la SPA).
     }
 
     /**
-     * Renderiza la página de Configuración del Plugin.
+     * Renderiza el contenedor principal y estructura HTML de la SPA.
      */
-    public function render_settings_page() {
+    public function render_spa_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
-        ?>
-        <div class="wrap">
-            <h1>
-                <span class="dashicons dashicons-admin-settings" style="font-size:24px;margin-right:8px;"></span>
-                <?php esc_html_e( 'Configuración de Babel Directory', 'babel-directory' ); ?>
-            </h1>
-            <form action="options.php" method="post" style="margin-top: 20px;">
-                <?php
-                settings_fields( 'babel_directory_settings_group' );
-                do_settings_sections( 'bd-settings' );
-                submit_button( __( 'Guardar Configuración', 'babel-directory' ) );
-                ?>
-            </form>
-        </div>
-        <?php
-    }
 
-    /**
-     * Renderiza el formulario de administración principal y la sección técnica de diagnóstico.
-     */
-    public function render_admin_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
+        // Obtención de métricas rápidas
+        $posts_count = wp_count_posts( 'babel_business' );
+        $total_published = isset( $posts_count->publish ) ? intval( $posts_count->publish ) : 0;
+        $total_pending = isset( $posts_count->pending ) ? intval( $posts_count->pending ) : 0;
         ?>
-        <div class="wrap">
-            <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-            <form action="options.php" method="post">
-                <?php
-                settings_fields( 'babel_directory_settings_group' );
-                do_settings_sections( 'bd-panel' );
-                submit_button();
-                ?>
-            </form>
-
-            <?php
-            // ==========================================================================
-            // SECCIÓN DE DIAGNÓSTICO Y ESTADO DEL SISTEMA (EXTENSIÓN HITO 10)
-            // ==========================================================================
+        <div id="babel-admin-app">
             
-            // 1. Obtención de métricas de control
-            $posts_count = wp_count_posts( 'babel_business' );
-            $total_published_wp = isset( $posts_count->publish ) ? intval( $posts_count->publish ) : 0;
+            <!-- Header SPA -->
+            <header class="sdc-header">
+                <div class="sdc-header-logo">
+                    <!-- Bandera simplificada por CSS/Emoji o logo -->
+                    🇨🇱 Soy de Chile
+                    <span class="sdc-header-title">Admin Dashboard</span>
+                </div>
+                <div class="sdc-header-actions">
+                    <span class="sdc-text-muted" style="color:rgba(255,255,255,0.7); font-size: 13px;">v8.0.0</span>
+                </div>
+            </header>
 
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'bd_search_index';
-            $table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) ) === $table_name;
+            <!-- Menú de Navegación por Pestañas -->
+            <nav class="sdc-tabs-nav">
+                <button class="sdc-tab-btn active" data-target="sdc-tab-dashboard">
+                    <span class="dashicons dashicons-dashboard"></span> Dashboard
+                </button>
+                <button class="sdc-tab-btn" data-target="sdc-tab-negocios">
+                    <span class="dashicons dashicons-store"></span> Editor de Negocios
+                </button>
+                <button class="sdc-tab-btn" data-target="sdc-tab-configuracion">
+                    <span class="dashicons dashicons-admin-settings"></span> Configuración
+                </button>
+                <button class="sdc-tab-btn" data-target="sdc-tab-guia">
+                    <span class="dashicons dashicons-editor-code"></span> Guía de Shortcodes
+                </button>
+            </nav>
 
-            $total_indexed = 0;
-            if ( $table_exists ) {
-                $total_indexed = intval( $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ) );
-            }
-
-            // 2. Verificación del Layout de Divi
-            $layout_id = intval( get_option( 'babel_divi_grid_layout_id', 0 ) );
-            $layout_status = '';
-            $layout_badge_class = '';
-
-            if ( $layout_id <= 0 ) {
-                $layout_status = __( 'No configurado', 'babel-directory' );
-                $layout_badge_class = 'babel-badge-warning';
-            } else {
-                $post_status = get_post_status( $layout_id );
-                $post_type = get_post_type( $layout_id );
-                if ( $post_status && 'et_pb_layout' === $post_type ) {
-                    $layout_status = sprintf( __( 'Válido (ID: %d - %s)', 'babel-directory' ), $layout_id, ucfirst( $post_status ) );
-                    $layout_badge_class = 'babel-badge-success';
-                } else {
-                    $layout_status = sprintf( __( 'Inexistente o Inválido (ID: %d)', 'babel-directory' ), $layout_id );
-                    $layout_badge_class = 'babel-badge-danger';
-                }
-            }
-            ?>
-            <div class="babel-diagnostic-panel">
-                <h2 class="babel-diagnostic-title">
-                    <span class="dashicons dashicons-shield-alt"></span>
-                    <?php esc_html_e( 'Diagnóstico y Estado del Sistema', 'babel-directory' ); ?>
-                </h2>
-                <p class="babel-diagnostic-subtitle">
-                    <?php esc_html_e( 'Supervisión en tiempo real de la integridad de la base de datos y la integración con Divi.', 'babel-directory' ); ?>
-                </p>
-
-                <div class="babel-diagnostic-grid">
-                    <!-- Tarjeta 1: Motor de Búsqueda Rápida -->
-                    <div class="babel-diagnostic-card">
-                        <div class="babel-card-header">
-                            <span class="dashicons dashicons-database"></span>
-                            <h3><?php esc_html_e( 'Índice de Búsqueda', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-card-body">
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'Estado de Tabla:', 'babel-directory' ); ?></span>
-                                <span class="babel-badge <?php echo $table_exists ? 'babel-badge-success' : 'babel-badge-danger'; ?>">
-                                    <?php echo $table_exists ? esc_html__( 'OK (Física)', 'babel-directory' ) : esc_html__( 'No encontrada', 'babel-directory' ); ?>
-                                </span>
-                            </div>
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'Tabla Física:', 'babel-directory' ); ?></span>
-                                <code class="babel-code-inline"><?php echo esc_html( $table_name ); ?></code>
-                            </div>
-                        </div>
+            <!-- 1. Contenido: Dashboard -->
+            <div id="sdc-tab-dashboard" class="sdc-tab-content active">
+                <h2 style="margin-top:0;">Dashboard</h2>
+                
+                <div class="sdc-grid">
+                    <div class="sdc-card sdc-card-primary">
+                        <div class="sdc-metric-title">Negocios Totales (Publicados)</div>
+                        <div class="sdc-metric-value"><?php echo esc_html( $total_published ); ?></div>
                     </div>
+                    <div class="sdc-card sdc-card-danger">
+                        <div class="sdc-metric-title">Aprobaciones Pendientes</div>
+                        <div class="sdc-metric-value"><?php echo esc_html( $total_pending ); ?></div>
+                    </div>
+                </div>
 
-                    <!-- Tarjeta 2: Negocios e Indexación -->
-                    <div class="babel-diagnostic-card">
-                        <div class="babel-card-header">
-                            <span class="dashicons dashicons-admin-plugins"></span>
-                            <h3><?php esc_html_e( 'Sincronización de Datos', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-card-body">
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'Negocios en WordPress:', 'babel-directory' ); ?></span>
-                                <span class="babel-metric-value"><?php echo esc_html( $total_published_wp ); ?></span>
-                            </div>
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'Negocios en Índice:', 'babel-directory' ); ?></span>
-                                <span class="babel-metric-value"><?php echo esc_html( $total_indexed ); ?></span>
-                            </div>
-                            <?php if ( $table_exists && $total_published_wp !== $total_indexed ) : ?>
-                                <div class="babel-alert-inline babel-alert-warning">
-                                    <span class="dashicons dashicons-warning"></span>
-                                    <?php esc_html_e( 'Existe un desfase en el índice. Se recomienda ejecutar re-indexación masiva.', 'babel-directory' ); ?>
-                                </div>
+                <h3>Negocios Pendientes de Aprobación</h3>
+                <div class="sdc-table-wrapper">
+                    <table class="sdc-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Negocio</th>
+                                <th>Estado</th>
+                                <th>Acciones Rápidas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ( $total_pending > 0 ) : ?>
+                                <!-- Aquí iría el loop de post pendientes. Estático por ahora para estructura. -->
+                                <tr>
+                                    <td>Ejemplo Restaurante</td>
+                                    <td>Pendiente</td>
+                                    <td>
+                                        <div class="sdc-flex sdc-gap-2">
+                                            <button class="sdc-btn sdc-btn-primary">Aprobar</button>
+                                            <button class="sdc-btn sdc-btn-danger">Rechazar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php else : ?>
+                                <tr>
+                                    <td colspan="3" style="text-align:center; padding: 24px; color: var(--sdc-text-muted);">No hay negocios pendientes de aprobación.</td>
+                                </tr>
                             <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Contenido: Editor de Negocios (Contenedor para la inyección de Metaboxes) -->
+            <div id="sdc-tab-negocios" class="sdc-tab-content">
+                <h2 style="margin-top:0;">Editor Inmersivo de Negocios</h2>
+                <div class="sdc-card">
+                    <?php 
+                    // Aquí se invoca la nueva clase de Metaboxes refactorizada 
+                    // para renderizar el formulario dentro de la SPA.
+                    \Babel\Directory\Metaboxes::render_spa_editor(); 
+                    ?>
+                </div>
+            </div>
+
+            <!-- 3. Contenido: Configuración -->
+            <div id="sdc-tab-configuracion" class="sdc-tab-content">
+                <h2 style="margin-top:0;">Configuración de Soy de Chile</h2>
+                <div class="sdc-card">
+                    <form id="sdc-settings-form">
+                        <?php
+                        // Renderiza los campos de configuración registrados
+                        do_settings_fields( 'bd-settings', 'babel_google_section' );
+                        ?>
+                        <div style="margin-top: 24px;">
+                            <button type="submit" class="sdc-btn sdc-btn-primary">Guardar Configuración</button>
                         </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. Contenido: Guía de Shortcodes -->
+            <div id="sdc-tab-guia" class="sdc-tab-content">
+                <h2 style="margin-top:0;">Guía Completa de Shortcodes</h2>
+                <p class="sdc-text-muted" style="margin-bottom:20px; font-size:14px;">Utiliza estos códigos cortos en las páginas de tu sitio o constructores visuales (como Divi o Gutenberg) para inyectar las diferentes secciones del directorio de forma dinámica.</p>
+                
+                <h3 style="border-bottom:1px solid var(--sdc-border); padding-bottom:8px; margin-top:24px; color:var(--sdc-blue);">1. Formularios e Interacción</h3>
+                <div class="sdc-grid">
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Formulario de Carga Frontend</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Muestra el portal de registro para nuevos negocios. Incluye validación de login con Google, selección de región, horarios semanales, carga de fotos y selección de comodidades. Los registros quedan pendientes de aprobación.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#d97706;">[babel_submission_form]</code>
+                    </div>
+                </div>
+
+                <h3 style="border-bottom:1px solid var(--sdc-border); padding-bottom:8px; margin-top:24px; color:var(--sdc-blue);">2. Buscadores e Integración de Filtros</h3>
+                <div class="sdc-grid">
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Buscador Universal AJAX (Recomendado)</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Barra de filtros unificada que permite buscar negocios por texto libre, filtrar por región y geolocalizar por proximidad GPS (botón radar). Carga los resultados en caliente sin recargar la página.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#10b981;">[bd_filter_bar show_results="yes"]</code>
                     </div>
 
-                    <!-- Tarjeta 3: Integración de Layout de Divi -->
-                    <div class="babel-diagnostic-card">
-                        <div class="babel-card-header">
-                            <span class="dashicons dashicons-admin-appearance"></span>
-                            <h3><?php esc_html_e( 'Layout de Divi 5', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-card-body">
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'Estado del Layout:', 'babel-directory' ); ?></span>
-                                <span class="babel-badge <?php echo esc_attr( $layout_badge_class ); ?>">
-                                    <?php echo esc_html( $layout_status ); ?>
-                                </span>
-                            </div>
-                            <div class="babel-metric-item">
-                                <span class="babel-metric-label"><?php esc_html_e( 'ID Configurado:', 'babel-directory' ); ?></span>
-                                <span class="babel-metric-value"><?php echo $layout_id > 0 ? esc_html( $layout_id ) : esc_html__( 'Ninguno', 'babel-directory' ); ?></span>
-                            </div>
-                        </div>
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Buscadores Alternativos (Compatibilidad)</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Códigos heredados que mapean automáticamente al buscador unificado para mantener la compatibilidad en bases de datos antiguas.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-size:11px; color:#6b7280;">[babel_search_form] o [babel_radar_search]</code>
+                    </div>
+                </div>
+
+                <h3 style="border-bottom:1px solid var(--sdc-border); padding-bottom:8px; margin-top:24px; color:var(--sdc-blue);">3. Páginas de Destino y Vistas</h3>
+                <div class="sdc-grid">
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Ficha/Perfil de Negocio</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Renderiza el perfil completo del comercio en su página individual (galería, contacto directo, botón de WhatsApp, mapa interactivo Leaflet.js, horarios y valoraciones). Si no se le pasa un ID, detecta automáticamente el negocio actual.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#2563eb;">[bd_business_profile]</code>
+                    </div>
+
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Plantilla de Región</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Genera el layout completo de una página de región: incluye un banner Hero de la región, contador de locales, buscador interno y botones de filtrado rápido por categoría.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#2563eb;">[bd_region_template region="auto"]</code>
+                    </div>
+
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Grilla / Listado de Resultados</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Muestra los negocios publicados en formato de tarjetas responsivas (diseño premium con ratings, badges de verificado/destacado y precio). Cuenta con paginación integrada.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#2563eb;">[bd_archive_loop]</code>
+                    </div>
+                </div>
+
+                <h3 style="border-bottom:1px solid var(--sdc-border); padding-bottom:8px; margin-top:24px; color:var(--sdc-blue);">4. Navegación, Portada y Enlaces SEO</h3>
+                <div class="sdc-grid">
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Grilla de Regiones Populares</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Dibuja una cuadricula responsiva con las imágenes y cantidad de locales registrados de cada región de Chile, ordenadas geográficamente.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#4f46e5;">[bd_popular_regions columns="4" rows="4"]</code>
+                    </div>
+
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Grilla de Categorías Populares</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Renderiza una grilla visual de las categorías con mayor cantidad de negocios, utilizando imágenes de fondo u opcionalmente fallbacks elegantes.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#4f46e5;">[bd_popular_categories columns="4" rows="4"]</code>
+                    </div>
+
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Enlaces de Regiones (Footer)</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Lista ordenada de regiones para situar en el pie de página, ideal para estructuración de enlaces de navegación y SEO indexable.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#4f46e5;">[bd_footer_regions columns="2" rows="8"]</code>
+                    </div>
+
+                    <div class="sdc-card">
+                        <h4 style="margin-top:0; color:#111827;">Enlaces de Categorías (Footer)</h4>
+                        <p class="sdc-text-muted" style="font-size:13px; line-height:1.5;">Lista ordenada de las categorías principales para situar en el pie de página, atrayendo visitas de nicho por buscadores web.</p>
+                        <code style="display:block; padding:8px; background:#F3F4F6; border-radius:4px; margin-top:8px; font-weight:bold; color:#4f46e5;">[bd_footer_categories columns="3" rows="8"]</code>
                     </div>
                 </div>
             </div>
 
-        </div> <!-- Cierre de .wrap -->
+        </div> <!-- Cierre #babel-admin-app -->
         <?php
-    }
-
-    /**
-     * Renderiza la página de la Guía de Shortcodes como elemento del menú de administración.
-     */
-    public function render_shortcode_guide_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return;
-        }
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e( 'Guía de Shortcodes', 'babel-directory' ); ?></h1>
-            
-            <div class="babel-shortcode-guide-panel" style="margin-top: 20px;">
-                <h2 class="babel-guide-title">
-                    <span class="dashicons dashicons-editor-code"></span>
-                    <?php esc_html_e( 'Guía de Shortcodes', 'babel-directory' ); ?>
-                </h2>
-                <p class="babel-guide-subtitle">
-                    <?php esc_html_e( 'Copie y pegue estos códigos directamente en Divi para integrar los componentes interactivos.', 'babel-directory' ); ?>
-                </p>
-
-                <div class="babel-guide-grid">
-                    <!-- Shortcode 1: Buscador de Radar -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Buscador de Radar (Hero Section)', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Renderiza la caja de búsqueda con efecto visual de radar pulsante e integración GPS. Ideal para cabeceras.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[babel_radar_search]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-radar" onclick="babelCopyShortcode('[babel_radar_search]', 'btn-copy-radar')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 2: Grilla de Regiones -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Grilla de Regiones / Comunas', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Muestra las regiones en una cuadrícula responsiva con imágenes. Soporta personalización de columnas y filas.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[babel_region_grid columns="4" rows="2"]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-region" onclick="babelCopyShortcode('[babel_region_grid columns=\'4\' rows=\'2\']', 'btn-copy-region')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                            <div class="babel-guide-params">
-                                <span><strong>Parámetros opcionales:</strong></span>
-                                <ul>
-                                    <li><code>columns="X"</code>: Cantidad de columnas en escritorio (ej. 3, 4).</li>
-                                    <li><code>rows="Y"</code>: Cantidad de filas a mostrar (limita los resultados a X * Y).</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 3: Formulario de Búsqueda AJAX -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Buscador Inteligente AJAX', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Barra de búsqueda única y moderna con geolocalización por GPS integrada para buscar negocios, categorías y comunas.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[babel_search_form]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-search" onclick="babelCopyShortcode('[babel_search_form]', 'btn-copy-search')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 4: Contenedor de Resultados -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Contenedor de Resultados AJAX', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Sección dinámica donde se cargan los resultados de búsqueda AJAX utilizando el maquetado de la biblioteca Divi.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[babel_results]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-results" onclick="babelCopyShortcode('[babel_results]', 'btn-copy-results')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 5: Barra de Filtros AJAX -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Barra de Filtros AJAX', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Barra horizontal de filtros (Buscador, Categoría, Región/Comuna, Radar Cerca de Mí) que actúa sobre el listado de resultados.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[bd_filter_bar]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-filter-bar" onclick="babelCopyShortcode('[bd_filter_bar]', 'btn-copy-filter-bar')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 6: Loop de Resultados de Archivo -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Loop de Resultados de Archivo (Divi Theme Builder)', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Muestra dinámicamente los negocios y la paginación correspondientes a la Región o Categoría actual. Diseñado para integrarse en plantillas del Generador de Temas de Divi.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[bd_archive_loop]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-archive-loop" onclick="babelCopyShortcode('[bd_archive_loop]', 'btn-copy-archive-loop')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                            <div class="babel-guide-params" style="margin-top: 10px;">
-                                <span><strong>Ejemplo de aplicación (en Divi):</strong></span>
-                                <div style="background: #e2e8f0; color: #0f172a; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-top: 5px; line-height: 1.4;">
-                                    [bd_filter_bar]<br>[bd_archive_loop]
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 9: Plantilla Completa de Región (Hero + Pills + Loop) -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Plantilla Completa de Región (Hero + Pills + Loop)', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Renderiza la plantilla de página de región completa e interactiva: Hero con imagen y contador, Pills de categorías horizontales, y grilla de negocios.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[bd_region_template]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-region-template" onclick="babelCopyShortcode('[bd_region_template]', 'btn-copy-region-template')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                            <div class="babel-guide-params" style="margin-top: 10px;">
-                                <span><strong>Parámetros opcionales:</strong></span>
-                                <ul>
-                                    <li><code>region="auto"</code>: Detecta la región automáticamente (por defecto).</li>
-                                    <li><code>region="slug-de-region"</code>: Fuerza una región específica (ej. <code>region="maule"</code>).</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 7: Footer Regiones -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Footer Regiones / Comunas', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Muestra un listado de las regiones principales ordenadas alfabéticamente (removiendo automáticamente prefijos romanos como "XV - REG -"). Ideal para el pie de página.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[bd_footer_regions columns="2" rows="8"]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-footer-regions" onclick="babelCopyShortcode('[bd_footer_regions columns=\'2\' rows=\'8\']', 'btn-copy-footer-regions')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                            <div class="babel-guide-params">
-                                <span><strong>Parámetros opcionales:</strong></span>
-                                <ul>
-                                    <li><code>columns</code>: Número de columnas (Por defecto: <code>2</code>)</li>
-                                    <li><code>rows</code>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
-                                    <li><code>orderby</code>: Ordenar por (<code>name</code>, <code>count</code>, <code>id</code>. Por defecto: <code>name</code>)</li>
-                                    <li><code>order</code>: Dirección (<code>ASC</code> o <code>DESC</code>. Por defecto: <code>ASC</code>)</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcode 8: Footer Categorías -->
-                    <div class="babel-guide-card">
-                        <div class="babel-guide-card-header">
-                            <h3><?php esc_html_e( 'Footer Categorías de Negocio', 'babel-directory' ); ?></h3>
-                        </div>
-                        <div class="babel-guide-card-body">
-                            <p><?php esc_html_e( 'Muestra un listado ordenado de las categorías principales para el pie de página.', 'babel-directory' ); ?></p>
-                            <div class="babel-copy-box">
-                                <code>[bd_footer_categories columns="3" rows="8"]</code>
-                                <button type="button" class="babel-copy-btn" id="btn-copy-footer-cats" onclick="babelCopyShortcode('[bd_footer_categories columns=\'3\' rows=\'8\']', 'btn-copy-footer-cats')">
-                                    <span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Copiar', 'babel-directory' ); ?>
-                                </button>
-                            </div>
-                            <div class="babel-guide-params">
-                                <span><strong>Parámetros opcionales:</strong></span>
-                                <ul>
-                                    <li><code>columns</code>: Número de columnas (Por defecto: <code>3</code>)</li>
-                                    <li><code>rows</code>: Límite de filas por columna (Por defecto: <code>8</code>)</li>
-                                    <li><code>parent</code>: ID de categoría padre (<code>0</code> para principales, o <code>any</code>. Por defecto: <code>0</code>)</li>
-                                    <li><code>orderby</code>: Ordenar por (<code>name</code>, <code>count</code>. Por defecto: <code>name</code>)</li>
-                                    <li><code>order</code>: Dirección (<code>ASC</code> o <code>DESC</code>. Por defecto: <code>ASC</code>)</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <script>
-            function babelCopyShortcode(text, buttonId) {
-                navigator.clipboard.writeText(text).then(function() {
-                    var btn = document.getElementById(buttonId);
-                    var originalHtml = btn.innerHTML;
-                    btn.innerHTML = '<span class="dashicons dashicons-yes"></span> Copiado';
-                    btn.classList.add('copied');
-                    setTimeout(function() {
-                        btn.innerHTML = originalHtml;
-                        btn.classList.remove('copied');
-                    }, 2000);
-                }).catch(function(err) {
-                    console.error('Error al copiar: ', err);
-                });
-            }
-        </script>
-
-        <style>
-            .babel-shortcode-guide-panel {
-                background: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                padding: 24px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-                max-width: 1000px;
-            }
-            .babel-guide-title {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-size: 20px;
-                font-weight: 600;
-                color: #1e293b;
-                margin: 0 0 4px 0 !important;
-            }
-            .babel-guide-title .dashicons {
-                font-size: 24px;
-                width: 24px;
-                height: 24px;
-                color: #10b981;
-            }
-            .babel-guide-subtitle {
-                font-size: 14px;
-                color: #64748b;
-                margin: 0 0 24px 0 !important;
-            }
-            .babel-guide-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
-                gap: 20px;
-            }
-            @media (max-width: 600px) {
-                .babel-guide-grid {
-                    grid-template-columns: 1fr;
-                }
-            }
-            .babel-guide-card {
-                background: #f8fafc;
-                border: 1px solid #f1f5f9;
-                border-radius: 8px;
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-            .babel-guide-card-header h3 {
-                font-size: 15px;
-                font-weight: 600;
-                color: #334155;
-                margin: 0 0 10px 0 !important;
-            }
-            .babel-guide-card-body p {
-                font-size: 13px;
-                color: #64748b;
-                margin: 0 0 15px 0 !important;
-                line-height: 1.5;
-            }
-            .babel-copy-box {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                background: #0f172a;
-                padding: 8px 12px;
-                border-radius: 6px;
-                border: 1px solid #1e293b;
-                margin-top: 10px;
-            }
-            .babel-copy-box code {
-                color: #38bdf8;
-                font-family: monospace;
-                font-size: 12px;
-                background: transparent !important;
-                padding: 0 !important;
-            }
-            .babel-copy-btn {
-                background: #3b82f6;
-                color: #ffffff;
-                border: none;
-                padding: 6px 12px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 11px;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                transition: background 0.2s ease;
-            }
-            .babel-copy-btn:hover {
-                background: #2563eb;
-            }
-            .babel-copy-btn.copied {
-                background: #10b981 !important;
-            }
-            .babel-copy-btn .dashicons {
-                font-size: 14px;
-                width: 14px;
-                height: 14px;
-            }
-            .babel-guide-params {
-                margin-top: 10px;
-                font-size: 12px;
-                color: #64748b;
-            }
-            .babel-guide-params ul {
-                margin: 5px 0 0 0 !important;
-                padding-left: 15px !important;
-                list-style-type: disc !important;
-            }
-            .babel-guide-params li {
-                margin-bottom: 4px !important;
-            }
-            .babel-guide-params code {
-                background: #e2e8f0;
-                color: #0f172a;
-                padding: 1px 4px;
-                border-radius: 3px;
-                font-size: 11px;
-            }
-        </style>
-        <?php
-    }
-
-    /**
-     * Corrige el resaltado del menú lateral para que Panel Babel permanezca activo
-     * al navegar por el listado, creación, taxonomías de negocios o guía de shortcodes.
-     *
-     * @param string $parent_file El archivo padre actual.
-     * @return string El archivo padre filtrado.
-     */
-    public function fix_menu_highlighting( $parent_file ) {
-        global $current_screen, $plugin_page;
-        
-        // Si estamos en cualquier pantalla del CPT 'babel_business', sus taxonomías asociadas o la guía de shortcodes
-        if ( ( isset( $current_screen->post_type ) && 'babel_business' === $current_screen->post_type ) ||
-             ( isset( $plugin_page ) && 'bd-shortcode-guide' === $plugin_page ) ) {
-            return 'bd-panel';
-        }
-        
-        return $parent_file;
     }
 }

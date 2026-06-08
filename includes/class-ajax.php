@@ -23,6 +23,9 @@ class Ajax {
      * Procesa la consulta AJAX de búsqueda y filtrado de negocios.
      */
     public function filter_listings() {
+        // Verificación de nonce para seguridad
+        check_ajax_referer('babel_search_nonce', 'nonce');
+        
         global $wpdb;
         $table_index = $wpdb->prefix . 'bd_search_index';
 
@@ -31,11 +34,11 @@ class Ajax {
         $cat     = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
         $region  = isset( $_POST['region'] ) ? sanitize_text_field( wp_unslash( $_POST['region'] ) ) : '';
         $sort    = isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'featured';
-        $paged   = isset( $_POST['paged'] ) ? intval( $_POST['paged'] ) : 1;
+        $paged   = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
         
         $lat    = isset( $_POST['lat'] ) ? floatval( $_POST['lat'] ) : 0;
         $lng    = isset( $_POST['lng'] ) ? floatval( $_POST['lng'] ) : 0;
-        $radius = isset( $_POST['radius'] ) ? intval( $_POST['radius'] ) : 50; // En kilómetros
+        $radius = isset( $_POST['radius'] ) ? absint( $_POST['radius'] ) : 50; // En kilómetros
 
         $posts_per_page = 12;
         $offset = ( $paged - 1 ) * $posts_per_page;
@@ -219,6 +222,15 @@ class Ajax {
         $rating_avg   = (float) get_post_meta( $post_id, '_babel_rating_avg', true );
         $rating_count = (int) get_post_meta( $post_id, '_babel_rating_count', true );
         $price_range  = get_post_meta( $post_id, '_babel_price_range', true );
+
+        $categorias = get_the_terms( $post_id, 'babel_category' );
+        $regiones   = get_the_terms( $post_id, 'babel_region' );
+
+        $category_name = ( ! empty( $categorias ) && ! \is_wp_error( $categorias ) ) ? $categorias[0]->name : '';
+        $region_name   = '';
+        if ( ! empty( $regiones ) && ! \is_wp_error( $regiones ) ) {
+            $region_name = preg_replace( '/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $regiones[0]->name );
+        }
 
         $thumb_id  = get_post_thumbnail_id( $post_id );
         $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
