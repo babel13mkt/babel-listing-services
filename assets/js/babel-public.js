@@ -175,6 +175,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const debouncedSearch = debounce(() => performSearch(1), 300);
 
     // ==========================================================================
+    // 0. AUTOCOMPLETADO PREDICTIVO (SUGERENCIAS)
+    // ==========================================================================
+    if (keywordInput) {
+        // Contenedor para el dropdown
+        const autocompleteDropdown = document.createElement('div');
+        autocompleteDropdown.className = 'babel-autocomplete-dropdown';
+        autocompleteDropdown.style.display = 'none';
+        
+        // Lo insertamos justo después del input
+        if (keywordInput.parentNode) {
+            keywordInput.parentNode.style.position = 'relative';
+            keywordInput.parentNode.appendChild(autocompleteDropdown);
+        }
+
+        const fetchSuggestions = debounce(async (query) => {
+            if (query.length < 2) {
+                autocompleteDropdown.style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Obtener la base de la URL REST desde babel_vars (fallback a wp-json manual si es necesario)
+                let baseRestUrl = babel_vars.rest_url ? babel_vars.rest_url.replace('/search', '') : '/wp-json/babel/v1';
+                // Si la url ya termina en /search, la limpiamos.
+                if (baseRestUrl.endsWith('/search')) baseRestUrl = baseRestUrl.replace('/search', '');
+
+                const response = await fetch(`${baseRestUrl}/suggestions?q=${encodeURIComponent(query)}`);
+                if (!response.ok) return;
+                
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    autocompleteDropdown.innerHTML = '';
+                    result.data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'babel-autocomplete-item';
+                        
+                        // Icono según tipo
+                        let icon = '📌';
+                        let typeLabel = '';
+                        if (item.type === 'category') { icon = '📁'; typeLabel = '<span class="babel-ac-type">Categoría</span>'; }
+                        if (item.type === 'region') { icon = '📍'; typeLabel = '<span class="babel-ac-type">Región</span>'; }
+                        if (item.type === 'business') { icon = '🏪'; }
+                        
+                        div.innerHTML = `<span class="babel-ac-icon">${icon}</span> <span class="babel-ac-label">${item.label}</span> ${typeLabel}`;
+                        
+                        div.addEventListener('click', () => {
+                            // Si es categoría o región, rellenar el input. Lo ideal es rellenar con el nombre.
+                            keywordInput.value = item.label;
+                            autocompleteDropdown.style.display = 'none';
+                            // Lanzar búsqueda automáticamente
+                            performSearch(1);
+                        });
+                        
+                        autocompleteDropdown.appendChild(div);
+                    });
+                    autocompleteDropdown.style.display = 'block';
+                } else {
+                    autocompleteDropdown.style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Error fetching suggestions", err);
+            }
+        }, 200);
+
+        keywordInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            fetchSuggestions(val);
+        });
+
+        // Ocultar dropdown si se hace clic fuera
+        document.addEventListener('click', (e) => {
+            if (!keywordInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+                autocompleteDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // ==========================================================================
     // 1. RADAR & GEOLOCALIZACIÓN GPS (INTEGRADO DE FORMA MODERNA)
     // ==========================================================================
     if (searchForm) {
@@ -193,11 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         keywordInput.classList.remove('babel-radar-active');
                     }
                     
-                    if (resultsContainer) {
-                        performSearch(1);
-                    } else {
-                        searchForm.submit();
-                    }
+                    // Removido: No auto-buscar al apagar el radar según requerimiento del cliente.
                     return;
                 }
 
@@ -246,12 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 .catch(err => console.log('Reverse geocoding error:', err));
                         }
 
-                        // Disparar búsqueda automática
-                        if (resultsContainer) {
-                            performSearch(1);
-                        } else {
-                            searchForm.submit();
-                        }
+                        // Removido: No auto-buscar al encender el radar según requerimiento del cliente.
                     },
                     (error) => {
                         console.error('GPS Error:', error);

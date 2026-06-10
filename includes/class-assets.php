@@ -30,9 +30,8 @@ class Assets {
         // de un shortcode llega demasiado tarde y el CSS nunca aparece en <head>.
         add_action( 'wp_enqueue_scripts', array( $this, 'force_enqueue_babel_css' ), 99 );
 
-        // Registrar los shortcodes oficiales del buscador
-        add_shortcode( 'babel_search_form', array( $this, 'render_search_form' ) );
-        add_shortcode( 'babel_results', array( $this, 'render_results_container' ) );
+        // Shortcodes legacy eliminados: babel_search_form, babel_results
+        // Usar exclusivamente [bd_filter_bar show_results="yes"]
     }
 
     /**
@@ -53,6 +52,22 @@ class Assets {
             'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
             array(),
             null
+        );
+
+        // Registrar Leaflet.js para mapas
+        wp_register_style(
+            'leaflet-css',
+            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+            array(),
+            '1.9.4'
+        );
+
+        wp_register_script(
+            'leaflet-js',
+            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+            array(),
+            '1.9.4',
+            true
         );
 
         // Registrar la hoja de estilos pública con cache-busting físico en el nombre del archivo
@@ -116,24 +131,6 @@ class Assets {
     public function force_enqueue_babel_css() {
         wp_enqueue_style( 'babel-public-css' );
         wp_enqueue_script( 'babel-public-js' );
-    }
-
-    public function render_search_form( $atts ) {
-        return do_shortcode( "[bd_filter_bar show_results='false']" );
-    }
-
-    /**
-     * Callback para el shortcode [babel_results].
-     * Renderiza el contenedor estructural puro donde se inyectarán los resultados vía AJAX.
-     *
-     * @return string Contenedor HTML estructural.
-     */
-    public function render_results_container() {
-        // Encolar los assets en caliente por si el formulario no está en la misma página
-        wp_enqueue_style( 'babel-public-css' );
-        wp_enqueue_script( 'babel-public-js' );
-
-        return '<div id="babel-directory-results" class="babel-results-container"></div>';
     }
 
 }

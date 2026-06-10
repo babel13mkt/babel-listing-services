@@ -12,7 +12,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Shortcodes {
 
     public function __construct() {
-        add_shortcode( 'babel_radar_search', array( $this, 'render_radar_search' ) );
         add_shortcode( 'babel_region_grid', array( $this, 'render_region_grid' ) );
         add_shortcode( 'bd_popular_regions', array( $this, 'render_region_grid' ) ); // Alias simétrico
         add_shortcode( 'bd_popular_categories', array( $this, 'render_category_grid' ) );
@@ -21,7 +20,29 @@ class Shortcodes {
         add_shortcode( 'bd_archive_loop', array( $this, 'render_archive_loop' ) );
         add_shortcode( 'bd_region_template', array( $this, 'render_region_template' ) );
         add_shortcode( 'bd_business_profile', array( $this, 'render_business_profile' ) );
+        add_shortcode( 'bd_breadcrumbs', array( $this, 'render_breadcrumbs' ) );
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
+
+        // Shortcodes adicionales B2B restaurados
+        add_shortcode( 'babel_claim_business', array( $this, 'render_claim_business' ) );
+        add_shortcode( 'bd_user_dashboard', array( $this, 'render_user_dashboard' ) );
+
+        // Micro-shortcodes atómicos LTM
+        add_shortcode( 'bd_business_gallery', array( $this, 'render_business_gallery' ) );
+        add_shortcode( 'bd_business_hours', array( $this, 'render_business_hours' ) );
+        add_shortcode( 'bd_business_map', array( $this, 'render_business_map' ) );
+        add_shortcode( 'bd_business_contact', array( $this, 'render_business_contact' ) );
+        add_shortcode( 'bd_business_badges', array( $this, 'render_business_badges' ) );
+
+        // Shortcode de banners publicitarios segmentados
+        add_shortcode( 'bd_ad_space', array( $this, 'render_ad_space' ) );
+
+        // Shortcode de listado de negocios destacados premium
+        add_shortcode( 'bd_featured_businesses', array( $this, 'render_featured_businesses' ) );
+
+        // Hooks para alertas transaccionales y estadísticas
+        add_action( 'post_updated', array( $this, 'notify_user_on_claim_approved' ), 10, 3 );
+        add_action( 'wp_head', array( $this, 'track_business_view' ) );
     }
 
     public function render_filter_bar( $atts ) {
@@ -71,20 +92,7 @@ class Shortcodes {
                         <input type="text" id="babel-search-keyword" name="keyword" placeholder="ej: Sushi, región metropolitana" />
                     </div>
 
-                    <!-- 2. Selector de Región -->
-                    <div class="babel-filter-region">
-                        <select id="babel-search-region-select" name="region">
-                            <option value="">Todas las regiones</option>
-                            <?php
-                            if ( ! \is_wp_error( $regions ) && ! empty( $regions ) ) {
-                                foreach ( $regions as $reg ) {
-                                    $selected = ( $current_region_slug === $reg->slug ) ? 'selected="selected"' : '';
-                                    echo '<option value="' . esc_attr( $reg->slug ) . '" ' . $selected . '>' . esc_html( $reg->name ) . '</option>';
-                                }
-                            }
-                            ?>
-                        </select>
-                    </div>
+                    <!-- 2. Selector de Región eliminado a petición del usuario -->
 
                     <!-- 3. Radar GPS -->
                     <div class="babel-filter-radar">
@@ -121,9 +129,6 @@ class Shortcodes {
         return ob_get_clean();
     }
 
-    public function render_radar_search( $atts ) {
-        return $this->render_filter_bar( $atts );
-    }
 
     public function render_region_grid( $atts ) {
         wp_enqueue_style( 'babel-public-css' );
@@ -467,6 +472,7 @@ class Shortcodes {
         wp_enqueue_style( 'babel-public-css' );
         
         ob_start();
+        $card_counter = 0;
         ?>
         <div class="sdc-grid-archive">
             <?php if ( have_posts() ) : ?>
@@ -579,6 +585,13 @@ class Shortcodes {
                         </div><!-- /.babel-biz-card__body -->
 
                     </a><!-- /.babel-biz-card -->
+                    <?php 
+                    $card_counter++;
+                    if ( 0 === $card_counter % 4 ) {
+                        // Inyectar anuncio publicitario in-loop adaptado a la región actual
+                        echo $this->render_ad_space( array( 'position' => 'in_loop_ad', 'region' => 'auto' ) );
+                    }
+                    ?>
                 <?php endwhile; ?>
             <?php else : ?>
                 <p class="sdc-no-results"><?php esc_html_e( 'No se encontraron negocios en esta categoría.', 'babel-directory' ); ?></p>
@@ -675,6 +688,11 @@ class Shortcodes {
         ob_start();
         ?>
         <div class="bd-region-container">
+            <!-- Breadcrumbs -->
+            <div class="bd-region-breadcrumbs-wrapper" style="max-width: 1200px; margin: 0 auto; padding: 20px 20px 0 20px;">
+                <?php echo do_shortcode( '[bd_breadcrumbs]' ); ?>
+            </div>
+
             <!-- Hero Section -->
             <div class="bd-region-hero">
                 <div class="bd-region-hero-bg" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
@@ -766,6 +784,7 @@ class Shortcodes {
         $youtube_channel  = \get_post_meta( $post_id, '_babel_youtube_channel', true );
         $verified         = \get_post_meta( $post_id, '_babel_verified', true );
         $featured         = \get_post_meta( $post_id, '_babel_featured', true );
+        $is_institution   = \get_post_meta( $post_id, '_babel_is_institution', true );
         $gallery_meta     = \get_post_meta( $post_id, '_babel_gallery', true );
         $hours_meta       = \get_post_meta( $post_id, '_babel_hours', true );
         $rut              = \get_post_meta( $post_id, '_babel_rut', true );
@@ -787,114 +806,77 @@ class Shortcodes {
 
         $content = \get_post_field( 'post_content', $post_id );
 
+        // Encolar los estilos y scripts registrados
+        \wp_enqueue_style( 'babel-public-css' );
+        \wp_enqueue_script( 'babel-public-js' );
+        \wp_enqueue_style( 'leaflet-css' );
+        \wp_enqueue_script( 'leaflet-js' );
+
         \ob_start();
         ?>
-                <!-- Inyección de dependencias del diseño Premium (Stitch) -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-        <script id="tailwind-config">
-            if(window.tailwind) {
-                window.tailwind.config = {
-                    darkMode: "class",
-                    theme: {
-                        extend: {
-                            "colors": {
-                                "surface-variant": "#e2e2e2", "inverse-on-surface": "#f1f1f1", "error": "#ba1a1a",
-                                "secondary-fixed-dim": "#e9c349", "surface-dim": "#dadada", "on-primary-container": "#858383",
-                                "secondary-container": "#fed65b", "inverse-primary": "#c8c6c5", "surface": "#f9f9f9",
-                                "surface-container-highest": "#e2e2e2", "on-error": "#ffffff", "on-primary-fixed-variant": "#474746",
-                                "on-tertiary-container": "#838484", "secondary-fixed": "#ffe088", "tertiary": "#000000",
-                                "surface-container-lowest": "#ffffff", "on-secondary-container": "#745c00", "surface-container-low": "#f3f3f3",
-                                "secondary": "#735c00", "primary-fixed": "#e5e2e1", "outline-variant": "#c4c7c7",
-                                "on-tertiary": "#ffffff", "surface-container-high": "#e8e8e8", "on-primary-fixed": "#1c1b1b",
-                                "on-secondary-fixed-variant": "#574500", "primary-container": "#1c1b1b", "surface-container": "#eeeeee",
-                                "tertiary-container": "#1a1c1c", "on-secondary-fixed": "#241a00", "on-secondary": "#ffffff",
-                                "on-tertiary-fixed-variant": "#454747", "background": "#f9f9f9", "error-container": "#ffdad6",
-                                "on-background": "#1a1c1c", "primary": "#000000", "primary-fixed-dim": "#c8c6c5",
-                                "surface-bright": "#f9f9f9", "on-primary": "#ffffff", "outline": "#747878", "on-surface": "#1a1c1c",
-                                "tertiary-fixed": "#e2e2e2", "inverse-surface": "#2f3131", "on-tertiary-fixed": "#1a1c1c",
-                                "surface-tint": "#5f5e5e", "on-error-container": "#93000a", "tertiary-fixed-dim": "#c6c6c7",
-                                "on-surface-variant": "#444748"
-                            },
-                            "borderRadius": { "DEFAULT": "0.5rem", "sm": "0.25rem", "md": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
-                            "spacing": { "unit": "8px", "gutter": "32px", "margin-mobile": "20px", "container-max": "1200px", "margin-desktop": "64px" },
-                            "fontFamily": {
-                                "body-md": ["Inter"], "label-md": ["Montserrat"], "label-caps": ["Montserrat"],
-                                "display-lg-mobile": ["Playfair Display"], "display-lg": ["Playfair Display"],
-                                "headline-sm": ["Playfair Display"], "headline-md": ["Playfair Display"], "body-lg": ["Inter"]
-                            },
-                            "fontSize": {
-                                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                                "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
-                                "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600"}],
-                                "display-lg-mobile": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
-                                "display-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                                "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
-                                "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
-                                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
-                            }
-                        }
-                    }
-                };
-            }
-        </script>
-        <style>
-            .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
-            .premium-shadow { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); }
-            .hide-scrollbar::-webkit-scrollbar { display: none; }
-            .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        </style>
+        <div class="bd-profile-wrapper <?php echo '1' === $featured ? 'bd-profile-featured' : ''; ?>">
+            <!-- Breadcrumbs -->
+            <div class="bd-profile-breadcrumbs" style="max-width: 1200px; margin: 0 auto; padding: 20px 20px 0 20px;">
+                <?php echo do_shortcode( '[bd_breadcrumbs]' ); ?>
+            </div>
 
-        <div class="bg-surface text-on-surface font-body-md overflow-x-hidden pt-12 pb-32 max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop">
             <!-- Hero Section -->
-            <section class="flex flex-col md:flex-row items-center md:items-start gap-gutter mb-20">
+            <section class="bd-profile-hero">
                 <?php if ( \has_post_thumbnail( $post_id ) ) : ?>
-                <div class="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white premium-shadow flex-shrink-0">
-                    <?php echo \get_the_post_thumbnail( $post_id, 'medium', array( 'class' => 'w-full h-full object-cover' ) ); ?>
+                <div class="bd-profile-logo-wrapper">
+                    <?php echo \get_the_post_thumbnail( $post_id, 'medium', array( 'class' => 'bd-profile-logo' ) ); ?>
                 </div>
                 <?php endif; ?>
-                <div class="flex-1 text-center md:text-left pt-4">
-                    <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-4">
+                <div class="bd-profile-title-section">
+                    <div class="bd-profile-badges-row">
+                        <?php if ( '1' === $is_institution ) : ?>
+                        <span class="bd-badge-pill bd-badge-institution" style="background-color: #dc2626; color: #ffffff;">
+                            <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">gavel</span>
+                            Servicio Público
+                        </span>
+                        <?php endif; ?>
                         <?php if ( '1' === $verified ) : ?>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-surface-container-high border border-outline-variant/30 rounded-full text-label-caps font-label-caps text-primary">
-                            <span class="material-symbols-outlined text-[14px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        <span class="bd-badge-pill bd-badge-verified">
+                            <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">verified</span>
                             Verificado
                         </span>
                         <?php endif; ?>
                         <?php if ( '1' === $featured ) : ?>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed rounded-full text-label-caps font-label-caps">
-                            <span class="material-symbols-outlined text-[14px]" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+                        <span class="bd-badge-pill bd-badge-featured">
+                            <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">stars</span>
                             Destacado
                         </span>
                         <?php endif; ?>
                     </div>
-                    <h1 class="font-display-lg text-headline-sm md:text-display-lg text-primary mb-2 leading-tight">
+                    <h1 class="bd-profile-name">
                         <?php echo esc_html( \get_the_title( $post_id ) ); ?>
                     </h1>
-                    <div class="flex justify-center md:justify-start items-center gap-4 text-on-surface-variant font-label-md text-label-md">
-                        <?php if ( ! empty( $price_range ) ) : ?>
-                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" data-icon="payments">payments</span> <?php echo esc_html( $price_range ); ?></span>
+                    <div class="bd-profile-meta-row">
+                        <?php if ( ! empty( $price_range ) && '1' !== $is_institution ) : ?>
+                        <span class="bd-meta-item bd-meta-price">
+                            <span class="material-symbols-outlined" style="font-size:18px;">payments</span>
+                            <strong><?php echo esc_html( $price_range ); ?></strong>
+                        </span>
                         <?php endif; ?>
                         <?php if ( ! empty( $biz_type ) ) : 
                             $biz_types = array( 'physical' => 'Local físico', 'online' => 'Solo online', 'hybrid' => 'Híbrido', 'mobile' => 'Móvil' );
                             if ( isset( $biz_types[ $biz_type ] ) ) : ?>
-                                <span class="w-1 h-1 bg-outline rounded-full"></span>
-                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" data-icon="location_on">location_on</span> <?php echo esc_html( $biz_types[ $biz_type ] ); ?></span>
+                                <span class="bd-meta-item">
+                                    <span class="material-symbols-outlined" style="font-size:18px;">location_on</span>
+                                    <?php echo esc_html( $biz_types[ $biz_type ] ); ?>
+                                </span>
                         <?php endif; endif; ?>
                     </div>
                 </div>
             </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter relative">
+            <div class="bd-profile-grid">
                 <!-- Main Content Area -->
-                <div class="lg:col-span-8 space-y-16">
+                <div class="bd-profile-main">
                     <?php if ( ! empty( $content ) ) : ?>
-                    <section>
-                        <h2 class="font-headline-md text-headline-md text-primary mb-6 border-l-4 border-secondary-fixed-dim pl-6">Sobre nosotros</h2>
-                        <div class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed space-y-4">
+                    <section class="bd-profile-section">
+                        <h2 class="bd-section-subtitle">Sobre nosotros</h2>
+                        <div class="bd-description-content">
                             <?php echo \wpautop( $content ); ?>
                         </div>
                     </section>
@@ -907,65 +889,63 @@ class Shortcodes {
                             $main_img_url = wp_get_attachment_image_url( $gallery_ids[0], 'large' );
                             if ( $main_img_url ) :
                     ?>
-                    <section>
-                        <div class="h-[400px] rounded-3xl overflow-hidden relative group mb-4">
-                            <img id="main-gallery-img" src="<?php echo esc_url( $main_img_url ); ?>" alt="Galería" class="w-full h-full object-cover transition-transform duration-700" />
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-8 pointer-events-none">
-                                <div class="text-white">
-                                    <h3 class="font-headline-sm text-headline-sm">Galería de Imágenes</h3>
-                                </div>
-                            </div>
+                    <section class="bd-profile-section">
+                        <h2 class="bd-section-subtitle">Galería de Imágenes</h2>
+                        <div class="bd-gallery-main" style="height:380px;border-radius:16px;overflow:hidden;position:relative;margin-bottom:12px;box-shadow:var(--bd-shadow);">
+                            <img id="main-gallery-img" src="<?php echo esc_url( $main_img_url ); ?>" alt="Galería" style="width:100%;height:100%;object-fit:cover;transition:transform 0.5s;" />
                         </div>
                         <?php if ( count( $gallery_ids ) > 1 ) : ?>
-                        <div class="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                        <div class="bd-photo-grid" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;">
                             <?php foreach ( $gallery_ids as $img_id ) : 
-                                $thumb_url = wp_get_attachment_image_url( $img_id, 'thumbnail' );
+                                $thumb_url = wp_get_attachment_image_url( $img_id, 'medium' );
                                 $full_url = wp_get_attachment_image_url( $img_id, 'large' );
                                 if ( ! $thumb_url ) continue;
                             ?>
-                                <img src="<?php echo esc_url( $thumb_url ); ?>" onclick="document.getElementById('main-gallery-img').src='<?php echo esc_url( $full_url ); ?>'" alt="Miniatura" class="w-24 h-24 rounded-2xl object-cover cursor-pointer border-2 border-transparent hover:border-secondary-fixed-dim transition-all flex-shrink-0" />
+                                <img src="<?php echo esc_url( $thumb_url ); ?>" onclick="document.getElementById('main-gallery-img').src='<?php echo esc_url( $full_url ); ?>'" alt="Miniatura" style="width:96px;height:96px;border-radius:12px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:border-color 0.2s;flex-shrink:0;" class="bd-gallery-thumbnail-item" onmouseover="this.style.borderColor='var(--color-secondary-fixed-dim,#e9c349)'" onmouseout="this.style.borderColor='transparent'" />
                             <?php endforeach; ?>
                         </div>
                         <?php endif; ?>
                     </section>
                     <?php endif; endif; endif; ?>
 
-                    <!-- Features Section (Bento Style) -->
-                    <section>
-                        <h2 class="font-headline-md text-headline-md text-primary mb-8">Características</h2>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <?php if ( '1' !== $is_institution ) : ?>
+                    <!-- Features Section -->
+                    <section class="bd-profile-section">
+                        <h2 class="bd-section-subtitle">Características</h2>
+                        <div class="bd-amenities-grid">
                             <?php if ( ! empty( $parking ) && 'none' !== $parking ) : ?>
-                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
-                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="local_parking">local_parking</span>
-                                <span class="font-label-md text-label-md">Estacionamiento</span>
+                            <div class="bd-amenity-chip">
+                                <span class="material-symbols-outlined bd-icon">local_parking</span>
+                                <span>Estacionamiento</span>
                             </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $wifi ) && 'none' !== $wifi ) : ?>
-                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
-                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="wifi">wifi</span>
-                                <span class="font-label-md text-label-md">Wi-Fi</span>
+                            <div class="bd-amenity-chip">
+                                <span class="material-symbols-outlined bd-icon">wifi</span>
+                                <span>Wi-Fi</span>
                             </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $pet_friendly ) && 'no' !== $pet_friendly ) : ?>
-                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
-                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="pets">pets</span>
-                                <span class="font-label-md text-label-md">Pet Friendly</span>
+                            <div class="bd-amenity-chip">
+                                <span class="material-symbols-outlined bd-icon">pets</span>
+                                <span>Pet Friendly</span>
                             </div>
                             <?php endif; ?>
                             <?php if ( '1' === $delivery ) : ?>
-                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
-                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="delivery_dining">delivery_dining</span>
-                                <span class="font-label-md text-label-md">Delivery</span>
+                            <div class="bd-amenity-chip">
+                                <span class="material-symbols-outlined bd-icon">delivery_dining</span>
+                                <span>Delivery</span>
                             </div>
                             <?php endif; ?>
                             <?php if ( '1' === $reservations ) : ?>
-                            <div class="p-6 bg-surface-container-low rounded-2xl border border-outline-variant/20 flex flex-col items-center text-center gap-3 group hover:border-secondary-fixed-dim transition-all duration-300">
-                                <span class="material-symbols-outlined text-secondary-fixed-dim text-3xl group-hover:scale-110 transition-transform" data-icon="calendar_month">calendar_month</span>
-                                <span class="font-label-md text-label-md">Reservas</span>
+                            <div class="bd-amenity-chip">
+                                <span class="material-symbols-outlined bd-icon">calendar_month</span>
+                                <span>Reservas</span>
                             </div>
                             <?php endif; ?>
                         </div>
                     </section>
+                    <?php endif; ?>
 
                     <!-- Puntaje y Comentarios -->
                     <?php
@@ -973,12 +953,12 @@ class Shortcodes {
                     $rating_count = \get_post_meta( $post_id, '_babel_rating_count', true ) ?: 0;
                     $reviews = get_comments( array( 'post_id' => $post_id, 'type' => 'babel_review', 'status' => 'approve', 'number' => 4 ) );
                     
-                    if ( $rating_count > 0 || ! empty( $reviews ) ) :
+                    if ( '1' !== $is_institution && ( $rating_count > 0 || ! empty( $reviews ) ) ) :
                     ?>
-                    <section>
-                        <h2 class="font-headline-md text-headline-md text-primary mb-6">Puntaje y Comentarios</h2>
-                        <div class="flex items-center gap-4 mb-8">
-                            <div class="flex text-secondary-fixed-dim text-3xl">
+                    <section class="bd-profile-section">
+                        <h2 class="bd-section-subtitle">Puntaje y Comentarios</h2>
+                        <div class="bd-rating-summary" style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+                            <div class="bd-rating-stars" style="color:var(--color-secondary-fixed-dim,#e9c349);font-size:24px;display:flex;">
                                 <?php 
                                 $avg_int = floor( $rating_avg );
                                 $avg_half = ( $rating_avg - $avg_int ) >= 0.5 ? 1 : 0;
@@ -989,30 +969,30 @@ class Shortcodes {
                                 }
                                 ?>
                             </div>
-                            <div class="flex items-baseline gap-2">
-                                <span class="font-headline-md text-[32px] text-primary"><?php echo number_format((float)$rating_avg, 1, '.', ''); ?></span>
-                                <span class="font-body-md text-on-surface-variant">/ 5</span>
+                            <div class="bd-rating-score-box" style="display:flex;align-items:baseline;gap:4px;">
+                                <span style="font-size:32px;font-weight:700;color:var(--color-primary);"><?php echo number_format((float)$rating_avg, 1, '.', ''); ?></span>
+                                <span style="color:var(--color-on-surface-variant);font-size:16px;">/ 5</span>
                             </div>
-                            <span class="text-on-surface-variant text-sm border-l border-outline-variant/40 pl-4">(<?php echo esc_html( $rating_count ); ?> reseñas)</span>
+                            <span style="color:var(--color-on-surface-variant);font-size:14px;border-left:1px solid var(--color-outline-variant);padding-left:16px;">(<?php echo esc_html( $rating_count ); ?> reseñas)</span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bd-reviews-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
                             <?php foreach ( $reviews as $review ) : 
                                 $r_rating = get_comment_meta( $review->comment_ID, 'babel_rating', true ) ?: 5;
                                 $initials = strtoupper( substr( $review->comment_author, 0, 2 ) );
                             ?>
-                            <div class="p-6 bg-surface-container-lowest rounded-2xl border border-outline-variant/20">
-                                <div class="flex items-center gap-3 mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-label-md"><?php echo esc_html( $initials ); ?></div>
-                                    <div>
-                                        <p class="font-label-md font-bold text-primary"><?php echo esc_html( $review->comment_author ); ?></p>
-                                        <div class="flex text-secondary-fixed-dim text-sm">
+                            <div class="bd-review-card" style="padding:20px;background:var(--color-surface-container-lowest,#ffffff);border-radius:12px;border:1px solid var(--color-outline-variant);box-shadow:var(--bd-shadow);">
+                                <div class="bd-review-header" style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                                    <div class="bd-review-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--color-primary);color:#ffffff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;"><?php echo esc_html( $initials ); ?></div>
+                                    <div class="bd-review-author-meta">
+                                        <p style="margin:0;font-weight:700;color:var(--color-primary);font-size:14px;"><?php echo esc_html( $review->comment_author ); ?></p>
+                                        <div class="bd-review-stars" style="color:var(--color-secondary-fixed-dim,#e9c349);display:flex;">
                                             <?php for ($i=1; $i<=5; $i++) {
-                                                echo '<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: \'FILL\' '.($i <= $r_rating ? '1' : '0').';">star</span>';
+                                                echo '<span class="material-symbols-outlined text-[16px]" style="font-size:16px;font-variation-settings: \'FILL\' '.($i <= $r_rating ? '1' : '0').';">star</span>';
                                             } ?>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="font-body-md text-on-surface-variant italic">"<?php echo esc_html( $review->comment_content ); ?>"</p>
+                                <p class="bd-review-text" style="margin:0;font-style:italic;color:var(--color-on-surface-variant);font-size:14px;line-height:1.5;">"<?php echo esc_html( $review->comment_content ); ?>"</p>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -1021,49 +1001,47 @@ class Shortcodes {
                 </div>
 
                 <!-- Sidebar / Sticky Contact Section -->
-                <div class="lg:col-span-4 lg:sticky lg:top-24 h-fit">
-                    <div class="bg-white p-8 rounded-3xl border border-outline-variant/30 premium-shadow space-y-8">
-                        <div class="space-y-4">
+                <div class="bd-profile-sidebar">
+                    <div class="bd-sidebar-wrapper" style="background:var(--color-surface-container-lowest,#ffffff);padding:30px;border-radius:16px;border:1px solid var(--color-outline-variant);box-shadow:var(--bd-shadow);display:flex;flex-direction:column;gap:24px;">
+                        <div class="bd-contact-info-list" style="display:flex;flex-direction:column;gap:16px;">
                             <?php if ( ! empty( $phone ) ) : ?>
-                            <div class="flex items-center gap-4 group cursor-pointer">
-                                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                    <span class="material-symbols-outlined" data-icon="call">call</span>
+                            <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                                <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                                    <span class="material-symbols-outlined">call</span>
                                 </div>
-                                <span class="font-label-md text-label-md"><?php echo esc_html( $phone ); ?></span>
+                                <span style="font-size:14px;font-weight:500;color:var(--color-on-surface);"><?php echo esc_html( $phone ); ?></span>
                             </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $whatsapp ) ) : ?>
-                            <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $whatsapp) ); ?>" target="_blank" class="flex items-center gap-4 group cursor-pointer no-underline">
-                                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-all">
-                                    <span class="material-symbols-outlined" data-icon="chat">chat</span>
+                            <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $whatsapp) ); ?>" target="_blank" class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+                                <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:#25D366;">
+                                    <span class="material-symbols-outlined">chat</span>
                                 </div>
-                                <span class="font-label-md text-label-md text-secondary font-bold">WhatsApp Directo</span>
+                                <span style="font-size:14px;font-weight:700;color:#25D366;">WhatsApp Directo</span>
                             </a>
                             <?php endif; ?>
                             <?php if ( ! empty( $email ) ) : ?>
-                            <div class="flex items-center gap-4 group cursor-pointer">
-                                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                    <span class="material-symbols-outlined" data-icon="mail">mail</span>
+                            <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                                <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                                    <span class="material-symbols-outlined">mail</span>
                                 </div>
-                                <span class="font-label-md text-label-md"><?php echo esc_html( $email ); ?></span>
+                                <span style="font-size:14px;font-weight:500;color:var(--color-on-surface);word-break:break-all;"><?php echo esc_html( $email ); ?></span>
                             </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $website ) ) : ?>
-                            <div class="flex items-center gap-4 group cursor-pointer">
-                                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                    <span class="material-symbols-outlined" data-icon="language">language</span>
+                            <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                                <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                                    <span class="material-symbols-outlined">language</span>
                                 </div>
-                                <a href="<?php echo esc_url( $website ); ?>" target="_blank" class="font-label-md text-label-md text-primary no-underline hover:underline truncate"><?php echo esc_html( str_replace(array('http://','https://'), '', $website) ); ?></a>
+                                <a href="<?php echo esc_url( $website ); ?>" target="_blank" style="font-size:14px;font-weight:500;color:var(--color-primary);text-decoration:none;word-break:break-all;" class="bd-website-link"><?php echo esc_html( str_replace(array('http://','https://'), '', $website) ); ?></a>
                             </div>
                             <?php endif; ?>
                             <?php if ( ! empty( $address ) ) : ?>
-                            <div class="flex items-start gap-4 pt-2">
-                                <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary mt-1">
-                                    <span class="material-symbols-outlined" data-icon="pin_drop">pin_drop</span>
+                            <div class="bd-contact-info-item" style="display:flex;align-items:flex-start;gap:12px;">
+                                <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);margin-top:2px;">
+                                    <span class="material-symbols-outlined">pin_drop</span>
                                 </div>
-                                <div>
-                                    <span class="font-label-md text-label-md block"><?php echo esc_html( $address ); ?></span>
-                                </div>
+                                <span style="font-size:14px;font-weight:500;color:var(--color-on-surface);line-height:1.4;"><?php echo esc_html( $address ); ?></span>
                             </div>
                             <?php endif; ?>
                         </div>
@@ -1074,8 +1052,8 @@ class Shortcodes {
                         $lng = \get_post_meta( $post_id, '_babel_lng', true );
                         if ( $lat && $lng ) :
                         ?>
-                        <div class="pt-4 relative z-10">
-                            <div id="babel-osm-map" class="w-full h-32 rounded-2xl border border-outline-variant/30" data-lat="<?php echo esc_attr($lat); ?>" data-lng="<?php echo esc_attr($lng); ?>"></div>
+                        <div class="bd-sidebar-map-section" style="position:relative;z-index:10;">
+                            <div id="babel-osm-map" class="bd-sidebar-map-canvas" style="width:100%;height:150px;border-radius:12px;border:1px solid var(--color-outline-variant);" data-lat="<?php echo esc_attr($lat); ?>" data-lng="<?php echo esc_attr($lng); ?>"></div>
                         </div>
                         <script>
                             document.addEventListener("DOMContentLoaded", function() {
@@ -1097,9 +1075,9 @@ class Shortcodes {
 
                         <!-- Condensed Weekly Hours -->
                         <?php if ( ! empty( $hours ) ) : ?>
-                        <div class="pt-6 border-t border-outline-variant/30">
-                            <h3 class="font-headline-sm text-[20px] text-primary mb-4 text-center">Horario</h3>
-                            <div class="space-y-2 text-sm">
+                        <div class="bd-sidebar-hours-section" style="padding-top:16px;border-top:1px solid var(--color-outline-variant);">
+                            <h3 style="font-size:18px;font-weight:700;color:var(--color-primary);margin:0 0 12px 0;text-align:center;">Horario</h3>
+                            <div class="bd-hours-list" style="display:flex;flex-direction:column;gap:8px;">
                                 <?php
                                 $dias_es = array('monday'=>'Lunes', 'tuesday'=>'Martes', 'wednesday'=>'Miércoles', 'thursday'=>'Jueves', 'friday'=>'Viernes', 'saturday'=>'Sábado', 'sunday'=>'Domingo');
                                 foreach ( $dias_es as $key => $label ) {
@@ -1112,12 +1090,12 @@ class Shortcodes {
                                         if ( is_array( $day_data ) ) $val = ! empty( $day_data['closed'] ) ? 'Cerrado' : esc_html( ( $day_data['open'] ?? '' ) . ' - ' . ( $day_data['close'] ?? '' ) );
                                         else $val = esc_html( $day_data );
                                         
-                                        $highlight = ($key === strtolower(date('l'))) ? 'text-secondary font-bold' : 'text-on-surface-variant';
-                                        $val_highlight = ($key === strtolower(date('l'))) ? 'text-secondary font-bold' : 'font-medium';
+                                        $is_current_day = ($key === strtolower(date('l')));
+                                        $highlight_class = $is_current_day ? 'color:var(--color-secondary);font-weight:700;' : 'color:var(--color-on-surface-variant);';
                                         
-                                        echo '<div class="flex justify-between items-center py-1.5 border-b border-outline-variant/20 last:border-0">';
-                                        echo '<span class="font-label-md ' . $highlight . '">' . esc_html( $label ) . '</span>';
-                                        echo '<span class="font-body-md text-xs ' . $val_highlight . '">' . $val . '</span>';
+                                        echo '<div class="bd-hours-row" style="display:flex;justify-content:between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--color-outline-variant);font-size:13px;'.$highlight_class.'">';
+                                        echo '<span style="font-weight:600;">' . esc_html( $label ) . '</span>';
+                                        echo '<span style="margin-left:auto;">' . $val . '</span>';
                                         echo '</div>';
                                     }
                                 }
@@ -1127,25 +1105,25 @@ class Shortcodes {
                         <?php endif; ?>
 
                         <!-- Social -->
-                        <div class="pt-6 border-t border-outline-variant/30">
-                            <p class="font-label-caps text-label-caps text-on-surface-variant mb-4 text-center">Nuestras Redes</p>
-                            <div class="flex flex-wrap justify-center gap-3">
+                        <div class="bd-sidebar-social-section" style="padding-top:16px;border-top:1px solid var(--color-outline-variant);">
+                            <p style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--color-on-surface-variant);text-align:center;margin:0 0 12px 0;">Nuestras Redes</p>
+                            <div class="bd-social-row" style="display:flex;justify-content:center;gap:12px;">
                                 <?php if ( ! empty( $instagram ) ) : ?>
-                                <a href="https://instagram.com/<?php echo esc_attr( $instagram ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="photo_camera">photo_camera</span></a>
+                                <a href="https://instagram.com/<?php echo esc_attr( $instagram ); ?>" target="_blank" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--color-outline-variant);display:flex;align-items:center;justify-content:center;color:var(--color-primary);text-decoration:none;"><span class="material-symbols-outlined" style="font-size:18px;">photo_camera</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $facebook ) ) : ?>
-                                <a href="https://facebook.com/<?php echo esc_attr( $facebook ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="facebook">social_leaderboard</span></a>
+                                <a href="https://facebook.com/<?php echo esc_attr( $facebook ); ?>" target="_blank" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--color-outline-variant);display:flex;align-items:center;justify-content:center;color:var(--color-primary);text-decoration:none;"><span class="material-symbols-outlined" style="font-size:18px;">social_leaderboard</span></a>
                                 <?php endif; ?>
                                 <?php if ( ! empty( $linkedin ) ) : ?>
-                                <a href="https://linkedin.com/company/<?php echo esc_attr( $linkedin ); ?>" target="_blank" class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-primary"><span class="material-symbols-outlined text-[18px]" data-icon="hub">hub</span></a>
+                                <a href="https://linkedin.com/company/<?php echo esc_attr( $linkedin ); ?>" target="_blank" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--color-outline-variant);display:flex;align-items:center;justify-content:center;color:var(--color-primary);text-decoration:none;"><span class="material-symbols-outlined" style="font-size:18px;">hub</span></a>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <section class="mt-12 text-center text-on-surface-variant/60 font-label-caps text-label-caps pt-8 border-t border-outline-variant/30">
+
+            <section class="bd-profile-legal-section" style="margin-top:48px;padding-top:24px;border-top:1px solid var(--color-outline-variant);text-align:center;font-size:11px;letter-spacing:0.5px;color:var(--color-on-surface-variant);opacity:0.6;">
                 <?php if ( ! empty( $rut ) && ! empty( $razon_social ) ) : ?>
                 <p>RUT <?php echo esc_html( $rut ); ?> | Razón Social <?php echo esc_html( $razon_social ); ?></p>
                 <?php endif; ?>
@@ -1154,5 +1132,881 @@ class Shortcodes {
 
         <?php
         return \ob_get_clean();
+    }
+
+    /**
+     * Helper para obtener el ID del negocio objetivo en micro-shortcodes.
+     */
+    private function get_target_post_id( $atts ) {
+        $atts = shortcode_atts( array(
+            'id' => '',
+        ), $atts );
+
+        // 1. Si se define un ID explícitamente en el bloque/shortcode
+        if ( ! empty( $atts['id'] ) ) {
+            return intval( $atts['id'] );
+        }
+
+        // 2. Si estamos en el loop/página del negocio actual
+        $queried_id = \get_queried_object_id();
+        if ( $queried_id && 'babel_business' === \get_post_type( $queried_id ) ) {
+            return $queried_id;
+        }
+
+        global $post;
+        if ( isset( $post ) && 'babel_business' === $post->post_type ) {
+            return $post->ID;
+        }
+
+        $current_id = \get_the_ID();
+        if ( $current_id && 'babel_business' === \get_post_type( $current_id ) ) {
+            return $current_id;
+        }
+
+        // 3. Fallback para el Editor Gutenberg (FSE / ServerSideRender)
+        // Si no estamos en un negocio, buscamos el primer negocio publicado para previsualización.
+        $args = array(
+            'post_type'      => 'babel_business',
+            'posts_per_page' => 1,
+            'post_status'    => 'publish',
+            'fields'         => 'ids',
+        );
+        $latest_biz = get_posts( $args );
+        if ( ! empty( $latest_biz ) ) {
+            return intval( $latest_biz[0] );
+        }
+
+        return 0;
+    }
+
+    /**
+     * Shortcode [bd_business_badges] para insignias de Verificado y Destacado.
+     */
+    public function render_business_badges( $atts ) {
+        $post_id = $this->get_target_post_id( $atts );
+        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+            return '';
+        }
+        $verified       = \get_post_meta( $post_id, '_babel_verified', true );
+        $featured       = \get_post_meta( $post_id, '_babel_featured', true );
+        $is_institution = \get_post_meta( $post_id, '_babel_is_institution', true );
+
+        if ( '1' !== $verified && '1' !== $featured && '1' !== $is_institution ) {
+            return '';
+        }
+
+        \wp_enqueue_style( 'babel-public-css' );
+        \ob_start();
+        ?>
+        <div class="bd-profile-badges-row">
+            <?php if ( '1' === $is_institution ) : ?>
+            <span class="bd-badge-pill bd-badge-institution" style="background-color: #dc2626; color: #ffffff;">
+                <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">gavel</span>
+                Servicio Público
+            </span>
+            <?php endif; ?>
+            <?php if ( '1' === $verified ) : ?>
+            <span class="bd-badge-pill bd-badge-verified">
+                <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">verified</span>
+                Verificado
+            </span>
+            <?php endif; ?>
+            <?php if ( '1' === $featured ) : ?>
+            <span class="bd-badge-pill bd-badge-featured">
+                <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings: 'FILL' 1;">stars</span>
+                Destacado
+            </span>
+            <?php endif; ?>
+        </div>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_business_gallery] para la galería multimedia premium.
+     */
+    public function render_business_gallery( $atts ) {
+        $post_id = $this->get_target_post_id( $atts );
+        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+            return '';
+        }
+        $gallery_meta = \get_post_meta( $post_id, '_babel_gallery', true );
+        if ( empty( $gallery_meta ) ) {
+            return '';
+        }
+
+        $gallery_ids = is_array( $gallery_meta ) ? $gallery_meta : explode( ',', $gallery_meta );
+        if ( count( $gallery_ids ) === 0 ) {
+            return '';
+        }
+
+        $main_img_url = wp_get_attachment_image_url( $gallery_ids[0], 'large' );
+        if ( ! $main_img_url ) {
+            return '';
+        }
+
+        \wp_enqueue_style( 'babel-public-css' );
+        \ob_start();
+        ?>
+        <div class="bd-business-gallery-wrapper">
+            <div class="bd-gallery-main" style="height:380px;border-radius:16px;overflow:hidden;position:relative;margin-bottom:12px;box-shadow:var(--bd-shadow);">
+                <img id="main-gallery-img" src="<?php echo esc_url( $main_img_url ); ?>" alt="Galería" style="width:100%;height:100%;object-fit:cover;transition:transform 0.5s;" />
+            </div>
+            <?php if ( count( $gallery_ids ) > 1 ) : ?>
+            <div class="bd-photo-grid" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;">
+                <?php foreach ( $gallery_ids as $img_id ) : 
+                    $thumb_url = wp_get_attachment_image_url( $img_id, 'medium' );
+                    $full_url = wp_get_attachment_image_url( $img_id, 'large' );
+                    if ( ! $thumb_url ) continue;
+                ?>
+                    <img src="<?php echo esc_url( $thumb_url ); ?>" onclick="document.getElementById('main-gallery-img').src='<?php echo esc_url( $full_url ); ?>'" alt="Miniatura" style="width:96px;height:96px;border-radius:12px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:border-color 0.2s;flex-shrink:0;" class="bd-gallery-thumbnail-item" onmouseover="this.style.borderColor='var(--color-secondary-fixed-dim,#e9c349)'" onmouseout="this.style.borderColor='transparent'" />
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_business_hours] para mostrar el horario de atención.
+     */
+    public function render_business_hours( $atts ) {
+        $post_id = $this->get_target_post_id( $atts );
+        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+            return '';
+        }
+        $hours_meta = \get_post_meta( $post_id, '_babel_hours', true );
+        if ( empty( $hours_meta ) ) {
+            return '';
+        }
+
+        if ( \is_array( $hours_meta ) ) {
+            $hours = $hours_meta;
+        } else {
+            $hours = ! empty( $hours_meta ) ? \json_decode( $hours_meta, true ) : array();
+            if ( ! \is_array( $hours ) ) { $hours = array(); }
+        }
+
+        if ( empty( $hours ) ) {
+            return '';
+        }
+
+        \wp_enqueue_style( 'babel-public-css' );
+        \ob_start();
+        ?>
+        <div class="bd-sidebar-hours-section-standalone" style="padding: 20px; background: var(--color-surface-container-lowest,#ffffff); border-radius: 12px; border: 1px solid var(--color-outline-variant);">
+            <h3 style="font-size:18px;font-weight:700;color:var(--color-primary);margin:0 0 12px 0;text-align:center;">Horario de Atención</h3>
+            <div class="bd-hours-list" style="display:flex;flex-direction:column;gap:8px;">
+                <?php
+                $dias_es = array('monday'=>'Lunes', 'tuesday'=>'Martes', 'wednesday'=>'Miércoles', 'thursday'=>'Jueves', 'friday'=>'Viernes', 'saturday'=>'Sábado', 'sunday'=>'Domingo');
+                foreach ( $dias_es as $key => $label ) {
+                    $day_data = null;
+                    if ( is_array( $hours ) ) {
+                        if ( isset( $hours[$key] ) ) $day_data = $hours[$key];
+                        elseif ( isset( $hours[$label] ) ) $day_data = $hours[$label];
+                    }
+                    if ( ! empty( $day_data ) ) {
+                        if ( is_array( $day_data ) ) $val = ! empty( $day_data['closed'] ) ? 'Cerrado' : esc_html( ( $day_data['open'] ?? '' ) . ' - ' . ( $day_data['close'] ?? '' ) );
+                        else $val = esc_html( $day_data );
+                        
+                        $is_current_day = ($key === strtolower(date('l')));
+                        $highlight_class = $is_current_day ? 'color:var(--color-secondary);font-weight:700;' : 'color:var(--color-on-surface-variant);';
+                        
+                        echo '<div class="bd-hours-row" style="display:flex;justify-content:between;align-items:center;padding:6px 0;border-bottom:1px dashed var(--color-outline-variant);font-size:13px;'.$highlight_class.'">';
+                        echo '<span style="font-weight:600;">' . esc_html( $label ) . '</span>';
+                        echo '<span style="margin-left:auto;">' . $val . '</span>';
+                        echo '</div>';
+                    }
+                }
+                ?>
+            </div>
+        </div>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_business_map] para mostrar el mapa y dirección.
+     */
+    public function render_business_map( $atts ) {
+        $post_id = $this->get_target_post_id( $atts );
+        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+            return '';
+        }
+        $lat = \get_post_meta( $post_id, '_babel_lat', true );
+        $lng = \get_post_meta( $post_id, '_babel_lng', true );
+        $address = \get_post_meta( $post_id, '_babel_address', true );
+
+        if ( ! $lat || ! $lng ) {
+            return '';
+        }
+
+        \wp_enqueue_style( 'babel-public-css' );
+        \wp_enqueue_style( 'leaflet-css' );
+        \wp_enqueue_script( 'leaflet-js' );
+
+        \ob_start();
+        ?>
+        <div class="bd-sidebar-map-section-standalone" style="padding: 20px; background: var(--color-surface-container-lowest,#ffffff); border-radius: 12px; border: 1px solid var(--color-outline-variant);">
+            <h3 style="font-size:18px;font-weight:700;color:var(--color-primary);margin:0 0 12px 0;text-align:center;">Ubicación</h3>
+            <div id="babel-osm-map-standalone" class="bd-sidebar-map-canvas" style="width:100%;height:200px;border-radius:12px;border:1px solid var(--color-outline-variant);" data-lat="<?php echo esc_attr($lat); ?>" data-lng="<?php echo esc_attr($lng); ?>"></div>
+            <?php if ( ! empty( $address ) ) : ?>
+            <div class="bd-contact-info-item" style="display:flex;align-items:flex-start;gap:12px;margin-top:12px;">
+                <div class="bd-icon-wrap" style="width:30px;height:30px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);flex-shrink:0;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">pin_drop</span>
+                </div>
+                <span style="font-size:13px;font-weight:500;color:var(--color-on-surface);line-height:1.4;"><?php echo esc_html( $address ); ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var mapEl = document.getElementById('babel-osm-map-standalone');
+                if(mapEl && typeof L !== 'undefined') {
+                    var lat = parseFloat(mapEl.getAttribute('data-lat'));
+                    var lng = parseFloat(mapEl.getAttribute('data-lng'));
+                    if(lat && lng) {
+                        var map = L.map('babel-osm-map-standalone', { zoomControl: true, dragging: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; OpenStreetMap'
+                        }).addTo(map);
+                        L.marker([lat, lng]).addTo(map);
+                    }
+                }
+            });
+        </script>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_business_contact] para los botones de contacto y redes sociales.
+     */
+    public function render_business_contact( $atts ) {
+        $post_id = $this->get_target_post_id( $atts );
+        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+            return '';
+        }
+
+        $phone          = \get_post_meta( $post_id, '_babel_phone', true );
+        $whatsapp       = \get_post_meta( $post_id, '_babel_whatsapp', true );
+        $email          = \get_post_meta( $post_id, '_babel_email', true );
+        $website        = \get_post_meta( $post_id, '_babel_website', true );
+        $instagram      = \get_post_meta( $post_id, '_babel_instagram', true );
+        $is_institution = \get_post_meta( $post_id, '_babel_is_institution', true );
+
+        if ( ! $phone && ! $whatsapp && ! $email && ! $website && ! $instagram ) {
+            return '';
+        }
+
+        \wp_enqueue_style( 'babel-public-css' );
+        \ob_start();
+        ?>
+        <div class="bd-sidebar-contact-standalone" style="padding: 20px; background: var(--color-surface-container-lowest,#ffffff); border-radius: 12px; border: 1px solid var(--color-outline-variant);">
+            <?php if ( '1' === $is_institution && ! empty( $phone ) ) : ?>
+            <a href="tel:<?php echo esc_attr( preg_replace('/[^0-9+]/', '', $phone) ); ?>" class="bd-emergency-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#dc2626;color:#ffffff;text-decoration:none;padding:14px 20px;border-radius:8px;font-weight:700;font-size:16px;margin-bottom:16px;text-align:center;box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: background 0.2s;">
+                <span class="material-symbols-outlined">emergency</span>
+                Llamar Emergencia
+            </a>
+            <?php endif; ?>
+            <h3 style="font-size:18px;font-weight:700;color:var(--color-primary);margin:0 0 16px 0;text-align:center;">Contacto</h3>
+            <div class="bd-contact-info-list" style="display:flex;flex-direction:column;gap:16px;">
+                <?php if ( ! empty( $phone ) ) : ?>
+                <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                    <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                        <span class="material-symbols-outlined">call</span>
+                    </div>
+                    <span style="font-size:14px;font-weight:500;color:var(--color-on-surface);"><?php echo esc_html( $phone ); ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if ( ! empty( $whatsapp ) ) : ?>
+                <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $whatsapp) ); ?>" target="_blank" class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;text-decoration:none;">
+                    <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:#25D366;">
+                        <span class="material-symbols-outlined">chat</span>
+                    </div>
+                    <span style="font-size:14px;font-weight:700;color:#25D366;">WhatsApp Directo</span>
+                </a>
+                <?php endif; ?>
+                <?php if ( ! empty( $email ) ) : ?>
+                <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                    <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                        <span class="material-symbols-outlined">mail</span>
+                    </div>
+                    <span style="font-size:14px;font-weight:500;color:var(--color-on-surface);word-break:break-all;"><?php echo esc_html( $email ); ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if ( ! empty( $website ) ) : ?>
+                <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                    <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                        <span class="material-symbols-outlined">language</span>
+                    </div>
+                    <a href="<?php echo esc_url( $website ); ?>" target="_blank" style="font-size:14px;font-weight:500;color:var(--color-primary);text-decoration:none;word-break:break-all;" class="bd-website-link"><?php echo esc_html( str_replace(array('http://','https://'), '', $website) ); ?></a>
+                </div>
+                <?php endif; ?>
+                <?php if ( ! empty( $instagram ) ) : ?>
+                <div class="bd-contact-info-item" style="display:flex;align-items:center;gap:12px;">
+                    <div class="bd-icon-wrap" style="width:36px;height:36px;border-radius:50%;background:var(--color-surface-container);display:flex;align-items:center;justify-content:center;color:var(--color-primary);">
+                        <span class="material-symbols-outlined">photo_camera</span>
+                    </div>
+                    <a href="https://instagram.com/<?php echo esc_attr( $instagram ); ?>" target="_blank" style="font-size:14px;font-weight:500;color:var(--color-primary);text-decoration:none;word-break:break-all;">@<?php echo esc_html( $instagram ); ?></a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Renderiza el botón "¿Eres el dueño? Reclama este negocio" para iniciar el flujo de cambio de autor.
+     */
+    public function render_claim_business() {
+        if ( ! is_user_logged_in() ) {
+            return '<p class="babel-claim-notice" style="margin-top:15px; font-size:14px; color:#666;">Debes <a href="' . wp_login_url( get_permalink() ) . '" style="color:#000; font-weight:bold; text-decoration:underline;">iniciar sesión</a> para reclamar este negocio.</p>';
+        }
+
+        $post_id = get_the_ID();
+        if ( ! $post_id || 'babel_business' !== get_post_type( $post_id ) ) {
+            return '';
+        }
+
+        $current_user_id = get_current_user_id();
+        $post = get_post( $post_id );
+
+        // Si el usuario logueado ya es el autor del negocio
+        if ( (int) $post->post_author === $current_user_id ) {
+            return '<p class="babel-claim-status sdc-text-success" style="margin-top:15px; font-size:14px; color:#2e7d32; font-weight:bold;">✓ Ya eres el dueño de este negocio.</p>';
+        }
+
+        // Si ya hay un reclamo pendiente registrado de este usuario
+        $pending_user = (int) get_post_meta( $post_id, '_babel_claim_pending_user', true );
+        if ( $pending_user === $current_user_id ) {
+            return '<p class="babel-claim-status sdc-text-info" style="margin-top:15px; font-size:14px; color:#1565c0;">⏳ Tu solicitud de reclamo está bajo revisión.</p>';
+        }
+
+        // Procesar el reclamo cuando se envía el formulario
+        if ( isset( $_POST['babel_claim_business_nonce'] ) && wp_verify_nonce( $_POST['babel_claim_business_nonce'], 'babel_claim_business_action' ) ) {
+            update_post_meta( $post_id, '_babel_claim_pending_user', $current_user_id );
+
+            // Notificar al administrador por correo sobre el reclamo pendiente
+            $admin_email = get_option( 'admin_email' );
+            $subject = '[Babel Directory] Solicitud de Reclamo de Propiedad Pendiente';
+            $message = sprintf(
+                "El usuario %s ha solicitado la propiedad del negocio '%s'.\n\nNegocio en vivo: %s\nEditar negocio en admin (cambiar autor): %s",
+                wp_get_current_user()->display_name,
+                $post->post_title,
+                get_permalink( $post_id ),
+                admin_url( 'post.php?post=' . $post_id . '&action=edit' )
+            );
+            wp_mail( $admin_email, $subject, $message );
+
+            return '<p class="babel-claim-status sdc-text-info" style="margin-top:15px; font-size:14px; color:#1565c0; font-weight:bold;">⏳ Tu solicitud de reclamo ha sido enviada con éxito y está bajo revisión.</p>';
+        }
+
+        ob_start();
+        ?>
+        <form method="post" action="" class="babel-claim-form" style="margin-top: 15px; display:inline-block;">
+            <?php wp_nonce_field( 'babel_claim_business_action', 'babel_claim_business_nonce' ); ?>
+            <button type="submit" class="babel-btn-claim" style="background:#e5c158; color:#000; padding:10px 20px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;">
+                ¿Eres el dueño? Reclama este negocio
+            </button>
+        </form>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Renderiza el panel de control del usuario para gestionar sus negocios reclamados/publicados.
+     */
+    public function render_user_dashboard() {
+        if ( ! is_user_logged_in() ) {
+            return '<p style="padding:15px; background:#f9f9f9; border:1px solid #ddd; border-radius:8px;">Debes <a href="' . wp_login_url( get_permalink() ) . '" style="color:#000; font-weight:bold; text-decoration:underline;">iniciar sesión</a> para ver tu panel.</p>';
+        }
+
+        $current_user_id = get_current_user_id();
+
+        // Procesar la actualización de WhatsApp
+        $message = '';
+        if ( isset( $_POST['action'] ) && 'bd_update_whatsapp' === $_POST['action'] ) {
+            $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
+            if ( $post_id && wp_verify_nonce( $_POST['bd_dashboard_nonce'], 'bd_update_whatsapp_' . $post_id ) ) {
+                $post = get_post( $post_id );
+                if ( $post && (int) $post->post_author === $current_user_id ) {
+                    $whatsapp = sanitize_text_field( wp_unslash( $_POST['whatsapp'] ) );
+                    update_post_meta( $post_id, '_babel_whatsapp', $whatsapp );
+                    update_post_meta( $post_id, '_bd_whatsapp', $whatsapp ); // Fallback
+                    $message = '<div class="sdc-alert sdc-alert-success" style="padding:12px; background:#d4edda; color:#155724; border:1px solid #c3e6cb; border-radius:8px; margin-bottom:20px; font-size:14px;">✓ Datos de contacto para "' . esc_html( $post->post_title ) . '" actualizados con éxito.</div>';
+                }
+            }
+        }
+
+        // Consultar negocios asociados al usuario
+        $args = array(
+            'post_type'      => 'babel_business',
+            'post_status'    => array( 'publish', 'pending' ),
+            'author'         => $current_user_id,
+            'posts_per_page' => -1,
+        );
+        $query = new \WP_Query( $args );
+
+        ob_start();
+        echo $message;
+        ?>
+        <div class="babel-dashboard-wrapper" style="margin-top:20px; font-family:'Inter', sans-serif;">
+            <h2 style="font-size:24px; font-weight:bold; margin-bottom:20px; color:#1a1a1a; border-bottom:1px solid #eee; padding-bottom:10px;">Mis Negocios Reclamados y Publicados</h2>
+            <?php if ( $query->have_posts() ) : ?>
+                <div style="overflow-x:auto;">
+                    <table class="babel-dashboard-table" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; min-width: 600px;">
+                        <thead>
+                            <tr style="background: #f5f5f5; border-bottom: 2px solid #ccc; text-align: left;">
+                                <th style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: 600; color:#333;">Comercio</th>
+                                <th style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: 600; color:#333;">Estado</th>
+                                <th style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: 600; color:#333;">Visitas</th>
+                                <th style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: 600; color:#333;">Número de Contacto (WhatsApp)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ( $query->have_posts() ) : $query->the_post(); 
+                                $pid = get_the_ID();
+                                $views = (int) get_post_meta( $pid, '_babel_views_count', true );
+                                $whatsapp = get_post_meta( $pid, '_babel_whatsapp', true );
+                                $status = get_post_status( $pid );
+                                $status_badge = ( 'publish' === $status ) 
+                                    ? '<span style="display:inline-block; padding:4px 8px; background:#d4edda; color:#155724; border-radius:12px; font-size:12px; font-weight:bold;">Activo</span>' 
+                                    : '<span style="display:inline-block; padding:4px 8px; background:#fff3cd; color:#856404; border-radius:12px; font-size:12px; font-weight:bold;">Pendiente</span>';
+                            ?>
+                                <tr style="border-bottom: 1px solid #e0e0e0;">
+                                    <td style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: 600;">
+                                        <a href="<?php the_permalink(); ?>" style="color:#000; text-decoration:none;" target="_blank"><?php the_title(); ?> ↗</a>
+                                    </td>
+                                    <td style="padding: 14px 12px; border: 1px solid #e0e0e0;"><?php echo $status_badge; ?></td>
+                                    <td style="padding: 14px 12px; border: 1px solid #e0e0e0; font-weight: bold;"><?php echo $views; ?></td>
+                                    <td style="padding: 14px 12px; border: 1px solid #e0e0e0;">
+                                        <form method="post" action="" style="display: flex; gap: 8px; align-items: center; margin: 0;">
+                                            <input type="hidden" name="action" value="bd_update_whatsapp">
+                                            <input type="hidden" name="post_id" value="<?php echo $pid; ?>">
+                                            <?php wp_nonce_field( 'bd_update_whatsapp_' . $pid, 'bd_dashboard_nonce' ); ?>
+                                            <input type="text" name="whatsapp" value="<?php echo esc_attr( $whatsapp ); ?>" placeholder="Ej: +56912345678" style="padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; width: 140px; box-sizing: border-box;">
+                                            <button type="submit" style="background: #000; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;">Guardar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endwhile; wp_reset_postdata(); ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else : ?>
+                <p style="color:#666;">Aún no tienes ningún negocio registrado bajo tu propiedad.</p>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Detecta la asignación de un usuario a un negocio reclamado y le notifica por correo.
+     */
+    public function notify_user_on_claim_approved( $post_id, $post_after, $post_before ) {
+        if ( 'babel_business' !== $post_after->post_type ) {
+            return;
+        }
+
+        // Si el autor del post cambió
+        if ( $post_after->post_author != $post_before->post_author ) {
+            $pending_claim_user = (int) get_post_meta( $post_id, '_babel_claim_pending_user', true );
+            $new_author_id = (int) $post_after->post_author;
+
+            // Si coincide con el usuario reclamante, gatillar aprobación
+            if ( $new_author_id === $pending_claim_user ) {
+                delete_post_meta( $post_id, '_babel_claim_pending_user' );
+
+                $user = get_userdata( $new_author_id );
+                if ( $user ) {
+                    $subject = '¡Tu reclamo de negocio ha sido aprobado! - ' . $post_after->post_title;
+                    $message = sprintf(
+                        "Hola %s,\n\nTu solicitud de reclamo de propiedad para el negocio '%s' ha sido aprobada por nuestro equipo de administración.\n\nYa puedes acceder a tu panel de usuario para actualizar tu número de WhatsApp y hacer seguimiento de las visitas del comercio.\n\nVer tu negocio: %s",
+                        $user->display_name,
+                        $post_after->post_title,
+                        get_permalink( $post_id )
+                    );
+                    wp_mail( $user->user_email, $subject, $message );
+                }
+            }
+        }
+    }
+
+    /**
+     * Registra las visitas a las fichas únicas incrementando el meta _babel_views_count.
+     */
+    public function track_business_view() {
+        if ( is_singular( 'babel_business' ) ) {
+            $post_id = get_the_ID();
+            if ( $post_id ) {
+                $views = (int) get_post_meta( $post_id, '_babel_views_count', true );
+                update_post_meta( $post_id, '_babel_views_count', $views + 1 );
+            }
+        }
+    }
+
+    /**
+     * Shortcode [bd_ad_space] para la inserción dinámica de banners publicitarios.
+     *
+     * @param array $atts Atributos del shortcode.
+     * @return string HTML resultante.
+     */
+    public function render_ad_space( $atts ) {
+        $atts = shortcode_atts( array(
+            'position' => 'top_leaderboard', // top_leaderboard, sidebar_ad, in_loop_ad
+            'region'   => 'auto',            // auto, slug de region o vacio para global
+        ), $atts, 'bd_ad_space' );
+
+        $position = sanitize_text_field( $atts['position'] );
+        $region_slug = '';
+
+        // 1. Detección automática de región si está en 'auto'
+        if ( 'auto' === $atts['region'] ) {
+            if ( \is_tax( 'babel_region' ) ) {
+                $term = \get_queried_object();
+                if ( $term && ! \is_wp_error( $term ) ) {
+                    $region_slug = $term->slug;
+                }
+            } elseif ( \is_singular( 'babel_business' ) ) {
+                $post_id = \get_the_ID();
+                $terms = \get_the_terms( $post_id, 'babel_region' );
+                if ( $terms && ! \is_wp_error( $terms ) ) {
+                    $first_term = reset( $terms );
+                    $region_slug = $first_term->slug;
+                }
+            }
+        } elseif ( ! empty( $atts['region'] ) ) {
+            $region_slug = sanitize_text_field( $atts['region'] );
+        }
+
+        // 2. Consulta de banners activos para la posición y región específicas
+        $query_args = array(
+            'post_type'      => 'bd_ad_banner',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'orderby'        => 'rand', // Rotación aleatoria justa
+            'meta_query'     => array(
+                array(
+                    'key'     => '_bd_ad_position',
+                    'value'   => $position,
+                    'compare' => '=',
+                ),
+            ),
+        );
+
+        if ( ! empty( $region_slug ) ) {
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'babel_region',
+                    'field'    => 'slug',
+                    'terms'    => $region_slug,
+                ),
+            );
+        }
+
+        $ad_query = new \WP_Query( $query_args );
+
+        // 3. Fallback: Buscar banners globales si no se encontró con la región
+        if ( ! $ad_query->have_posts() && ! empty( $region_slug ) ) {
+            unset( $query_args['tax_query'] );
+            // Excluir anuncios que estén segmentados a alguna región para priorizar los globales puros
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'babel_region',
+                    'operator' => 'NOT EXISTS',
+                ),
+            );
+            $ad_query = new \WP_Query( $query_args );
+
+            // Si tampoco hay globales estrictos, traer cualquier anuncio que coincida con la posición
+            if ( ! $ad_query->have_posts() ) {
+                unset( $query_args['tax_query'] );
+                $ad_query = new \WP_Query( $query_args );
+            }
+        }
+
+        if ( ! $ad_query->have_posts() ) {
+            \wp_reset_postdata();
+            return '';
+        }
+
+        $ad_post = $ad_query->posts[0];
+        $ad_id   = $ad_post->ID;
+        \wp_reset_postdata();
+
+        // 4. Incrementar impresiones en el servidor
+        $impressions = (int) \get_post_meta( $ad_id, '_bd_ad_impressions', true );
+        $impressions++;
+        \update_post_meta( $ad_id, '_bd_ad_impressions', $impressions );
+
+        // Obtener datos del anuncio
+        $code     = \get_post_meta( $ad_id, '_bd_ad_code', true );
+        $image_id = \get_post_meta( $ad_id, '_bd_ad_image_id', true );
+        $link     = \get_post_meta( $ad_id, '_bd_ad_link', true );
+
+        // Clases responsivas según posición
+        $wrapper_class = 'bd-ad-space bd-ad-space--' . esc_attr( $position );
+
+        \ob_start();
+        ?>
+        <div class="<?php echo esc_attr( $wrapper_class ); ?>" data-ad-id="<?php echo esc_attr( $ad_id ); ?>" style="margin: 24px auto; text-align: center; max-width: 100%;">
+            <span class="bd-ad-label" style="display: block; font-size: 9px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 6px;"><?php esc_html_e( 'Publicidad', 'babel-directory' ); ?></span>
+            <div class="bd-ad-content" style="display: inline-block; max-width: 100%;">
+                <?php if ( ! empty( $code ) ) : ?>
+                    <!-- Render de script o código alternativo (AdSense, iFrame, etc.) -->
+                    <?php echo $code; ?>
+                <?php elseif ( $image_id ) : 
+                    $image_url = \wp_get_attachment_image_url( $image_id, 'full' );
+                    $click_url = \get_rest_url( null, 'babel/v1/ads/click' ) . '?ad_id=' . $ad_id;
+                    if ( $image_url ) :
+                ?>
+                    <!-- Render de banner de imagen nativo con tracker REST -->
+                    <a href="<?php echo esc_url( $click_url ); ?>" target="_blank" rel="noopener sponsored" class="bd-ad-link" style="display: block; outline: none; border: none; text-decoration: none;">
+                        <img src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $ad_post->post_title ); ?>" class="bd-ad-image" style="max-width: 100%; height: auto; display: block; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" loading="lazy" />
+                    </a>
+                <?php endif; endif; ?>
+            </div>
+        </div>
+        <?php
+        return \ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_featured_businesses] para mostrar una grilla de negocios destacados premium.
+     *
+     * @param array $atts Atributos del shortcode.
+     * @return string HTML resultante.
+     */
+    public function render_featured_businesses( $atts ) {
+        wp_enqueue_style( 'babel-public-css' );
+
+        $atts = shortcode_atts( array(
+            'limit'  => 4,
+            'region' => '', // slug de la region, vacio para global o 'auto'
+        ), $atts, 'bd_featured_businesses' );
+
+        $limit = intval( $atts['limit'] );
+        $region_slug = '';
+
+        if ( 'auto' === $atts['region'] ) {
+            if ( \is_tax( 'babel_region' ) ) {
+                $term = \get_queried_object();
+                if ( $term && ! \is_wp_error( $term ) ) {
+                    $region_slug = $term->slug;
+                }
+            }
+        } elseif ( ! empty( $atts['region'] ) ) {
+            $region_slug = sanitize_text_field( $atts['region'] );
+        }
+
+        $query_args = array(
+            'post_type'      => 'babel_business',
+            'post_status'    => 'publish',
+            'posts_per_page' => $limit,
+            'orderby'        => 'rand', // Rotación justa
+            'meta_query'     => array(
+                array(
+                    'key'     => '_babel_featured',
+                    'value'   => '1',
+                    'compare' => '=',
+                ),
+            ),
+        );
+
+        if ( ! empty( $region_slug ) ) {
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'babel_region',
+                    'field'    => 'slug',
+                    'terms'    => $region_slug,
+                ),
+            );
+        }
+
+        $featured_query = new \WP_Query( $query_args );
+
+        if ( ! $featured_query->have_posts() ) {
+            wp_reset_postdata();
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="bd-featured-section" style="margin: 32px 0;">
+            <div class="sdc-grid-archive">
+                <?php while ( $featured_query->have_posts() ) : $featured_query->the_post();
+                    $post_id   = get_the_ID();
+                    $categorias = get_the_terms( $post_id, 'babel_category' );
+                    $regiones   = get_the_terms( $post_id, 'babel_region' );
+
+                    $cat_name   = ( ! empty( $categorias ) && ! \is_wp_error( $categorias ) ) ? esc_html( $categorias[0]->name ) : '';
+                    $reg_name   = '';
+                    if ( ! empty( $regiones ) && ! \is_wp_error( $regiones ) ) {
+                        $reg_name = preg_replace( '/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $regiones[0]->name );
+                        $reg_name = esc_html( $reg_name );
+                    }
+
+                    $price_range = \get_post_meta( $post_id, '_babel_price_range', true );
+                    $rating_avg  = (float) \get_post_meta( $post_id, '_babel_rating_avg', true );
+                    $rating_count = (int) \get_post_meta( $post_id, '_babel_rating_count', true );
+                    $is_verified = \get_post_meta( $post_id, '_babel_verified', true );
+
+                    $thumb_id  = get_post_thumbnail_id( $post_id );
+                    $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
+                ?>
+                    <a href="<?php the_permalink(); ?>" class="babel-biz-card babel-biz-card--featured" aria-label="<?php the_title_attribute(); ?>" style="border: 2px solid var(--color-secondary-fixed-dim,#e9c349); box-shadow: 0 4px 15px rgba(233, 195, 73, 0.15);">
+                        
+                        <!-- Zona de imagen -->
+                        <div class="babel-biz-card__image-wrap">
+                            <?php if ( $thumb_url ) : ?>
+                                <img src="<?php echo esc_url( $thumb_url ); ?>" alt="<?php the_title_attribute(); ?>" class="babel-biz-card__image" loading="lazy" />
+                            <?php else : ?>
+                                <div class="babel-biz-card__placeholder">
+                                    <span class="material-symbols-outlined" style="font-size:56px;">store</span>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- Badges flotantes -->
+                            <div class="babel-biz-card__badges">
+                                <span class="babel-biz-card__badge babel-biz-card__badge--featured" style="background: var(--color-secondary-fixed-dim,#e9c349); color: #000000; font-weight: 700;">
+                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">stars</span>
+                                    <?php esc_html_e( 'Destacado Premium', 'babel-directory' ); ?>
+                                </span>
+                                <?php if ( $is_verified ) : ?>
+                                    <span class="babel-biz-card__badge babel-biz-card__badge--verified">
+                                        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">verified</span>
+                                        <?php esc_html_e( 'Verificado', 'babel-directory' ); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Cuerpo de la tarjeta -->
+                        <div class="babel-biz-card__body">
+                            <h3 class="babel-biz-card__title"><?php the_title(); ?></h3>
+
+                            <?php if ( $rating_count > 0 ) : ?>
+                                <div class="babel-biz-card__rating">
+                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">star</span>
+                                    <span class="babel-biz-card__rating-score"><?php echo esc_html( number_format( $rating_avg, 1 ) ); ?></span>
+                                    <span class="babel-biz-card__rating-count">(<?php echo esc_html( $rating_count ); ?>)</span>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ( $cat_name || $reg_name ) : ?>
+                                <div class="babel-biz-card__meta">
+                                    <?php if ( $cat_name ) : ?>
+                                        <span class="babel-biz-card__meta-item">
+                                            <span class="material-symbols-outlined">category</span>
+                                            <?php echo $cat_name; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ( $cat_name && $reg_name ) : ?>
+                                        <span class="babel-biz-card__meta-sep"></span>
+                                    <?php endif; ?>
+                                    <?php if ( $reg_name ) : ?>
+                                        <span class="babel-biz-card__meta-item">
+                                            <span class="material-symbols-outlined">location_on</span>
+                                            <?php echo $reg_name; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="babel-biz-card__footer">
+                                <?php if ( $price_range ) : ?>
+                                    <span class="babel-biz-card__price"><?php echo esc_html( $price_range ); ?></span>
+                                <?php else : ?>
+                                    <span></span>
+                                <?php endif; ?>
+                                <span class="babel-biz-card__cta" style="color: var(--color-secondary-fixed-dim,#e9c349);">
+                                    <?php esc_html_e( 'Ver perfil', 'babel-directory' ); ?>
+                                    <span class="material-symbols-outlined">arrow_forward</span>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                <?php endwhile; ?>
+            </div>
+        </div>
+        <?php
+        wp_reset_postdata();
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode [bd_breadcrumbs] para navegación jerárquica
+     */
+    public function render_breadcrumbs( $atts ) {
+        $atts = shortcode_atts( array(
+            'separator' => '/',
+        ), $atts, 'bd_breadcrumbs' );
+
+        $separator = esc_html( $atts['separator'] );
+        $home_url = home_url('/');
+
+        $output = '<nav class="babel-breadcrumbs" aria-label="Breadcrumb">';
+        $output .= '<ol>';
+        
+        // Home
+        $output .= '<li><a href="' . esc_url( $home_url ) . '"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">home</span> Inicio</a></li>';
+
+        if ( is_tax('babel_region') || is_tax('babel_category') ) {
+            $region = get_query_var('babel_region');
+            $category = get_query_var('babel_category');
+
+            if ( $region ) {
+                $term = get_term_by('slug', $region, 'babel_region');
+                if ( $term ) {
+                    $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
+                    if ( $category ) {
+                        $output .= '<li><a href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a></li>';
+                    } else {
+                        $output .= '<li aria-current="page">' . esc_html( $term->name ) . '</li>';
+                    }
+                }
+            }
+
+            if ( $category ) {
+                $term = get_term_by('slug', $category, 'babel_category');
+                if ( $term ) {
+                    $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
+                    $output .= '<li aria-current="page">' . esc_html( $term->name ) . '</li>';
+                }
+            }
+        } elseif ( is_singular('babel_business') ) {
+            $post_id = get_the_ID();
+            $regions = wp_get_post_terms( $post_id, 'babel_region' );
+            $categories = wp_get_post_terms( $post_id, 'babel_category' );
+
+            if ( ! is_wp_error( $regions ) && ! empty( $regions ) ) {
+                $region = $regions[0];
+                $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
+                $output .= '<li><a href="' . esc_url( get_term_link( $region ) ) . '">' . esc_html( $region->name ) . '</a></li>';
+            }
+
+            if ( ! is_wp_error( $categories ) && ! empty( $categories ) ) {
+                $category = $categories[0];
+                $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
+                
+                $cat_link = get_term_link( $category );
+                if ( ! empty( $regions ) ) {
+                    $cat_link = home_url( '/region/' . $regions[0]->slug . '/categoria/' . $category->slug . '/' );
+                }
+                $output .= '<li><a href="' . esc_url( $cat_link ) . '">' . esc_html( $category->name ) . '</a></li>';
+            }
+
+            $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
+            $output .= '<li aria-current="page">' . esc_html( get_the_title() ) . '</li>';
+        }
+
+        $output .= '</ol>';
+        $output .= '</nav>';
+
+        return $output;
     }
 }

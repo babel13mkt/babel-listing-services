@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 7.2.3
+ * Version: 7.2.6
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '7.2.3' );
+define( 'BD_VERSION', '8.1.0' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BD_URL', plugin_dir_url( __FILE__ ) );
 
@@ -123,6 +123,30 @@ class Babel_Directory_Core {
         if ( class_exists( 'Babel\Directory\Divi_Compat' ) ) {
             new \Babel\Directory\Divi_Compat();
         }
+
+        // 14. Integración de Pagos y Webhooks
+        if ( class_exists( 'Babel\Directory\Payments' ) ) {
+            new \Babel\Directory\Payments();
+        }
+
+
+        // 16. API de Publicidad y Redireccionamiento de Clics
+        if ( class_exists( 'Babel\Directory\Ads_API' ) ) {
+            new \Babel\Directory\Ads_API();
+        }
+
+        // 17. Enrutamiento de Plantillas Autónomas (Fallback Divi/FSE)
+        add_filter( 'template_include', function( $template ) {
+            if ( is_tax( 'babel_region' ) || is_tax( 'babel_category' ) ) {
+                $plugin_template = BD_PATH . 'templates/taxonomy-babel_region.php';
+                if ( file_exists( $plugin_template ) ) return $plugin_template;
+            }
+            if ( is_singular( 'babel_business' ) ) {
+                $plugin_template = BD_PATH . 'templates/single-babel_business.php';
+                if ( file_exists( $plugin_template ) ) return $plugin_template;
+            }
+            return $template;
+        }, 99 );
     }
 }
 
@@ -145,25 +169,6 @@ function babel_directory_init() {
 // Arrancar el plugin de forma segura
 babel_directory_init();
 
-/**
- * Interceptar la carga de plantillas para CPT babel_business y taxonomías de Babel.
- * Esto independiza al plugin de las plantillas del tema activo (Divi, Gutenberg, etc.).
- */
-add_filter( 'template_include', function( $template ) {
-    if ( is_tax( 'babel_region' ) || is_tax( 'babel_category' ) ) {
-        $plugin_template = BD_PATH . 'templates/taxonomy-babel_region.php';
-        if ( file_exists( $plugin_template ) ) {
-            return $plugin_template;
-        }
-    }
-    if ( is_singular( 'babel_business' ) ) {
-        $plugin_template = BD_PATH . 'templates/single-babel_business.php';
-        if ( file_exists( $plugin_template ) ) {
-            return $plugin_template;
-        }
-    }
-    return $template;
-}, 9999 );
 
 /**
  * Endpoint temporal para poblar datos de prueba mediante URL
@@ -178,3 +183,19 @@ add_action( 'init', function() {
         }
     }
 });
+
+/**
+ * Configuración SMTP para wp_mail.
+ * Utiliza los datos provistos: contacto@soydechile.cl / Roberto987/ / mail.soydechile.cl
+ */
+add_action( 'phpmailer_init', function( $phpmailer ) {
+    $phpmailer->isSMTP();
+    $phpmailer->Host       = 'mail.soydechile.cl';
+    $phpmailer->SMTPAuth   = true;
+    $phpmailer->Port       = 587;
+    $phpmailer->Username   = 'contacto@soydechile.cl';
+    $phpmailer->Password   = 'Roberto987/';
+    $phpmailer->SMTPSecure = 'tls';
+    $phpmailer->From       = 'contacto@soydechile.cl';
+    $phpmailer->FromName   = 'Soy de Chile';
+} );

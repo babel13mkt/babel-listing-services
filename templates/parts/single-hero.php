@@ -13,6 +13,9 @@ $rating     = get_post_meta( $post_id, '_bd_reputacion', true );
 
 <div class="bd-single-header">
     <div class="bd-container">
+        <div style="margin-bottom: 24px;">
+            <?php echo do_shortcode( '[bd_breadcrumbs]' ); ?>
+        </div>
         <div class="bd-hero-content">
             <span class="bd-card-category"><?php echo esc_html( $main_cat ); ?></span>
             <h1 class="bd-single-title"><?php the_title(); ?></h1>

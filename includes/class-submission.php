@@ -20,6 +20,9 @@ class Submission {
 
         add_action( 'wp_ajax_babel_frontend_submission', array( $this, 'handle_ajax_submission' ) );
         add_action( 'wp_ajax_nopriv_babel_frontend_submission', array( $this, 'handle_ajax_not_logged_in' ) );
+
+        // Hook para notificar al administrador sobre negocio pendiente de aprobación
+        add_action( 'transition_post_status', array( $this, 'notify_admin_on_pending' ), 10, 3 );
     }
 
     public function enqueue_submission_assets() {
@@ -175,6 +178,15 @@ class Submission {
                                     Nombre del Comercio <span class="text-secondary">*</span>
                                 </label>
                                 <input type="text" name="business_name" required placeholder="Ej: Pizzería Don Carlos"
+                                       class="w-full px-4 py-3 border border-outline-variant/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary font-body-md text-body-md text-on-surface transition-all duration-200">
+                            </div>
+
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">
+                                    <span class="material-symbols-outlined text-sm align-middle mr-1">badge</span>
+                                    RUT de la Empresa / Persona <span class="text-secondary">*</span>
+                                </label>
+                                <input type="text" name="business_rut" required placeholder="Ej: 12.345.678-9"
                                        class="w-full px-4 py-3 border border-outline-variant/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary font-body-md text-body-md text-on-surface transition-all duration-200">
                             </div>
 
@@ -576,6 +588,42 @@ class Submission {
             return;
         }
 
+        $rut = isset( $_POST['business_rut'] ) ? sanitize_text_field( wp_unslash( $_POST['business_rut'] ) ) : '';
+        if ( empty( $rut ) ) {
+            wp_send_json_error( array( 'message' => 'El RUT es obligatorio.' ) );
+            return;
+        }
+
+        // Validación matemática de RUT Chileno
+        $clean_rut = preg_replace( '/[^0-9kK]/', '', $rut );
+        if ( strlen( $clean_rut ) >= 8 && strlen( $clean_rut ) <= 9 ) {
+            $dv  = substr( $clean_rut, -1 );
+            $num = substr( $clean_rut, 0, strlen( $clean_rut ) - 1 );
+            $i = 2;
+            $suma = 0;
+            foreach ( array_reverse( str_split( $num ) ) as $v ) {
+                if ( $i == 8 ) {
+                    $i = 2;
+                }
+                $suma += $v * $i;
+                $i++;
+            }
+            $dvr = 11 - ( $suma % 11 );
+            if ( $dvr == 11 ) {
+                $dvr = 0;
+            }
+            if ( $dvr == 10 ) {
+                $dvr = 'K';
+            }
+            if ( strtoupper( $dv ) !== strval( $dvr ) ) {
+                wp_send_json_error( array( 'message' => 'El RUT ingresado no es válido (dígito verificador incorrecto).' ) );
+                return;
+            }
+        } else {
+            wp_send_json_error( array( 'message' => 'El RUT ingresado no tiene la cantidad de dígitos correcta.' ) );
+            return;
+        }
+
         // CAPA 4: Moderación
         $post_id = wp_insert_post( array(
             'post_title'   => $title,
@@ -589,6 +637,9 @@ class Submission {
             wp_send_json_error( array( 'message' => 'Error al crear el registro.' ) );
             return;
         }
+
+        // Guardar el RUT en post meta
+        update_post_meta( $post_id, '_babel_rut', $rut );
 
         // Taxonomías
         if ( ! empty( $_POST['business_region'] ) ) {
@@ -691,5 +742,25 @@ class Submission {
         wp_send_json_success( array(
             'message' => '¡Tu negocio fue enviado con éxito! Nuestro equipo lo revisará en las próximas 24-48 horas.',
         ) );
+    }
+
+    /**
+     * Envía una notificación por correo al administrador cuando un negocio queda en estado 'pending'.
+     */
+    public function notify_admin_on_pending( $new_status, $old_status, $post ) {
+        if ( 'babel_business' !== $post->post_type ) {
+            return;
+        }
+
+        if ( 'pending' === $new_status && 'pending' !== $old_status ) {
+            $admin_email = get_option( 'admin_email' );
+            $subject = '[Babel Directory] Nuevo negocio pendiente de revisión: ' . $post->post_title;
+            $message = sprintf(
+                "Un nuevo negocio ha sido registrado en el directorio y está pendiente de revisión.\n\nNombre: %s\nVer en Admin: %s",
+                $post->post_title,
+                admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
+            );
+            wp_mail( $admin_email, $subject, $message );
+        }
     }
 }

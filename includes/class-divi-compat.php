@@ -78,7 +78,6 @@ class Divi_Compat {
         };
 
         $tags = [
-            'babel_radar_search',
             'babel_region_grid',
             'bd_footer_regions',
             'bd_footer_categories',

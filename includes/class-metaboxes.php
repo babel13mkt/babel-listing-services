@@ -19,7 +19,9 @@ class Metaboxes {
      */
     public function __construct() {
         add_action( 'add_meta_boxes', array( $this, 'add_business_meta_box' ) );
+        add_action( 'add_meta_boxes', array( $this, 'add_ad_banner_meta_box' ) );
         add_action( 'save_post_babel_business', array( $this, 'save_business_meta' ), 10, 2 );
+        add_action( 'save_post_bd_ad_banner', array( $this, 'save_ad_banner_meta' ), 10, 2 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
     }
 
@@ -38,13 +40,27 @@ class Metaboxes {
     }
 
     /**
+     * Registra la metabox para el post type 'bd_ad_banner'.
+     */
+    public function add_ad_banner_meta_box() {
+        add_meta_box(
+            'bd_ad_banner_panel',
+            __( 'Ajustes del Anuncio Publicitario', 'babel-directory' ),
+            array( $this, 'render_ad_banner_panel' ),
+            'bd_ad_banner',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
      * Encola los scripts nativos de medios y taxonomías en la pantalla del CPT.
      *
      * @param string $hook Identificador de la página actual del panel de administración.
      */
     public function enqueue_admin_assets( $hook ) {
         $screen = get_current_screen();
-        if ( $screen && 'babel_business' === $screen->post_type ) {
+        if ( $screen && ( 'babel_business' === $screen->post_type || 'bd_ad_banner' === $screen->post_type ) ) {
             wp_enqueue_media();
             wp_enqueue_script( 'jquery-ui-sortable' );
             wp_enqueue_script( 'category' ); // WordPress hierarchical checklist helper
@@ -135,6 +151,11 @@ class Metaboxes {
         }
         if ( $featured === '' ) {
             $featured = get_post_meta( $post->ID, '_bd_destacado', true );
+        }
+
+        $is_institution = get_post_meta( $post->ID, '_babel_is_institution', true );
+        if ( $is_institution === '' ) {
+            $is_institution = get_post_meta( $post->ID, '_bd_is_institution', true );
         }
 
         $gallery     = get_post_meta( $post->ID, '_babel_gallery', true );
@@ -1431,6 +1452,11 @@ class Metaboxes {
                                 <input type="checkbox" id="babel_featured" name="babel_featured" value="1" <?php checked( $featured, '1' ); ?> />
                                 <span>🔥 <?php esc_html_e( 'Destacar Negocio', 'babel-directory' ); ?></span>
                             </label>
+
+                            <label class="bd-state-checkbox">
+                                <input type="checkbox" id="babel_is_institution" name="babel_is_institution" value="1" <?php checked( $is_institution, '1' ); ?> />
+                                <span>🏛️ <?php esc_html_e( 'Institución Pública / Emergencias', 'babel-directory' ); ?></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -2263,6 +2289,10 @@ class Metaboxes {
         update_post_meta( $post_id, '_babel_is_featured', $featured ); // Duplicación para compatibilidad
         update_post_meta( $post_id, '_bd_destacado', $featured );
 
+        $is_institution = isset( $_POST['babel_is_institution'] ) ? '1' : '0';
+        update_post_meta( $post_id, '_babel_is_institution', $is_institution );
+        update_post_meta( $post_id, '_bd_is_institution', $is_institution );
+
         // Tags / Palabras Clave SEO
         if ( isset( $_POST['babel_biz_tags'] ) ) {
             $raw_tags   = sanitize_text_field( wp_unslash( $_POST['babel_biz_tags'] ) );
@@ -2776,5 +2806,272 @@ class Metaboxes {
         </div>
         </div>
         <?php
+    }
+
+    /**
+     * Renderiza el panel de configuración para el banner publicitario.
+     */
+    public function render_ad_banner_panel( $post ) {
+        wp_nonce_field( 'bd_ad_banner_nonce_action', 'bd_ad_banner_nonce' );
+
+        $position    = get_post_meta( $post->ID, '_bd_ad_position', true );
+        $image_id    = get_post_meta( $post->ID, '_bd_ad_image_id', true );
+        $link        = get_post_meta( $post->ID, '_bd_ad_link', true );
+        $code        = get_post_meta( $post->ID, '_bd_ad_code', true );
+        $impressions = get_post_meta( $post->ID, '_bd_ad_impressions', true );
+        $clicks      = get_post_meta( $post->ID, '_bd_ad_clicks', true );
+
+        if ( empty( $impressions ) ) { $impressions = 0; }
+        if ( empty( $clicks ) ) { $clicks = 0; }
+        $ctr = $impressions > 0 ? round( ( $clicks / $impressions ) * 100, 2 ) : 0;
+
+        $image_url = '';
+        if ( $image_id ) {
+            $image_url = wp_get_attachment_image_url( $image_id, 'medium' );
+        }
+        ?>
+        <style>
+            .bd-ad-metabox {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 20px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            }
+            .bd-ad-grid {
+                display: grid;
+                grid-template-columns: repeat(12, 1fr);
+                gap: 16px;
+            }
+            .bd-ad-span-12 { grid-column: span 12; }
+            .bd-ad-span-6 { grid-column: span 6; }
+            .bd-ad-span-4 { grid-column: span 4; }
+            .bd-ad-field-group {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .bd-ad-field-group label {
+                font-weight: 600;
+                font-size: 13px;
+                color: #1e293b;
+            }
+            .bd-ad-field-group input[type="text"],
+            .bd-ad-field-group input[type="url"],
+            .bd-ad-field-group select,
+            .bd-ad-field-group textarea {
+                width: 100%;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 13px;
+                color: #334155;
+                background-color: #f8fafc;
+                box-sizing: border-box;
+            }
+            .bd-ad-field-group input:focus,
+            .bd-ad-field-group select:focus,
+            .bd-ad-field-group textarea:focus {
+                background-color: #ffffff;
+                border-color: #219ebc;
+                box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+                outline: none;
+            }
+            .bd-ad-media-preview {
+                width: 100%;
+                max-width: 300px;
+                min-height: 100px;
+                border: 2px dashed #cbd5e1;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f8fafc;
+                margin-top: 8px;
+                overflow: hidden;
+            }
+            .bd-ad-media-preview img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+            }
+            .bd-ad-media-actions {
+                margin-top: 10px;
+                display: flex;
+                gap: 10px;
+            }
+            .bd-ad-stats-card {
+                background: #f1f5f9;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            .bd-ad-stats-val {
+                font-size: 24px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .bd-ad-stats-lbl {
+                font-size: 11px;
+                color: #64748b;
+                text-transform: uppercase;
+                margin-top: 4px;
+            }
+            .bd-ad-placeholder-text {
+                font-size: 13px;
+                color: #94a3b8;
+            }
+        </style>
+        <div class="bd-ad-metabox">
+            <div class="bd-ad-grid">
+                <!-- Ubicación -->
+                <div class="bd-ad-field-group bd-ad-span-6">
+                    <label for="bd_ad_position"><?php esc_html_e( 'Ubicación del Anuncio', 'babel-directory' ); ?></label>
+                    <select id="bd_ad_position" name="bd_ad_position">
+                        <option value="top_leaderboard" <?php selected( $position, 'top_leaderboard' ); ?>><?php esc_html_e( 'Banner Horizontal Superior (Top Leaderboard - 728x90 / 320x100)', 'babel-directory' ); ?></option>
+                        <option value="sidebar_ad" <?php selected( $position, 'sidebar_ad' ); ?>><?php esc_html_e( 'Banner de Barra Lateral (Sidebar - 300x250 / 300x600)', 'babel-directory' ); ?></option>
+                        <option value="in_loop_ad" <?php selected( $position, 'in_loop_ad' ); ?>><?php esc_html_e( 'Banner en Grilla de Negocios (In-Loop / Card)', 'babel-directory' ); ?></option>
+                    </select>
+                    <p class="description"><?php esc_html_e( 'Define dónde se inyectará este anuncio.', 'babel-directory' ); ?></p>
+                </div>
+
+                <!-- Enlace de redirección -->
+                <div class="bd-ad-field-group bd-ad-span-6">
+                    <label for="bd_ad_link"><?php esc_html_e( 'Enlace del Banner (URL)', 'babel-directory' ); ?></label>
+                    <input type="url" id="bd_ad_link" name="bd_ad_link" value="<?php echo esc_url( $link ); ?>" placeholder="https://ejemplo.com/pagina-destino" />
+                    <p class="description"><?php esc_html_e( 'URL externa a donde irá el usuario al hacer clic en la imagen.', 'babel-directory' ); ?></p>
+                </div>
+
+                <!-- Imagen del banner (Media Library) -->
+                <div class="bd-ad-field-group bd-ad-span-6">
+                    <label><?php esc_html_e( 'Imagen del Banner', 'babel-directory' ); ?></label>
+                    <input type="hidden" id="bd_ad_image_id" name="bd_ad_image_id" value="<?php echo esc_attr( $image_id ); ?>" />
+                    <div id="bd-ad-image-preview" class="bd-ad-media-preview">
+                        <?php if ( $image_url ) : ?>
+                            <img src="<?php echo esc_url( $image_url ); ?>" alt="Preview" />
+                        <?php else : ?>
+                            <span class="bd-ad-placeholder-text"><?php esc_html_e( 'Ninguna imagen seleccionada', 'babel-directory' ); ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="bd-ad-media-actions">
+                        <button type="button" id="bd-ad-select-img-btn" class="button button-secondary"><?php esc_html_e( 'Seleccionar Imagen', 'babel-directory' ); ?></button>
+                        <button type="button" id="bd-ad-remove-img-btn" class="button button-link-delete" style="<?php echo $image_id ? '' : 'display:none;'; ?>"><?php esc_html_e( 'Eliminar', 'babel-directory' ); ?></button>
+                    </div>
+                </div>
+
+                <!-- Código HTML/JS Alternativo -->
+                <div class="bd-ad-field-group bd-ad-span-6">
+                    <label for="bd_ad_code"><?php esc_html_e( 'Código HTML o Script Alternativo', 'babel-directory' ); ?></label>
+                    <textarea id="bd_ad_code" name="bd_ad_code" rows="6" placeholder="&lt;ins class='adsbygoogle' ...&gt;&lt;/ins&gt;"><?php echo esc_textarea( $code ); ?></textarea>
+                    <p class="description"><?php esc_html_e( 'Si ingresas código aquí (ej. AdSense, iframes de terceros), se mostrará este código en lugar de la imagen y enlace anteriores.', 'babel-directory' ); ?></p>
+                </div>
+
+                <!-- Estadísticas (4 cols cada una) -->
+                <div class="bd-ad-span-12" style="margin-top: 15px;">
+                    <hr style="border: 0; border-top: 1px solid #cbd5e1; margin-bottom: 20px;" />
+                    <label style="font-weight: 600; font-size: 14px; display: block; margin-bottom: 12px;"><?php esc_html_e( 'Estadísticas del Anuncio', 'babel-directory' ); ?></label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                        <div class="bd-ad-stats-card">
+                            <span class="bd-ad-stats-val"><?php echo number_format( $impressions ); ?></span>
+                            <span class="bd-ad-stats-lbl"><?php esc_html_e( 'Impresiones', 'babel-directory' ); ?></span>
+                        </div>
+                        <div class="bd-ad-stats-card">
+                            <span class="bd-ad-stats-val"><?php echo number_format( $clicks ); ?></span>
+                            <span class="bd-ad-stats-lbl"><?php esc_html_e( 'Clics', 'babel-directory' ); ?></span>
+                        </div>
+                        <div class="bd-ad-stats-card">
+                            <span class="bd-ad-stats-val"><?php echo $ctr; ?>%</span>
+                            <span class="bd-ad-stats-lbl"><?php esc_html_e( 'CTR (Click-Through Rate)', 'babel-directory' ); ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            jQuery(document).ready(function($) {
+                var adFrame;
+                $('#bd-ad-select-img-btn').on('click', function(e) {
+                    e.preventDefault();
+                    if (adFrame) {
+                        adFrame.open();
+                        return;
+                    }
+                    adFrame = wp.media({
+                        title: 'Seleccionar Imagen de Banner',
+                        button: {
+                            text: 'Usar como Banner'
+                        },
+                        multiple: false
+                    });
+                    adFrame.on('select', function() {
+                        var attachment = adFrame.state().get('selection').first().toJSON();
+                        $('#bd_ad_image_id').val(attachment.id);
+                        var imageUrl = (attachment.sizes && attachment.sizes.medium) ? attachment.sizes.medium.url : attachment.url;
+                        $('#bd-ad-image-preview').html('<img src="' + imageUrl + '" />');
+                        $('#bd-ad-remove-img-btn').show();
+                    });
+                    adFrame.open();
+                });
+
+                $('#bd-ad-remove-img-btn').on('click', function(e) {
+                    e.preventDefault();
+                    $('#bd_ad_image_id').val('0');
+                    $('#bd-ad-image-preview').html('<span class="bd-ad-placeholder-text">Ninguna imagen seleccionada</span>');
+                    $(this).hide();
+                });
+            });
+        </script>
+        <?php
+    }
+
+    /**
+     * Guarda la configuración de la metabox de banners publicitarios.
+     */
+    public function save_ad_banner_meta( $post_id, $post ) {
+        // Validar nonce
+        if ( ! isset( $_POST['bd_ad_banner_nonce'] ) || ! wp_verify_nonce( $_POST['bd_ad_banner_nonce'], 'bd_ad_banner_nonce_action' ) ) {
+            return;
+        }
+
+        // Evitar auto-save
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return;
+        }
+
+        // Verificar permisos
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            return;
+        }
+
+        // Guardar Posición
+        if ( isset( $_POST['bd_ad_position'] ) ) {
+            $position = sanitize_text_field( wp_unslash( $_POST['bd_ad_position'] ) );
+            update_post_meta( $post_id, '_bd_ad_position', $position );
+        }
+
+        // Guardar Imagen ID
+        if ( isset( $_POST['bd_ad_image_id'] ) ) {
+            $image_id = sanitize_text_field( wp_unslash( $_POST['bd_ad_image_id'] ) );
+            update_post_meta( $post_id, '_bd_ad_image_id', $image_id );
+        }
+
+        // Guardar Enlace
+        if ( isset( $_POST['bd_ad_link'] ) ) {
+            $link = esc_url_raw( wp_unslash( $_POST['bd_ad_link'] ) );
+            update_post_meta( $post_id, '_bd_ad_link', $link );
+        }
+
+        // Guardar Código Script / HTML alternativo
+        if ( isset( $_POST['bd_ad_code'] ) ) {
+            $code = current_user_can( 'unfiltered_html' ) ? wp_unslash( $_POST['bd_ad_code'] ) : wp_kses_post( wp_unslash( $_POST['bd_ad_code'] ) );
+            update_post_meta( $post_id, '_bd_ad_code', $code );
+        }
     }
 }

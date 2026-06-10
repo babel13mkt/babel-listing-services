@@ -601,6 +601,84 @@
     box-sizing: border-box;
 }
 
+/* Búsqueda */
+.babel-search-form {
+    display: flex;
+    gap: 0;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--sdc-white);
+    border-radius: 50px;
+    padding: 6px;
+    box-shadow: var(--sdc-shadow-md);
+    position: relative; /* Para el dropdown absoluto */
+    z-index: 100;
+}
+
+/* -------------------------------------------------------------
+ * Dropdown Predictivo (Autocompletar)
+ * ------------------------------------------------------------- */
+.babel-autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    overflow: hidden;
+    animation: babelSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes babelSlideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.babel-autocomplete-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    font-size: 15px;
+    color: var(--sdc-text);
+}
+
+.babel-autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.babel-autocomplete-item:hover {
+    background: var(--sdc-gray-50);
+}
+
+.babel-ac-icon {
+    font-size: 18px;
+    margin-right: 12px;
+    opacity: 0.8;
+}
+
+.babel-ac-label {
+    flex: 1;
+    font-weight: 500;
+}
+
+.babel-ac-type {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--sdc-gray-100);
+    color: var(--sdc-text-muted);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
 .babel-card-action-btn {
     display: inline-flex;
     align-items: center;
@@ -1552,7 +1630,7 @@
     background-size: cover;
     background-position: center;
     transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    filter: saturate(0.2) brightness(0.7) !important;
+    filter: brightness(0.95) !important;
     z-index: 0;
 }
 .babel-region-bg.babel-region-pip-fix {
@@ -1561,7 +1639,7 @@
 }
 .babel-region-card:hover .babel-region-bg {
     transform: scale(1.05) !important;
-    filter: saturate(1) brightness(1.1) !important;
+    filter: brightness(1.05) !important;
 }
 .babel-region-overlay {
     position: absolute;
@@ -1622,7 +1700,7 @@
 }
 .babel-region-title {
     font-family: 'Playfair Display', Georgia, serif !important;
-    font-size: 30px !important; /* text-3xl */
+    font-size: 22px !important; /* text-xl */
     font-weight: 500 !important;
     text-transform: none !important;
     letter-spacing: -0.01em !important;
@@ -2456,6 +2534,48 @@
 
 .bd-map-container iframe {
     display: block;
+}
+
+/* ==========================================================================
+   BREADCRUMBS (.babel-breadcrumbs)
+   ========================================================================== */
+.babel-breadcrumbs {
+    font-family: var(--babel-font-body, 'Inter', sans-serif);
+    font-size: 14px;
+    margin-bottom: 24px;
+    color: var(--babel-color-on-surface-variant, #444748);
+}
+.babel-breadcrumbs ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.babel-breadcrumbs li {
+    display: inline-flex;
+    align-items: center;
+}
+.babel-breadcrumbs a {
+    color: var(--babel-color-primary, #000000);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.babel-breadcrumbs a:hover {
+    color: var(--babel-color-secondary, #735c00);
+    text-decoration: underline;
+}
+.babel-breadcrumbs-separator {
+    margin: 0 4px;
+    opacity: 0.5;
+    font-size: 12px;
+}
+.babel-breadcrumbs [aria-current="page"] {
+    color: var(--babel-color-on-surface-variant, #444748);
+    font-weight: 400;
 }
 
 /* 6. HORARIOS */
@@ -3323,5 +3443,31 @@ header.wp-block-template-part .wp-block-site-title a {
         z-index: 999 !important;
         /* Sombra leve al hacer scroll y anclarse */
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+}
+
+/* ==========================================================================
+   LTM SINGLE PROFILE LAYOUT GRID (Non-Tailwind)
+   ========================================================================== */
+.bd-profile-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-top: 24px;
+}
+@media (min-width: 1024px) {
+    .bd-profile-grid {
+        grid-template-columns: repeat(12, 1fr);
+    }
+    .bd-profile-main {
+        grid-column: span 8;
+    }
+    .bd-profile-sidebar {
+        grid-column: span 4;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 24px;
+        height: -moz-fit-content;
+        height: fit-content;
     }
 }

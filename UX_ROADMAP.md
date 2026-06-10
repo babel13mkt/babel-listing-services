@@ -356,7 +356,7 @@ curl -s https://soydechile.cl/ | grep -o 'sdc-site-header\|babel-custom-hero' | 
 ---
 
 *Documento vivo — actualizar con cada hito completado.*  
-*Historial completo de hitos: Neo4j → `MATCH (h:Milestone) RETURN h ORDER BY h.number DESC`*
+*Historial completo de hitos: Ver `archive/decisiones_old.md`*
 
 ---
 
