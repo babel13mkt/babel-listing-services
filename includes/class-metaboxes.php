@@ -60,7 +60,7 @@ class Metaboxes {
      */
     public function enqueue_admin_assets( $hook ) {
         $screen = get_current_screen();
-        if ( $screen && ( 'babel_business' === $screen->post_type || 'bd_ad_banner' === $screen->post_type ) ) {
+        if ( ( $screen && ( 'babel_business' === $screen->post_type || 'bd_ad_banner' === $screen->post_type ) ) || strpos( $hook, 'bd-panel' ) !== false ) {
             wp_enqueue_media();
             wp_enqueue_script( 'jquery-ui-sortable' );
             wp_enqueue_script( 'category' ); // WordPress hierarchical checklist helper
@@ -206,11 +206,15 @@ class Metaboxes {
             $logo_url = wp_get_attachment_image_url( $logo_id, 'thumbnail' );
         }
 
-        // Parsear IDs de galería
+        // Parsear IDs de galería (puede venir como string "1,2,3" o como array)
         $gallery_ids = array();
         if ( ! empty( $gallery ) ) {
-            $gallery_ids = explode( ',', $gallery );
-            $gallery_ids = array_filter( array_map( 'intval', $gallery_ids ) );
+            if ( is_array( $gallery ) ) {
+                $gallery_ids = array_filter( array_map( 'intval', $gallery ) );
+            } else {
+                $gallery_ids = explode( ',', (string) $gallery );
+                $gallery_ids = array_filter( array_map( 'intval', $gallery_ids ) );
+            }
         }
 
         // --- Fase 2 - Recuperar nuevos valores guardados con fallback seguro a llaves anteriores ---
@@ -403,7 +407,7 @@ class Metaboxes {
                 margin: 0 !important;
             }
 
-            /* 1. Reset y Contenedor Principal */
+            /* 1. Reset y Contenedor Principal (Bento Grid) */
             .bd-metabox-wrapper {
                 background: transparent;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -412,63 +416,46 @@ class Metaboxes {
                 padding: 0;
             }
             
-            /* Pestañas / Tabs Navigation with seamless overlapping */
-            .bd-tabs-nav {
-                display: flex;
-                gap: 6px;
-                border-bottom: 2px solid #cbd5e1;
-                margin: 0 0 15px 0;
-                list-style: none;
-                padding: 0;
+            .bd-dashboard-wrapper {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+                gap: 24px;
+                background: transparent;
             }
-            .bd-tab-link {
-                padding: 12px 20px;
-                cursor: pointer;
-                border-radius: 8px 8px 0 0;
-                background: #e2e8f0;
-                font-weight: 600;
-                font-size: 13px;
-                color: #64748b;
+            
+            .bd-card {
+                background: #ffffff;
                 border: 1px solid #cbd5e1;
-                border-bottom: none;
-                transition: all 0.2s ease;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                align-self: start;
+            }
+            
+            .bd-card-full {
+                grid-column: 1 / -1;
+            }
+            
+            .bd-card-title {
+                font-size: 16px;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0 0 8px 0;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #f1f5f9;
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                margin-bottom: -2px; /* Pull down to overlay the active border line */
-                position: relative;
-                z-index: 1;
-            }
-            .bd-tab-link:hover {
-                background: #cbd5e1;
-                color: #1e293b;
-            }
-            .bd-tab-link.active {
-                background: #ffffff;
-                color: #219ebc;
-                border-color: #cbd5e1;
-                border-bottom-color: #ffffff;
-                z-index: 3;
             }
             
-            /* Paneles de Contenido */
-            .bd-tab-panel {
-                display: none;
-            }
-            .bd-tab-panel.active {
-                display: block;
-            }
-            
-            /* Sistema de Grillas Premium */
+            /* Sistema de Grillas Interno */
             .bd-metabox-grid {
                 display: grid;
                 grid-template-columns: repeat(12, 1fr);
                 gap: 16px;
-                padding: 20px;
-                background: #ffffff;
-                border: 1px solid #cbd5e1;
-                border-radius: 0 0 8px 8px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             }
             
             .bd-grid-span-12 { grid-column: span 12; }
@@ -1047,19 +1034,11 @@ class Metaboxes {
         </style>
 
         <div class="bd-metabox-wrapper">
-            <!-- Navegación por pestañas -->
-            <ul class="bd-tabs-nav">
-                <li class="bd-tab-link active" data-tab="tab-general">🏢 <?php esc_html_e( 'General', 'babel-directory' ); ?></li>
-                <li class="bd-tab-link" data-tab="tab-contacto">📞 <?php esc_html_e( 'Contacto', 'babel-directory' ); ?></li>
-                <li class="bd-tab-link" data-tab="tab-redes">🌐 <?php esc_html_e( 'Redes y Estados', 'babel-directory' ); ?></li>
-                <li class="bd-tab-link" data-tab="tab-horarios">⏰ <?php esc_html_e( 'Horarios y Medios', 'babel-directory' ); ?></li>
-                <li class="bd-tab-link" data-tab="tab-legal">🇨🇱 <?php esc_html_e( 'Legal & Comercial', 'babel-directory' ); ?></li>
-            </ul>
+            <div class="bd-dashboard-wrapper">
 
-            <!-- PANELES DE CONTENIDO -->
-
-            <!-- PESTAÑA 1: GENERAL -->
-            <div id="tab-general" class="bd-tab-panel active">
+            <!-- TARJETA 1: GENERAL -->
+            <div class="bd-card bd-card-full">
+                <h3 class="bd-card-title">🏢 <?php esc_html_e( 'Información Principal', 'babel-directory' ); ?></h3>
                 <div class="bd-metabox-grid">
                     <!-- Fila 1: Nombre del Negocio (12 cols) -->
                     <div class="bd-field-group bd-grid-span-12">
@@ -1346,8 +1325,9 @@ class Metaboxes {
                 </div>
             </div>
 
-            <!-- PESTAÑA 2: CONTACTO -->
-            <div id="tab-contacto" class="bd-tab-panel">
+            <!-- TARJETA 2: CONTACTO -->
+            <div class="bd-card">
+                <h3 class="bd-card-title">📞 <?php esc_html_e( 'Ubicación y Contacto', 'babel-directory' ); ?></h3>
                 <div class="bd-metabox-grid">
                     <!-- Fila 1: Teléfono, WhatsApp, Email (4 cols c/u) -->
                     <div class="bd-field-group bd-grid-span-4">
@@ -1400,8 +1380,9 @@ class Metaboxes {
                 </div>
             </div>
 
-            <!-- PESTAÑA 3: REDES SOCIALES Y ESTADOS -->
-            <div id="tab-redes" class="bd-tab-panel">
+            <!-- TARJETA 3: REDES SOCIALES Y ESTADOS -->
+            <div class="bd-card">
+                <h3 class="bd-card-title">🌐 <?php esc_html_e( 'Redes y Estados', 'babel-directory' ); ?></h3>
                 <div class="bd-metabox-grid">
                     <!-- Fila 1: Instagram, Facebook, LinkedIn (4 cols c/u) -->
                     <div class="bd-field-group bd-grid-span-4">
@@ -1462,8 +1443,9 @@ class Metaboxes {
                 </div>
             </div>
 
-            <!-- PESTAÑA 4: HORARIOS Y MEDIOS -->
-            <div id="tab-horarios" class="bd-tab-panel">
+            <!-- TARJETA 4: HORARIOS Y MEDIOS -->
+            <div class="bd-card bd-card-full">
+                <h3 class="bd-card-title">⏰ <?php esc_html_e( 'Horarios y Medios', 'babel-directory' ); ?></h3>
                 <div class="bd-metabox-grid">
                     <!-- Fila 1: Horarios Día por Día (12 cols) -->
                     <div class="bd-field-group bd-grid-span-12">
@@ -1549,8 +1531,9 @@ class Metaboxes {
                 </div>
             </div>
 
-            <!-- PESTAÑA 5: LEGAL & COMERCIAL -->
-            <div id="tab-legal" class="bd-tab-panel">
+            <!-- TARJETA 5: LEGAL & COMERCIAL -->
+            <div class="bd-card">
+                <h3 class="bd-card-title">🇨🇱 <?php esc_html_e( 'Legal & Comercial', 'babel-directory' ); ?></h3>
                 <div class="bd-metabox-grid">
                     <div class="bd-section-title bd-grid-span-12">
                         <span>🇨🇱 Identidad Legal (Chile)</span>
@@ -1606,21 +1589,12 @@ class Metaboxes {
                     </div>
                 </div>
             </div>
+
+            </div> <!-- Cierre bd-dashboard-wrapper -->
         </div>
 
         <script>
             jQuery(document).ready(function($) {
-                // --- CAMBIO DE PESTAÑAS (TABS LOGIC) ---
-                $('.bd-tab-link').on('click', function(e) {
-                    e.preventDefault();
-                    var tabId = $(this).data('tab');
-                    
-                    $('.bd-tab-link').removeClass('active');
-                    $('.bd-tab-panel').removeClass('active');
-                    
-                    $(this).addClass('active');
-                    $('#' + tabId).addClass('active');
-                });
 
                 // --- MANEJO DE LOGOTIPO / IMAGEN DESTACADA ---
                 var logoFrame;
@@ -2572,34 +2546,40 @@ class Metaboxes {
                 color: #475569;
                 background: #fff;
             }
+            /* Bento Grid Styles for SPA */
+            .sdc-bento-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+                gap: 24px;
+                padding: 24px;
+                background: transparent;
+            }
+            .sdc-bento-card {
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                align-self: start;
+            }
+            .sdc-bento-card.full {
+                grid-column: 1 / -1;
+            }
         </style>
         <div class="sdc-saas-container">
-            <div class="sdc-editor-layout">
-            <!-- Tabs Internos del Editor -->
-            <div class="sdc-editor-sidebar">
-                <div class="sdc-editor-tab active" data-target="sdc-biz-general">
-                    <span class="dashicons dashicons-admin-generic"></span> General
-                </div>
-                <div class="sdc-editor-tab" data-target="sdc-biz-location">
-                    <span class="dashicons dashicons-location"></span> Ubicación
-                </div>
-                <div class="sdc-editor-tab" data-target="sdc-biz-hours">
-                    <span class="dashicons dashicons-clock"></span> Horarios
-                </div>
-                <div class="sdc-editor-tab" data-target="sdc-biz-amenities">
-                    <span class="dashicons dashicons-star-filled"></span> Comodidades
-                </div>
-                <div class="sdc-editor-tab" data-target="sdc-biz-gallery">
-                    <span class="dashicons dashicons-format-gallery"></span> Galería
-                </div>
-            </div>
-
-            <!-- Formularios -->
-            <div class="sdc-editor-main">
+            <div class="sdc-editor-layout" style="display: block;">
+            
+            <!-- Formularios en Layout Bento -->
+            <div class="sdc-editor-main" style="width: 100%;">
                 <form id="sdc-business-form">
                     
-                    <!-- General (Scroll Largo) -->
-                    <div id="sdc-biz-general" class="sdc-editor-panel active">
+                    <div class="sdc-bento-grid">
+                    
+                    <!-- General -->
+                    <div id="sdc-biz-general" class="sdc-bento-card full">
                         <h3 style="margin-top:0; border-bottom: 1px solid var(--sdc-border); padding-bottom:8px;">Información Principal</h3>
                         
                         <div class="sdc-form-group">
@@ -2612,13 +2592,42 @@ class Metaboxes {
                             <textarea id="sdc_biz_desc" name="biz_desc" class="sdc-input" rows="5" placeholder="Describe el negocio..."></textarea>
                         </div>
 
+                        <?php
+                        $categories = get_terms( array(
+                            'taxonomy'   => 'babel_category',
+                            'hide_empty' => false,
+                        ) );
+                        ?>
                         <div class="sdc-form-group">
-                            <label class="sdc-label">Logo del Negocio</label>
-                            <div style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer;">
-                                <span class="dashicons dashicons-upload" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
-                                <p style="margin-top: 12px; font-weight: 500;">Haz clic o arrastra el logotipo aquí</p>
+                            <label class="sdc-label">Categorías y Subcategorías</label>
+                            <select id="sdc_biz_categories" name="biz_categories[]" class="sdc-input sdc-select2" multiple="multiple" style="width: 100%;">
+                                <?php if ( ! is_wp_error( $categories ) && ! empty( $categories ) ) : ?>
+                                    <?php foreach ( $categories as $category ) : ?>
+                                        <option value="<?php echo esc_attr( $category->term_id ); ?>"><?php echo esc_html( $category->name ); ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <p class="sdc-text-muted" style="font-size: 12px; margin-top: 4px;">Escribe para buscar. Puedes seleccionar varias opciones.</p>
+                        </div>
+
+                        <div class="sdc-grid-2" style="display: grid; gap: 16px; grid-template-columns: 1fr 1fr;">
+                            <div class="sdc-form-group" style="height: 100%;">
+                                <label class="sdc-label">Logo del Negocio</label>
+                                <div id="sdc_upload_logo_btn" style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; height: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                                    <span class="dashicons dashicons-upload" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
+                                    <p style="margin-top: 12px; font-weight: 500; margin-bottom: 0;">Haz clic para subir el logotipo</p>
+                                </div>
+                                <input type="hidden" name="biz_logo_id" id="sdc_biz_logo_id">
                             </div>
-                            <input type="hidden" name="biz_logo_id" id="sdc_biz_logo_id">
+
+                            <div class="sdc-form-group" style="height: 100%;">
+                                <label class="sdc-label">Galería de Fotos</label>
+                                <div id="sdc_upload_gallery_btn" style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; height: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                                    <span class="dashicons dashicons-images-alt2" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
+                                    <p style="margin-top: 12px; font-weight: 500; margin-bottom: 0;">Haz clic para añadir fotos a la galería</p>
+                                </div>
+                                <input type="hidden" name="biz_gallery" id="sdc_biz_gallery">
+                            </div>
                         </div>
 
                         <style>
@@ -2684,7 +2693,7 @@ class Metaboxes {
                     </div>
 
                     <!-- Ubicación y Mapa -->
-                    <div id="sdc-biz-location" class="sdc-editor-panel">
+                    <div id="sdc-biz-location" class="sdc-bento-card">
                         <h3 style="margin-top:0;">Ubicación (Auto-Mapa OpenStreetMap)</h3>
                         
                         <div class="sdc-form-group">
@@ -2702,7 +2711,7 @@ class Metaboxes {
                     </div>
 
                     <!-- Comodidades -->
-                    <div id="sdc-biz-amenities" class="sdc-editor-panel">
+                    <div id="sdc-biz-amenities" class="sdc-bento-card">
                         <h3 style="margin-top:0;">Comodidades y Servicios</h3>
                         
                         <div class="sdc-grid">
@@ -2757,44 +2766,19 @@ class Metaboxes {
                     </div>
 
                     <!-- Horarios -->
-                    <div id="sdc-biz-hours" class="sdc-editor-panel">
+                    <div id="sdc-biz-hours" class="sdc-bento-card full">
                         <h3 style="margin-top:0;">Horarios de Atención</h3>
-                        <p class="sdc-text-muted" style="margin-bottom: 24px;">Configura los días y horas de apertura. Marca "Cerrado" para los días sin atención.</p>
+                        <p class="sdc-text-muted" style="margin-bottom: 24px;">Configura los días y horas de apertura. Añade bloques dinámicos para agrupar días con el mismo horario.</p>
                         
-                        <div class="sdc-hours-grid">
-                            <?php 
-                            $days_of_week = array( 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo' );
-                            foreach ( $days_of_week as $day ) : ?>
-                                <div class="sdc-hours-row bd-hours-row">
-                                    <span class="sdc-hours-day"><?php echo esc_html( $day ); ?></span>
-                                    <div class="sdc-hours-inputs">
-                                        <input type="time" name="biz_hours[<?php echo esc_attr( $day ); ?>][open]" value="09:00" />
-                                        <span style="color:#64748b; font-size:14px;">a</span>
-                                        <input type="time" name="biz_hours[<?php echo esc_attr( $day ); ?>][close]" value="18:00" />
-                                    </div>
-                                    <label class="sdc-toggle" style="margin-left: auto;">
-                                        <input type="checkbox" class="bd-hours-closed-checkbox" name="biz_hours[<?php echo esc_attr( $day ); ?>][closed]" value="1">
-                                        <span class="sdc-toggle-slider"></span>
-                                    </label>
-                                    <span style="font-size: 13px; color: #64748b;">Cerrado</span>
-                                </div>
-                            <?php endforeach; ?>
+                        <div id="sdc-dynamic-hours-container" style="display:flex; flex-direction:column; gap:16px;">
+                            <!-- Blocks will be injected here via JS -->
                         </div>
+                        <button type="button" id="sdc-add-hours-btn" class="sdc-btn" style="margin-top: 16px; width: fit-content;">
+                            <span class="dashicons dashicons-plus-alt2" style="margin-top: 4px;"></span> Añadir Bloque de Horario
+                        </button>
                     </div>
 
-                    <!-- Galería -->
-                    <div id="sdc-biz-gallery" class="sdc-editor-panel">
-                        <h3 style="margin-top:0;">Galería de Fotos</h3>
-                        <p class="sdc-text-muted">Sube imágenes de tu local, productos o servicios.</p>
-                        
-                        <div style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 48px; text-align: center; background: #f8fafc; cursor: pointer; margin-top: 16px;">
-                            <span class="dashicons dashicons-images-alt2" style="font-size: 48px; width: 48px; height: 48px; color: var(--sdc-blue);"></span>
-                            <p style="margin-top: 16px; font-weight: 500; font-size: 16px;">Haz clic o arrastra fotos aquí</p>
-                            <p class="sdc-text-muted" style="font-size: 13px; margin-top: 4px;">Puedes subir múltiples fotos a la vez</p>
-                        </div>
-                        <input type="hidden" name="biz_gallery" id="sdc_biz_gallery">
-                    </div>
-
+                    </div> <!-- End sdc-bento-grid -->
                     <div class="sdc-editor-footer" style="position: sticky; bottom: 0; background: white; padding: 16px 24px; border-top: 1px solid var(--sdc-border); z-index: 10;">
                         <button type="button" class="sdc-btn sdc-btn-primary" onclick="alert('Funcionalidad de guardado en desarrollo.')" style="width: 100%;">
                             <span class="dashicons dashicons-saved"></span> Guardar Negocio Completamente
@@ -2805,6 +2789,161 @@ class Metaboxes {
             </div>
         </div>
         </div>
+        <?php
+        self::render_spa_editor_scripts();
+    }
+
+    /**
+     * Renderiza los scripts específicos para el Editor de la SPA
+     */
+    private static function render_spa_editor_scripts() {
+        ?>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <style>
+            .select2-container--default .select2-selection--multiple {
+                border-color: #cbd5e1;
+                border-radius: 8px;
+                min-height: 42px;
+                padding: 4px;
+            }
+            .sdc-day-pill {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 20px;
+                border: 1px solid #cbd5e1;
+                font-size: 12px;
+                cursor: pointer;
+                user-select: none;
+                margin-right: 4px;
+                margin-bottom: 4px;
+                color: #64748b;
+            }
+            .sdc-day-pill input[type="checkbox"] {
+                display: none;
+            }
+            .sdc-day-pill.active {
+                background: var(--sdc-blue);
+                color: white;
+                border-color: var(--sdc-blue);
+            }
+        </style>
+        <script>
+        jQuery(document).ready(function($){
+            // Inicializar Select2 para Categorías
+            $('#sdc_biz_categories').select2({
+                placeholder: "Selecciona categorías...",
+                allowClear: true,
+                tags: true,
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') {
+                        return null;
+                    }
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true // add additional parameters
+                    }
+                }
+            });
+
+            // Upload Logo
+            var sdc_logo_frame;
+            $('#sdc_upload_logo_btn').on('click', function(e){
+                e.preventDefault();
+                if ( sdc_logo_frame ) {
+                    sdc_logo_frame.open();
+                    return;
+                }
+                sdc_logo_frame = wp.media({
+                    title: 'Seleccionar Logo del Negocio',
+                    button: { text: 'Usar este Logo' },
+                    multiple: false
+                });
+                sdc_logo_frame.on('select', function() {
+                    var attachment = sdc_logo_frame.state().get('selection').first().toJSON();
+                    $('#sdc_biz_logo_id').val(attachment.id);
+                    $('#sdc_upload_logo_btn').html('<img src="'+attachment.url+'" style="max-width:100%; max-height:100px; border-radius:6px;">');
+                });
+                sdc_logo_frame.open();
+            });
+
+            // Upload Gallery
+            var sdc_gallery_frame;
+            $('#sdc_upload_gallery_btn').on('click', function(e){
+                e.preventDefault();
+                if ( sdc_gallery_frame ) {
+                    sdc_gallery_frame.open();
+                    return;
+                }
+                sdc_gallery_frame = wp.media({
+                    title: 'Seleccionar Fotos para la Galería',
+                    button: { text: 'Añadir a la Galería' },
+                    multiple: true
+                });
+                sdc_gallery_frame.on('select', function() {
+                    var selection = sdc_gallery_frame.state().get('selection');
+                    var ids = [];
+                    var imgs = '';
+                    selection.map(function(attachment) {
+                        attachment = attachment.toJSON();
+                        ids.push(attachment.id);
+                        imgs += '<img src="'+attachment.url+'" style="max-width:50px; max-height:50px; border-radius:4px; margin-right:4px;">';
+                    });
+                    $('#sdc_biz_gallery').val(ids.join(','));
+                    $('#sdc_upload_gallery_btn').html('<div style="display:flex; flex-wrap:wrap; gap:4px; justify-content:center; align-items:center;">'+imgs+'</div>');
+                });
+                sdc_gallery_frame.open();
+            });
+
+            // Lógica de Horarios Dinámicos
+            let hoursBlockIndex = 0;
+            const daysOfWeek = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+            const daysLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+            function addHoursBlock() {
+                let html = '<div class="sdc-hours-block" style="border:1px solid #cbd5e1; border-radius:8px; padding:16px; position:relative;">';
+                html += '<button type="button" class="sdc-remove-hours-btn" style="position:absolute; top:8px; right:8px; background:none; border:none; color:#ef4444; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>';
+                html += '<div style="margin-bottom:12px;"><strong>Días:</strong><br>';
+                
+                daysOfWeek.forEach((day, index) => {
+                    html += '<label class="sdc-day-pill"><input type="checkbox" name="biz_hours_dynamic['+hoursBlockIndex+'][days][]" value="'+day+'"> '+daysLabels[index]+'</label>';
+                });
+                
+                html += '</div>';
+                html += '<div style="display:flex; align-items:center; gap:8px;">';
+                html += '<span>Abre: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][open]" class="sdc-input" style="width:120px;" value="09:00">';
+                html += '<span>Cierra: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][close]" class="sdc-input" style="width:120px;" value="18:00">';
+                html += '</div></div>';
+                
+                $('#sdc-dynamic-hours-container').append(html);
+                hoursBlockIndex++;
+            }
+
+            // Añadir un bloque por defecto si está vacío
+            if ($('.sdc-hours-block').length === 0) {
+                addHoursBlock();
+            }
+
+            $('#sdc-add-hours-btn').on('click', function(){
+                addHoursBlock();
+            });
+
+            $(document).on('click', '.sdc-remove-hours-btn', function(){
+                $(this).closest('.sdc-hours-block').remove();
+            });
+
+            $(document).on('change', '.sdc-day-pill input', function(){
+                if($(this).is(':checked')){
+                    $(this).parent('.sdc-day-pill').addClass('active');
+                } else {
+                    $(this).parent('.sdc-day-pill').removeClass('active');
+                }
+            });
+
+        });
+        </script>
         <?php
     }
 

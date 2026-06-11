@@ -160,6 +160,50 @@ class Admin {
             }
         }
 
+        // Guardar Categorías
+        if ( isset( $_POST['biz_categories'] ) && is_array( $_POST['biz_categories'] ) ) {
+            $categories_raw = wp_unslash( $_POST['biz_categories'] );
+            $term_ids_or_names = array();
+            foreach ( $categories_raw as $cat ) {
+                if ( is_numeric( $cat ) ) {
+                    $term_ids_or_names[] = intval( $cat );
+                } else {
+                    $term_ids_or_names[] = sanitize_text_field( $cat );
+                }
+            }
+            wp_set_object_terms( $post_id, $term_ids_or_names, 'babel_category' );
+        } else {
+            // Si viene vacío, limpiar las categorías
+            wp_set_object_terms( $post_id, array(), 'babel_category' );
+        }
+
+        // Guardar Horarios Dinámicos
+        $final_hours = array();
+        $days_of_week = array( 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo' );
+        // Pre-llenar todo en "cerrado" por defecto
+        foreach ( $days_of_week as $d ) {
+            $final_hours[ $d ] = array( 'open' => '', 'close' => '', 'closed' => '1' );
+        }
+
+        if ( isset( $_POST['biz_hours_dynamic'] ) && is_array( $_POST['biz_hours_dynamic'] ) ) {
+            $dynamic_blocks = wp_unslash( $_POST['biz_hours_dynamic'] );
+            foreach ( $dynamic_blocks as $block ) {
+                if ( isset( $block['days'] ) && is_array( $block['days'] ) ) {
+                    $open_time  = isset( $block['open'] ) ? sanitize_text_field( $block['open'] ) : '';
+                    $close_time = isset( $block['close'] ) ? sanitize_text_field( $block['close'] ) : '';
+                    foreach ( $block['days'] as $d ) {
+                        $d = sanitize_text_field( $d );
+                        if ( array_key_exists( $d, $final_hours ) ) {
+                            $final_hours[ $d ]['open']   = $open_time;
+                            $final_hours[ $d ]['close']  = $close_time;
+                            $final_hours[ $d ]['closed'] = ''; // Abierto
+                        }
+                    }
+                }
+            }
+        }
+        update_post_meta( $post_id, '_bd_horarios', $final_hours );
+        update_post_meta( $post_id, '_babel_hours', $final_hours );
         // Disparar un hook personalizado para que otros módulos (como el motor de búsqueda)
         // sepan que el negocio y TODOS sus metadatos ya están listos en la BD.
         do_action( 'bd_after_business_saved', $post_id );
@@ -244,7 +288,7 @@ class Admin {
                     </div>
                 </div>
 
-                <h3>Negocios Pendientes de Aprobación</h3>
+                <h3>Últimos Negocios Registrados</h3>
                 <div class="sdc-table-wrapper">
                     <table class="sdc-table">
                         <thead>
@@ -255,21 +299,49 @@ class Admin {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if ( $total_pending > 0 ) : ?>
-                                <!-- Aquí iría el loop de post pendientes. Estático por ahora para estructura. -->
-                                <tr>
-                                    <td>Ejemplo Restaurante</td>
-                                    <td>Pendiente</td>
-                                    <td>
-                                        <div class="sdc-flex sdc-gap-2">
-                                            <button class="sdc-btn sdc-btn-primary">Aprobar</button>
-                                            <button class="sdc-btn sdc-btn-danger">Rechazar</button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <?php
+                            $recent_businesses = new \WP_Query( array(
+                                'post_type'      => 'babel_business',
+                                'post_status'    => array( 'publish', 'pending', 'draft' ),
+                                'posts_per_page' => 10,
+                                'orderby'        => 'date',
+                                'order'          => 'DESC'
+                            ) );
+
+                            if ( $recent_businesses->have_posts() ) :
+                                while ( $recent_businesses->have_posts() ) : $recent_businesses->the_post();
+                                    $post_status = get_post_status();
+                                    if ( $post_status === 'publish' ) {
+                                        $status_label  = 'Publicado';
+                                        $badge_bg      = '#dcfce7';
+                                        $badge_color   = '#166534';
+                                    } elseif ( $post_status === 'pending' ) {
+                                        $status_label  = 'Pendiente';
+                                        $badge_bg      = '#fef08a';
+                                        $badge_color   = '#854d0e';
+                                    } else {
+                                        $status_label  = 'Borrador';
+                                        $badge_bg      = '#f1f5f9';
+                                        $badge_color   = '#64748b';
+                                    }
+                                    $edit_link = get_edit_post_link( get_the_ID() );
+                                    ?>
+                                    <tr>
+                                        <td><strong><?php echo esc_html( get_the_title() ); ?></strong></td>
+                                        <td>
+                                            <span style="background:<?php echo esc_attr( $badge_bg ); ?>; color:<?php echo esc_attr( $badge_color ); ?>; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;">
+                                                <?php echo esc_html( $status_label ); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569;">Editar (Nativo)</a>
+                                            <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn sdc-btn-primary" style="text-decoration:none; padding:4px 12px; font-size:12px; margin-left:8px;">Ver Pág.</a>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; wp_reset_postdata(); ?>
                             <?php else : ?>
                                 <tr>
-                                    <td colspan="3" style="text-align:center; padding: 24px; color: var(--sdc-text-muted);">No hay negocios pendientes de aprobación.</td>
+                                    <td colspan="3" style="text-align:center; padding: 24px; color: var(--sdc-text-muted);">No hay negocios registrados aún.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
