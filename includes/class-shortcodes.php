@@ -117,6 +117,12 @@ class Shortcodes {
             <!-- Contenedor Dinámico para Carga Asíncrona (AJAX) -->
             <!-- Usamos data-region dinámico basado en PHP para heredar el contexto -->
             <?php if ( 'yes' === $atts['show_results'] || 'true' === $atts['show_results'] || true === $atts['show_results'] || '1' === $atts['show_results'] ) : ?>
+                <style>
+                    /* Forzar Fullwidth en Divi para resultados de búsqueda y archivos del directorio */
+                    #main-content .container::before { display: none !important; }
+                    #sidebar { display: none !important; }
+                    #left-area { width: 100% !important; padding-right: 0 !important; border-right: none !important; float: none !important; }
+                </style>
                 <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category=""></div>
             <?php endif; ?>
         </div>
@@ -469,6 +475,12 @@ class Shortcodes {
         ob_start();
         $card_counter = 0;
         ?>
+        <style>
+            /* Forzar Fullwidth en Divi para resultados de búsqueda y archivos del directorio */
+            #main-content .container::before { display: none !important; }
+            #sidebar { display: none !important; }
+            #left-area { width: 100% !important; padding-right: 0 !important; border-right: none !important; float: none !important; }
+        </style>
         <div class="sdc-grid-archive">
             <?php if ( have_posts() ) : ?>
                 <?php while ( have_posts() ) : the_post();
@@ -1330,11 +1342,14 @@ class Shortcodes {
             <div class="bd-hours-list" style="display:flex;flex-direction:column;gap:8px;">
                 <?php
                 $dias_es = array('monday'=>'Lunes', 'tuesday'=>'Martes', 'wednesday'=>'Miércoles', 'thursday'=>'Jueves', 'friday'=>'Viernes', 'saturday'=>'Sábado', 'sunday'=>'Domingo');
+                $dias_es_lower = array('monday'=>'lunes', 'tuesday'=>'martes', 'wednesday'=>'miercoles', 'thursday'=>'jueves', 'friday'=>'viernes', 'saturday'=>'sabado', 'sunday'=>'domingo');
                 foreach ( $dias_es as $key => $label ) {
                     $day_data = null;
                     if ( is_array( $hours ) ) {
+                        $lower_key = $dias_es_lower[$key];
                         if ( isset( $hours[$key] ) ) $day_data = $hours[$key];
                         elseif ( isset( $hours[$label] ) ) $day_data = $hours[$label];
+                        elseif ( isset( $hours[$lower_key] ) ) $day_data = $hours[$lower_key];
                     }
                     if ( ! empty( $day_data ) ) {
                         if ( is_array( $day_data ) ) $val = ! empty( $day_data['closed'] ) ? 'Cerrado' : esc_html( ( $day_data['open'] ?? '' ) . ' - ' . ( $day_data['close'] ?? '' ) );

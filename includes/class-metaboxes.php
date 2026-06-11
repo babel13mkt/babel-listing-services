@@ -2505,7 +2505,92 @@ class Metaboxes {
     /**
      * Renderiza el Editor de Negocios dentro de la SPA (Soy de Chile).
      */
-    public static function render_spa_editor() {
+    public static function render_spa_editor( $post_id = 0 ) {
+        $post = null;
+        $title = '';
+        $desc = '';
+        $logo_id = '';
+        $logo_url = '';
+        $gallery = '';
+        $whatsapp = '';
+        $phone = '';
+        $email = '';
+        $website = '';
+        $instagram = '';
+        $facebook = '';
+        $tiktok = '';
+        $linkedin = '';
+        $rut = '';
+        $razon_social = '';
+        $giro = '';
+        $rep_legal = '';
+        $address = '';
+        $lat = '';
+        $lng = '';
+        $wifi = '';
+        $parking = '';
+        $pet_friendly = '';
+        $delivery = '';
+        $hours_meta = array();
+        $assigned_cat_ids = array();
+        $is_edit = false;
+
+        if ( $post_id > 0 ) {
+            $is_edit = true;
+            $post = get_post( $post_id );
+            if ( $post ) {
+                $title = $post->post_title;
+                $desc = $post->post_content;
+
+                // Contacto
+                $whatsapp = get_post_meta( $post->ID, '_babel_whatsapp', true ) ?: get_post_meta( $post->ID, '_bd_whatsapp', true );
+                $phone = get_post_meta( $post->ID, '_babel_phone', true ) ?: get_post_meta( $post->ID, '_bd_telefono', true );
+                $email = get_post_meta( $post->ID, '_babel_email', true ) ?: get_post_meta( $post->ID, '_bd_email', true );
+                $website = get_post_meta( $post->ID, '_babel_website', true ) ?: get_post_meta( $post->ID, '_bd_sitio_web', true );
+                $instagram = get_post_meta( $post->ID, '_babel_instagram', true );
+                $facebook = get_post_meta( $post->ID, '_babel_facebook', true );
+                $tiktok = get_post_meta( $post->ID, '_babel_tiktok', true );
+                $linkedin = get_post_meta( $post->ID, '_babel_linkedin', true );
+
+                // Detalles Legales
+                $rut = get_post_meta( $post->ID, '_babel_rut', true ) ?: get_post_meta( $post->ID, '_bd_rut', true );
+                $razon_social = get_post_meta( $post->ID, '_babel_razon_social', true ) ?: get_post_meta( $post->ID, '_bd_razon_social', true );
+                $giro = get_post_meta( $post->ID, '_babel_giro', true ) ?: get_post_meta( $post->ID, '_bd_giro', true );
+                $rep_legal = get_post_meta( $post->ID, '_babel_rep_legal', true ) ?: get_post_meta( $post->ID, '_bd_rep_legal', true );
+
+                // Ubicación
+                $address = get_post_meta( $post->ID, '_babel_address', true ) ?: get_post_meta( $post->ID, '_bd_direccion', true );
+                $lat = get_post_meta( $post->ID, '_babel_lat', true ) ?: get_post_meta( $post->ID, '_bd_latitud', true );
+                $lng = get_post_meta( $post->ID, '_babel_lng', true ) ?: get_post_meta( $post->ID, '_bd_longitud', true );
+
+                // Amenities
+                $wifi = get_post_meta( $post->ID, '_babel_wifi', true ) ?: get_post_meta( $post->ID, '_bd_wifi', true );
+                $parking = get_post_meta( $post->ID, '_babel_parking', true ) ?: get_post_meta( $post->ID, '_bd_estacionamiento', true );
+                $pet_friendly = get_post_meta( $post->ID, '_babel_pet_friendly', true );
+                $delivery = get_post_meta( $post->ID, '_babel_delivery', true );
+
+                // Horarios
+                $hours_meta = get_post_meta( $post->ID, '_babel_hours', true ) ?: get_post_meta( $post->ID, '_bd_horarios', true );
+
+                // Galería
+                $gallery = get_post_meta( $post->ID, '_babel_gallery', true ) ?: get_post_meta( $post->ID, '_bd_galeria', true );
+                if ( is_array( $gallery ) ) {
+                    $gallery = implode( ',', $gallery );
+                }
+
+                // Logo
+                $logo_id = get_post_thumbnail_id( $post->ID ) ?: get_post_meta( $post->ID, '_bd_logo_id', true );
+                if ( $logo_id ) {
+                    $logo_url = wp_get_attachment_image_url( $logo_id, 'thumbnail' );
+                }
+
+                // Categorías
+                $assigned_cat_ids = wp_get_object_terms( $post->ID, 'babel_category', array( 'fields' => 'ids' ) );
+                if ( is_wp_error( $assigned_cat_ids ) ) {
+                    $assigned_cat_ids = array();
+                }
+            }
+        }
         ?>
         <style>
             .sdc-saas-container {
@@ -2575,6 +2660,9 @@ class Metaboxes {
             <!-- Formularios en Layout Bento -->
             <div class="sdc-editor-main" style="width: 100%;">
                 <form id="sdc-business-form">
+                    <?php if ( $is_edit && $post ) : ?>
+                        <input type="hidden" name="post_id" id="sdc_post_id" value="<?php echo esc_attr( $post->ID ); ?>">
+                    <?php endif; ?>
                     
                     <div class="sdc-bento-grid">
                     
@@ -2584,12 +2672,12 @@ class Metaboxes {
                         
                         <div class="sdc-form-group">
                             <label class="sdc-label">Nombre del Negocio</label>
-                            <input type="text" id="sdc_biz_name" name="biz_name" class="sdc-input" placeholder="Ej. Restaurante El Olivo">
+                            <input type="text" id="sdc_biz_name" name="biz_name" class="sdc-input" placeholder="Ej. Restaurante El Olivo" value="<?php echo esc_attr( $title ); ?>">
                         </div>
                         
                         <div class="sdc-form-group">
                             <label class="sdc-label">Descripción</label>
-                            <textarea id="sdc_biz_desc" name="biz_desc" class="sdc-input" rows="5" placeholder="Describe el negocio..."></textarea>
+                            <textarea id="sdc_biz_desc" name="biz_desc" class="sdc-input" rows="5" placeholder="Describe el negocio..."><?php echo esc_textarea( $desc ); ?></textarea>
                         </div>
 
                         <?php
@@ -2603,7 +2691,7 @@ class Metaboxes {
                             <select id="sdc_biz_categories" name="biz_categories[]" class="sdc-input sdc-select2" multiple="multiple" style="width: 100%;">
                                 <?php if ( ! is_wp_error( $categories ) && ! empty( $categories ) ) : ?>
                                     <?php foreach ( $categories as $category ) : ?>
-                                        <option value="<?php echo esc_attr( $category->term_id ); ?>"><?php echo esc_html( $category->name ); ?></option>
+                                        <option value="<?php echo esc_attr( $category->term_id ); ?>" <?php selected( in_array( $category->term_id, $assigned_cat_ids ) ); ?>><?php echo esc_html( $category->name ); ?></option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
@@ -2613,20 +2701,22 @@ class Metaboxes {
                         <div class="sdc-grid-2" style="display: grid; gap: 16px; grid-template-columns: 1fr 1fr;">
                             <div class="sdc-form-group" style="height: 100%;">
                                 <label class="sdc-label">Logo del Negocio</label>
-                                <div id="sdc_upload_logo_btn" style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; height: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                                <div id="sdc_upload_logo_btn" style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; height: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; <?php if($logo_url) echo 'background-image: url('.esc_url($logo_url).'); background-size: contain; background-repeat: no-repeat; background-position: center;'; ?>">
+                                    <?php if(!$logo_url): ?>
                                     <span class="dashicons dashicons-upload" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
                                     <p style="margin-top: 12px; font-weight: 500; margin-bottom: 0;">Haz clic para subir el logotipo</p>
+                                    <?php endif; ?>
                                 </div>
-                                <input type="hidden" name="biz_logo_id" id="sdc_biz_logo_id">
+                                <input type="hidden" name="biz_logo_id" id="sdc_biz_logo_id" value="<?php echo esc_attr($logo_id); ?>">
                             </div>
 
                             <div class="sdc-form-group" style="height: 100%;">
                                 <label class="sdc-label">Galería de Fotos</label>
                                 <div id="sdc_upload_gallery_btn" style="border: 2px dashed var(--sdc-border); border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; height: calc(100% - 24px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                                     <span class="dashicons dashicons-images-alt2" style="font-size: 32px; width: 32px; height: 32px; color: var(--sdc-blue);"></span>
-                                    <p style="margin-top: 12px; font-weight: 500; margin-bottom: 0;">Haz clic para añadir fotos a la galería</p>
+                                    <p style="margin-top: 12px; font-weight: 500; margin-bottom: 0;"><?php echo $gallery ? 'Cambiar Galería (' . count(explode(',',$gallery)) . ' fotos)' : 'Haz clic para añadir fotos a la galería'; ?></p>
                                 </div>
-                                <input type="hidden" name="biz_gallery" id="sdc_biz_gallery">
+                                <input type="hidden" name="biz_gallery" id="sdc_biz_gallery" value="<?php echo esc_attr($gallery); ?>">
                             </div>
                         </div>
 
@@ -2639,35 +2729,35 @@ class Metaboxes {
                         <div class="sdc-grid-4">
                             <div class="sdc-form-group">
                                 <label class="sdc-label">WhatsApp</label>
-                                <input type="text" name="biz_whatsapp" class="sdc-input" placeholder="+56 9...">
+                                <input type="text" name="biz_whatsapp" class="sdc-input" placeholder="+56 9..." value="<?php echo esc_attr($whatsapp); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Teléfono Fijo</label>
-                                <input type="text" name="biz_phone" class="sdc-input" placeholder="(2) 2...">
+                                <input type="text" name="biz_phone" class="sdc-input" placeholder="(2) 2..." value="<?php echo esc_attr($phone); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Correo Electrónico</label>
-                                <input type="email" name="biz_email" class="sdc-input" placeholder="contacto@...">
+                                <input type="email" name="biz_email" class="sdc-input" placeholder="contacto@..." value="<?php echo esc_attr($email); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Sitio Web</label>
-                                <input type="url" name="biz_website" class="sdc-input" placeholder="https://...">
+                                <input type="url" name="biz_website" class="sdc-input" placeholder="https://..." value="<?php echo esc_attr($website); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Instagram</label>
-                                <input type="url" name="biz_instagram" class="sdc-input" placeholder="https://instagram.com/...">
+                                <input type="text" name="biz_instagram" class="sdc-input" placeholder="ej: usuario o @usuario" value="<?php echo esc_attr($instagram); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Facebook</label>
-                                <input type="url" name="biz_facebook" class="sdc-input" placeholder="https://facebook.com/...">
+                                <input type="text" name="biz_facebook" class="sdc-input" placeholder="ej: usuario" value="<?php echo esc_attr($facebook); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">TikTok</label>
-                                <input type="url" name="biz_tiktok" class="sdc-input" placeholder="https://tiktok.com/@...">
+                                <input type="text" name="biz_tiktok" class="sdc-input" placeholder="ej: usuario o @usuario" value="<?php echo esc_attr($tiktok); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">LinkedIn</label>
-                                <input type="url" name="biz_linkedin" class="sdc-input" placeholder="https://linkedin.com/company/...">
+                                <input type="text" name="biz_linkedin" class="sdc-input" placeholder="ej: usuario o mi-empresa" value="<?php echo esc_attr($linkedin); ?>">
                             </div>
                         </div>
 
@@ -2675,19 +2765,19 @@ class Metaboxes {
                         <div class="sdc-grid-4">
                             <div class="sdc-form-group">
                                 <label class="sdc-label">RUT Empresa</label>
-                                <input type="text" name="biz_rut" class="sdc-input" placeholder="76.123.456-7">
+                                <input type="text" name="biz_rut" class="sdc-input" placeholder="76.123.456-7" value="<?php echo esc_attr($rut); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Razón Social</label>
-                                <input type="text" name="biz_razon_social" class="sdc-input" placeholder="Comercial SPA">
+                                <input type="text" name="biz_razon_social" class="sdc-input" placeholder="Comercial SPA" value="<?php echo esc_attr($razon_social); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Giro Comercial</label>
-                                <input type="text" name="biz_giro" class="sdc-input" placeholder="Restaurante...">
+                                <input type="text" name="biz_giro" class="sdc-input" placeholder="Restaurante..." value="<?php echo esc_attr($giro); ?>">
                             </div>
                             <div class="sdc-form-group">
                                 <label class="sdc-label">Representante Legal</label>
-                                <input type="text" name="biz_rep_legal" class="sdc-input" placeholder="Nombre completo">
+                                <input type="text" name="biz_rep_legal" class="sdc-input" placeholder="Nombre completo" value="<?php echo esc_attr($rep_legal); ?>">
                             </div>
                         </div>
                     </div>
@@ -2698,15 +2788,35 @@ class Metaboxes {
                         
                         <div class="sdc-form-group">
                             <label class="sdc-label">Dirección Completa</label>
-                            <input type="text" id="sdc_biz_address" name="biz_address" class="sdc-input" placeholder="Ej. Av. Providencia 1234, Santiago">
-                            <p class="sdc-text-muted" style="font-size:12px; margin-top:4px;">El mapa se actualizará automáticamente al terminar de escribir.</p>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="sdc_biz_address" name="biz_address" class="sdc-input" placeholder="Ej. Av. Providencia 1234, Santiago" value="<?php echo esc_attr($address); ?>" style="flex-grow: 1;">
+                                <button type="button" id="sdc_btn_geocode" class="sdc-btn sdc-btn-primary" style="white-space: nowrap; padding: 8px 16px;">
+                                    <span class="dashicons dashicons-location-alt" style="margin-top:2px;"></span> Ubicar
+                                </button>
+                            </div>
+                            <p class="sdc-text-muted" style="font-size:12px; margin-top:4px;">Presiona "Ubicar" para buscar las coordenadas en el mapa (OpenStreetMap).</p>
                         </div>
                         
-                        <input type="hidden" id="sdc_biz_lat" name="biz_lat">
-                        <input type="hidden" id="sdc_biz_lng" name="biz_lng">
+                        <div class="sdc-grid-2" style="display: grid; gap: 16px; grid-template-columns: 1fr 1fr;">
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Latitud</label>
+                                <input type="text" id="sdc_biz_lat" name="biz_lat" class="sdc-input" placeholder="-33.4..." value="<?php echo esc_attr($lat); ?>" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                            </div>
+                            <div class="sdc-form-group">
+                                <label class="sdc-label">Longitud</label>
+                                <input type="text" id="sdc_biz_lng" name="biz_lng" class="sdc-input" placeholder="-70.6..." value="<?php echo esc_attr($lng); ?>" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                            </div>
+                        </div>
 
                         <div style="margin-top:16px; border:1px solid var(--sdc-border); border-radius:8px; overflow:hidden;">
-                            <iframe id="sdc_map_preview" width="100%" height="300" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=-70.6693,-33.4489,-70.6393,-33.4289&layer=mapnik"></iframe>
+                            <?php 
+                            $map_src = "about:blank";
+                            if($lat && $lng) {
+                                $bbox = (floatval($lng)-0.01) . "," . (floatval($lat)-0.01) . "," . (floatval($lng)+0.01) . "," . (floatval($lat)+0.01);
+                                $map_src = "https://www.openstreetmap.org/export/embed.html?bbox=" . $bbox . "&layer=mapnik&marker=" . $lat . "," . $lng;
+                            }
+                            ?>
+                            <iframe id="sdc_map_preview" width="100%" height="300" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="<?php echo esc_url($map_src); ?>"></iframe>
                         </div>
                     </div>
 
@@ -2722,7 +2832,7 @@ class Metaboxes {
                                     <div class="sdc-text-muted" style="font-size:12px;">Conexión gratuita para clientes</div>
                                 </div>
                                 <label class="sdc-toggle">
-                                    <input type="checkbox" name="biz_wifi" value="1">
+                                    <input type="checkbox" name="biz_wifi" value="1" <?php checked($wifi, '1'); ?>>
                                     <span class="sdc-toggle-slider"></span>
                                 </label>
                             </div>
@@ -2734,7 +2844,7 @@ class Metaboxes {
                                     <div class="sdc-text-muted" style="font-size:12px;">Estacionamiento privado o cercano</div>
                                 </div>
                                 <label class="sdc-toggle">
-                                    <input type="checkbox" name="biz_parking" value="1">
+                                    <input type="checkbox" name="biz_parking" value="1" <?php checked($parking, '1'); ?>>
                                     <span class="sdc-toggle-slider"></span>
                                 </label>
                             </div>
@@ -2746,7 +2856,7 @@ class Metaboxes {
                                     <div class="sdc-text-muted" style="font-size:12px;">Mascotas bienvenidas</div>
                                 </div>
                                 <label class="sdc-toggle">
-                                    <input type="checkbox" name="biz_pet_friendly" value="1">
+                                    <input type="checkbox" name="biz_pet_friendly" value="1" <?php checked($pet_friendly, '1'); ?>>
                                     <span class="sdc-toggle-slider"></span>
                                 </label>
                             </div>
@@ -2758,7 +2868,7 @@ class Metaboxes {
                                     <div class="sdc-text-muted" style="font-size:12px;">Entrega a domicilio</div>
                                 </div>
                                 <label class="sdc-toggle">
-                                    <input type="checkbox" name="biz_delivery" value="1">
+                                    <input type="checkbox" name="biz_delivery" value="1" <?php checked($delivery, '1'); ?>>
                                     <span class="sdc-toggle-slider"></span>
                                 </label>
                             </div>
@@ -2790,13 +2900,13 @@ class Metaboxes {
         </div>
         </div>
         <?php
-        self::render_spa_editor_scripts();
+        self::render_spa_editor_scripts( $hours_meta );
     }
 
     /**
      * Renderiza los scripts específicos para el Editor de la SPA
      */
-    private static function render_spa_editor_scripts() {
+    private static function render_spa_editor_scripts( $hours_meta = array() ) {
         ?>
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -2901,24 +3011,51 @@ class Metaboxes {
             let hoursBlockIndex = 0;
             const daysOfWeek = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
             const daysLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            
+            const existingHours = <?php echo wp_json_encode( $hours_meta ?: new \stdClass() ); ?>;
 
-            function addHoursBlock() {
+            function addHoursBlock(prefillDays = [], openTime = '09:00', closeTime = '18:00') {
                 let html = '<div class="sdc-hours-block" style="border:1px solid #cbd5e1; border-radius:8px; padding:16px; position:relative;">';
                 html += '<button type="button" class="sdc-remove-hours-btn" style="position:absolute; top:8px; right:8px; background:none; border:none; color:#ef4444; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>';
                 html += '<div style="margin-bottom:12px;"><strong>Días:</strong><br>';
                 
                 daysOfWeek.forEach((day, index) => {
-                    html += '<label class="sdc-day-pill"><input type="checkbox" name="biz_hours_dynamic['+hoursBlockIndex+'][days][]" value="'+day+'"> '+daysLabels[index]+'</label>';
+                    let checked = prefillDays.includes(day) ? 'checked' : '';
+                    let activeClass = checked ? 'active' : '';
+                    html += '<label class="sdc-day-pill '+activeClass+'"><input type="checkbox" name="biz_hours_dynamic['+hoursBlockIndex+'][days][]" value="'+day+'" '+checked+'> '+daysLabels[index]+'</label>';
                 });
                 
                 html += '</div>';
                 html += '<div style="display:flex; align-items:center; gap:8px;">';
-                html += '<span>Abre: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][open]" class="sdc-input" style="width:120px;" value="09:00">';
-                html += '<span>Cierra: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][close]" class="sdc-input" style="width:120px;" value="18:00">';
+                html += '<span>Abre: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][open]" class="sdc-input" style="width:120px;" value="'+openTime+'">';
+                html += '<span>Cierra: </span><input type="time" name="biz_hours_dynamic['+hoursBlockIndex+'][close]" class="sdc-input" style="width:120px;" value="'+closeTime+'">';
                 html += '</div></div>';
                 
                 $('#sdc-dynamic-hours-container').append(html);
                 hoursBlockIndex++;
+            }
+
+            // Group existing hours by open/close times to rebuild blocks
+            let hoursGrouped = {};
+            if (Object.keys(existingHours).length > 0) {
+                for (const [day, data] of Object.entries(existingHours)) {
+                    if (data.closed === '1' || data.closed === true || data.closed === 1 || !data.open) {
+                        continue;
+                    }
+                    let timeKey = data.open + '-' + data.close;
+                    if (!hoursGrouped[timeKey]) {
+                        hoursGrouped[timeKey] = {
+                            open: data.open,
+                            close: data.close,
+                            days: []
+                        };
+                    }
+                    hoursGrouped[timeKey].days.push(day);
+                }
+                
+                for (const timeKey in hoursGrouped) {
+                    addHoursBlock(hoursGrouped[timeKey].days, hoursGrouped[timeKey].open, hoursGrouped[timeKey].close);
+                }
             }
 
             // Añadir un bloque por defecto si está vacío

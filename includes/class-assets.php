@@ -120,6 +120,12 @@ class Assets {
             BD_VERSION,
             true
         );
+
+        // Pass ajaxurl and nonce to the admin JS
+        wp_localize_script( 'babel-admin-js', 'sdc_admin_vars', array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'sdc_quick_action_nonce' ),
+        ) );
     }
 
     /**

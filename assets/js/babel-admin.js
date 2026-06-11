@@ -2,8 +2,12 @@
  * Babel Directory - Soy de Chile Admin SPA Scripts
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    
+let isBabelAdminInitialized = false;
+function initBabelAdmin() {
+    if (isBabelAdminInitialized) return;
+    isBabelAdminInitialized = true;
+    console.log("🚀 Babel Admin JS Initialized");
+    try {
     // 1. Main SPA Tabs Logic
     const mainTabBtns = document.querySelectorAll('.sdc-tab-btn');
     const mainTabContents = document.querySelectorAll('.sdc-tab-content');
@@ -42,39 +46,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 3. OpenStreetMap Auto-Geocoding
+    // 3. OpenStreetMap Geocoding
     const addressInput = document.getElementById('sdc_biz_address');
     const latInput = document.getElementById('sdc_biz_lat');
     const lngInput = document.getElementById('sdc_biz_lng');
     const mapIframe = document.getElementById('sdc_map_preview');
+    const geocodeBtn = document.getElementById('sdc_btn_geocode');
 
-    if (addressInput && latInput && lngInput && mapIframe) {
-        addressInput.addEventListener('blur', function() {
-            const address = this.value;
-            if (!address) return;
+    function performGeocode() {
+        if (!addressInput || !latInput || !lngInput || !mapIframe) return;
+        
+        let address = addressInput.value.trim();
+        if (!address) {
+            showToast('Por favor, ingresa una dirección primero.', 'error');
+            return;
+        }
 
-            // Fetch coordinates from Nominatim (OpenStreetMap)
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const lat = data[0].lat;
-                        const lon = data[0].lon;
-                        
-                        // Update hidden inputs
-                        latInput.value = lat;
-                        lngInput.value = lon;
+        // Add 'Chile' to help OpenStreetMap if it's not present
+        if (address.toLowerCase().indexOf('chile') === -1) {
+            address += ', Chile';
+        }
 
-                        // Update Map Iframe (using simple OSM embed)
-                        const bbox = `${parseFloat(lon)-0.01},${parseFloat(lat)-0.01},${parseFloat(lon)+0.01},${parseFloat(lat)+0.01}`;
-                        mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
-                        
-                        showToast('Ubicación actualizada en el mapa', 'success');
-                    }
-                })
-                .catch(error => console.error('Error geocoding address:', error));
+        if (geocodeBtn) {
+            geocodeBtn.innerHTML = '<span class="dashicons dashicons-update"></span>...';
+            geocodeBtn.disabled = true;
+        }
+
+        // Fetch coordinates from Nominatim (OpenStreetMap)
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const lat = data[0].lat;
+                    const lon = data[0].lon;
+                    
+                    // Update hidden inputs
+                    latInput.value = lat;
+                    lngInput.value = lon;
+
+                    // Update Map Iframe (using simple OSM embed)
+                    const bbox = `${parseFloat(lon)-0.01},${parseFloat(lat)-0.01},${parseFloat(lon)+0.01},${parseFloat(lat)+0.01}`;
+                    mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+                    
+                    showToast('Ubicación encontrada y actualizada', 'success');
+                } else {
+                    showToast('No se encontró la dirección exacta. Intenta simplificarla.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error geocoding address:', error);
+                showToast('Hubo un error al conectar con el mapa.', 'error');
+            })
+            .finally(() => {
+                if (geocodeBtn) {
+                    geocodeBtn.innerHTML = '<span class="dashicons dashicons-location-alt" style="margin-top:2px;"></span> Ubicar';
+                    geocodeBtn.disabled = false;
+                }
+            });
+    }
+
+    if (geocodeBtn) {
+        geocodeBtn.addEventListener('click', performGeocode);
+    }
+    
+    if (addressInput) {
+        addressInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
+                performGeocode();
+            }
         });
     }
 
@@ -204,6 +246,112 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 4.6 Quick Actions (Suspend/Trash)
+    function executeQuickAction(action, postIds, btnElement, originalText) {
+        // Skip confirm() - it can be blocked in WP admin contexts. Use double-click pattern.
+        if (btnElement) {
+            btnElement.innerHTML = '...';
+            btnElement.disabled = true;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'sdc_quick_action');
+        formData.append('q_action', action);
+        formData.append('nonce', (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.nonce : '');
+        
+        // Append multiple post_ids
+        if (Array.isArray(postIds)) {
+            postIds.forEach(id => formData.append('post_ids[]', id));
+        } else {
+            formData.append('post_ids[]', postIds);
+        }
+
+        const endpoint = (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '');
+        if (!endpoint) {
+            if (btnElement) { btnElement.disabled = false; btnElement.innerHTML = originalText; }
+            showToast('Error: no se encontró la URL de AJAX.', 'error');
+            return;
+        }
+
+        fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.data);
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast('Error: ' + (data.data || 'Respuesta inesperada del servidor'), 'error');
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.innerHTML = originalText;
+                }
+            }
+        })
+        .catch(err => {
+            showToast('Error de red: ' + err.message, 'error');
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Individual Action Buttons
+    const quickActionBtns = document.querySelectorAll('.sdc-quick-action-btn');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const action = this.getAttribute('data-action');
+            const postId = this.getAttribute('data-postid');
+            const originalText = action === 'trash' ? 'Borrar' : 'Suspender';
+            
+            const actionText = action === 'trash' ? 'borrar' : 'suspender';
+            if (!confirm(`¿Estás seguro de que deseas ${actionText} este negocio?`)) {
+                return;
+            }
+            
+            executeQuickAction(action, postId, this, originalText);
+        });
+    });
+
+    // Bulk Select All Checkbox
+    const selectAllCb = document.getElementById('sdc-bulk-select-all');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.sdc-bulk-select-item').forEach(cb => cb.checked = isChecked);
+        });
+    }
+
+    // Bulk Action Handlers
+    function handleBulkAction(action, btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const selected = Array.from(document.querySelectorAll('.sdc-bulk-select-item:checked')).map(cb => cb.value);
+            if (selected.length === 0) {
+                alert('Selecciona al menos un negocio.');
+                return;
+            }
+            
+            const actionText = action === 'trash' ? 'borrar' : 'suspender';
+            if (!confirm(`¿Estás seguro de que deseas ${actionText} los negocios seleccionados?`)) {
+                return;
+            }
+
+            const originalText = action === 'trash' ? 'Borrar Seleccionados' : 'Suspender Seleccionados';
+            executeQuickAction(action, selected, this, originalText);
+        });
+    }
+    
+    handleBulkAction('suspend', 'sdc-bulk-suspend-btn');
+    handleBulkAction('trash', 'sdc-bulk-trash-btn');
+
     // 5. Toast Notification System
     function showToast(message, type = 'success') {
         // Remove existing toast if any
@@ -235,4 +383,17 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
-});
+    
+    } catch (e) {
+        console.error("❌ Babel Admin JS Error:", e);
+        alert("⚠️ Babel Directory Error: No se pudo cargar correctamente la interfaz de administración (" + e.message + "). Por favor, contacta a soporte o revisa la consola para más detalles.");
+    }
+}
+
+// Initialize when DOM is ready (or immediately if already ready)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBabelAdmin);
+} else {
+    initBabelAdmin();
+}
+window.addEventListener('load', initBabelAdmin); // Fallback

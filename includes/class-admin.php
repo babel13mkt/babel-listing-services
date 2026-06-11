@@ -25,6 +25,7 @@ class Admin {
         // AJAX Endpoints SPA
         add_action( 'wp_ajax_sdc_save_settings', array( $this, 'ajax_save_settings' ) );
         add_action( 'wp_ajax_sdc_save_business', array( $this, 'ajax_save_business' ) );
+        add_action( 'wp_ajax_sdc_quick_action', array( $this, 'ajax_quick_action' ) );
     }
 
     /**
@@ -146,8 +147,13 @@ class Admin {
                 $val = wp_unslash( $_POST[ $post_key ] );
                 
                 // Sanitización básica
-                if ( in_array( $post_key, array('biz_website', 'biz_instagram', 'biz_facebook', 'biz_tiktok', 'biz_linkedin') ) ) {
+                if ( $post_key === 'biz_website' ) {
                     $val = esc_url_raw( $val );
+                } elseif ( in_array( $post_key, array('biz_instagram', 'biz_facebook', 'biz_tiktok', 'biz_linkedin') ) ) {
+                    $val = sanitize_text_field( $val );
+                    // Remove '@' or full url if user pasted it
+                    $val = str_replace( array('@', 'https://instagram.com/', 'https://www.instagram.com/', 'https://facebook.com/', 'https://www.facebook.com/', 'https://tiktok.com/', 'https://www.tiktok.com/@', 'https://www.tiktok.com/', 'https://linkedin.com/in/', 'https://www.linkedin.com/in/'), '', $val );
+                    $val = trim( $val, '/' );
                 } elseif ( $post_key === 'biz_email' ) {
                     $val = sanitize_email( $val );
                 } else {
@@ -211,6 +217,50 @@ class Admin {
         wp_send_json_success( array( 'post_id' => $post_id ) );
     }
 
+    /**
+     * Acciones rápidas (Suspender, Borrar) para el dashboard
+     */
+    public function ajax_quick_action() {
+        if ( ! check_ajax_referer( 'sdc_quick_action_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Seguridad: nonce inválido.' );
+            return;
+        }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Permisos insuficientes.' );
+            return;
+        }
+        $q_action = isset( $_POST['q_action'] ) ? sanitize_text_field( $_POST['q_action'] ) : '';
+        $post_ids = isset( $_POST['post_ids'] ) ? $_POST['post_ids'] : '';
+
+        if ( ! $post_ids || ! $q_action ) {
+            wp_send_json_error( 'Faltan parámetros.' );
+        }
+
+        if ( ! is_array( $post_ids ) ) {
+            $post_ids = array( intval( $post_ids ) );
+        }
+
+        $count = 0;
+        foreach ( $post_ids as $pid ) {
+            $pid = intval( $pid );
+            if ( ! $pid ) continue;
+
+            if ( $q_action === 'trash' ) {
+                wp_trash_post( $pid );
+                $count++;
+            } elseif ( $q_action === 'suspend' ) {
+                wp_update_post( array( 'ID' => $pid, 'post_status' => 'draft' ) );
+                $count++;
+            }
+        }
+
+        if ( $count > 0 ) {
+            wp_send_json_success( "Acción aplicada a $count negocio(s)." );
+        }
+
+        wp_send_json_error( 'Acción desconocida o no se aplicó a ningún negocio.' );
+    }
+
 
     /**
      * Registra la página de administración única de la SPA.
@@ -242,6 +292,10 @@ class Admin {
         $posts_count = wp_count_posts( 'babel_business' );
         $total_published = isset( $posts_count->publish ) ? intval( $posts_count->publish ) : 0;
         $total_pending = isset( $posts_count->pending ) ? intval( $posts_count->pending ) : 0;
+
+        $edit_id = isset( $_GET['edit_id'] ) ? intval( $_GET['edit_id'] ) : 0;
+        $tab_dashboard_active = $edit_id === 0 ? 'active' : '';
+        $tab_editor_active = $edit_id > 0 ? 'active' : '';
         ?>
         <div id="babel-admin-app">
             
@@ -259,10 +313,10 @@ class Admin {
 
             <!-- Menú de Navegación por Pestañas -->
             <nav class="sdc-tabs-nav">
-                <button class="sdc-tab-btn active" data-target="sdc-tab-dashboard">
+                <button class="sdc-tab-btn <?php echo $tab_dashboard_active; ?>" data-target="sdc-tab-dashboard">
                     <span class="dashicons dashicons-dashboard"></span> Dashboard
                 </button>
-                <button class="sdc-tab-btn" data-target="sdc-tab-negocios">
+                <button class="sdc-tab-btn <?php echo $tab_editor_active; ?>" data-target="sdc-tab-negocios">
                     <span class="dashicons dashicons-store"></span> Editor de Negocios
                 </button>
                 <button class="sdc-tab-btn" data-target="sdc-tab-configuracion">
@@ -274,7 +328,7 @@ class Admin {
             </nav>
 
             <!-- 1. Contenido: Dashboard -->
-            <div id="sdc-tab-dashboard" class="sdc-tab-content active">
+            <div id="sdc-tab-dashboard" class="sdc-tab-content <?php echo $tab_dashboard_active; ?>">
                 <h2 style="margin-top:0;">Dashboard</h2>
                 
                 <div class="sdc-grid">
@@ -288,14 +342,23 @@ class Admin {
                     </div>
                 </div>
 
-                <h3>Últimos Negocios Registrados</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 24px;">
+                    <h3 style="margin:0;">Últimos Negocios Registrados</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="sdc-bulk-suspend-btn" class="sdc-btn" style="background:#f59e0b; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer;">Suspender Seleccionados</button>
+                        <button type="button" id="sdc-bulk-trash-btn" class="sdc-btn" style="background:#ef4444; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer;">Borrar Seleccionados</button>
+                    </div>
+                </div>
                 <div class="sdc-table-wrapper">
                     <table class="sdc-table">
                         <thead>
                             <tr>
                                 <th>Nombre del Negocio</th>
                                 <th>Estado</th>
-                                <th>Acciones Rápidas</th>
+                                <th>
+                                    <input type="checkbox" id="sdc-bulk-select-all" style="margin-right:8px;" title="Seleccionar todos">
+                                    Acciones Rápidas
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -324,7 +387,8 @@ class Admin {
                                         $badge_bg      = '#f1f5f9';
                                         $badge_color   = '#64748b';
                                     }
-                                    $edit_link = get_edit_post_link( get_the_ID() );
+                                    $edit_link = admin_url( 'admin.php?page=bd-panel&edit_id=' . get_the_ID() );
+                                    $native_link = get_edit_post_link( get_the_ID() );
                                     ?>
                                     <tr>
                                         <td><strong><?php echo esc_html( get_the_title() ); ?></strong></td>
@@ -333,9 +397,12 @@ class Admin {
                                                 <?php echo esc_html( $status_label ); ?>
                                             </span>
                                         </td>
-                                        <td>
-                                            <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569;">Editar (Nativo)</a>
-                                            <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn sdc-btn-primary" style="text-decoration:none; padding:4px 12px; font-size:12px; margin-left:8px;">Ver Pág.</a>
+                                        <td style="display: flex; align-items: center;">
+                                            <input type="checkbox" class="sdc-bulk-select-item" value="<?php echo get_the_ID(); ?>" style="margin-right:8px;">
+                                            <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#3b82f6; color:#ffffff;">Editar (SPA)</a>
+                                            <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="suspend" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#f59e0b; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Pausar negocio (Borrador)">Suspender</button>
+                                            <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="trash" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#ef4444; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Eliminar negocio">Borrar</button>
+                                            <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569; margin-left:8px;">Ver Pág.</a>
                                         </td>
                                     </tr>
                                 <?php endwhile; wp_reset_postdata(); ?>
@@ -350,13 +417,13 @@ class Admin {
             </div>
 
             <!-- 2. Contenido: Editor de Negocios (Contenedor para la inyección de Metaboxes) -->
-            <div id="sdc-tab-negocios" class="sdc-tab-content">
+            <div id="sdc-tab-negocios" class="sdc-tab-content <?php echo $tab_editor_active; ?>">
                 <h2 style="margin-top:0;">Editor Inmersivo de Negocios</h2>
                 <div class="sdc-card">
                     <?php 
                     // Aquí se invoca la nueva clase de Metaboxes refactorizada 
                     // para renderizar el formulario dentro de la SPA.
-                    \Babel\Directory\Metaboxes::render_spa_editor(); 
+                    \Babel\Directory\Metaboxes::render_spa_editor( $edit_id ); 
                     ?>
                 </div>
             </div>

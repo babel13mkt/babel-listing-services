@@ -12,9 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '8.1.2' );
+define( 'BD_VERSION', '8.1.4' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
-define( 'BD_URL', plugin_dir_url( __FILE__ ) );
+// FIX: Forzar HTTPS en la URL del plugin.
+// Detrás de Cloudflare el servidor no ve HTTPS, plugin_dir_url() genera http://
+// y los navegadores bloquean silenciosamente los assets como "mixed content".
+define( 'BD_URL', str_replace( 'http://', 'https://', plugin_dir_url( __FILE__ ) ) );
 
 /**
  * Clase principal de inicialización: Babel_Directory_Core (Pattern Singleton).
