@@ -83,19 +83,14 @@ class Shortcodes {
                 <div class="babel-filter-bar-inner" data-babel-filter="true">
                     <!-- 1. Búsqueda libre -->
                     <div class="babel-filter-keyword">
-                        <span class="babel-input-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </span>
                         <input type="text" id="babel-search-keyword" name="keyword" placeholder="ej: Sushi, región metropolitana" />
                     </div>
 
                     <!-- 2. Selector de Región eliminado a petición del usuario -->
 
                     <!-- 3. Radar GPS -->
-                    <div class="babel-filter-radar">
+                    <div class="babel-filter-radar" style="display: flex; align-items: center;">
+                        <span class="babel-radar-hint" style="font-size: 13px; color: #94a3b8; margin-right: 12px; font-weight: 500; white-space: nowrap; cursor: default;">Usar mi ubicación &rarr;</span>
                         <button type="button" id="babel-geo-btn" class="babel-radar-btn" title="Buscar cerca de mí (GPS)">
                             <svg class="radar-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -631,7 +626,7 @@ class Shortcodes {
             $term = get_term_by( 'slug', $atts['region'], 'babel_region' );
         }
 
-        if ( ! $term || \is_wp_error( $term ) || ! is_a( $term, 'WP_Term' ) || 'babel_region' !== $term->taxonomy ) {
+        if ( ! $term || \is_wp_error( $term ) || ! is_a( $term, 'WP_Term' ) || ! in_array( $term->taxonomy, array( 'babel_region', 'babel_category' ) ) ) {
             // Fallback para cuando no estamos en una página de taxonomía (ej. previsualización en página normal)
             $terms = get_terms( array(
                 'taxonomy'   => 'babel_region',
@@ -644,26 +639,33 @@ class Shortcodes {
         }
 
         if ( ! $term ) {
-            return '<p>' . esc_html__( 'Región no encontrada.', 'babel-directory' ) . '</p>';
+            return '<p>' . esc_html__( 'Taxonomía no encontrada.', 'babel-directory' ) . '</p>';
         }
 
         // Limpiar el nombre
-        $full_name = $term->name;
-        $clean_name = preg_replace('/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $full_name);
-        preg_match('/^([IVX]+)/i', $full_name, $matches);
-        $eyebrow = ! empty( $matches[1] ) ? sprintf( __( 'Región %s', 'babel-directory' ), $matches[1] ) : __( 'Región de Chile', 'babel-directory' );
+        if ( 'babel_region' === $term->taxonomy ) {
+            $full_name = $term->name;
+            $clean_name = preg_replace('/^[IVX]+\s*-\s*REG\s*-\s*/i', '', $full_name);
+            preg_match('/^([IVX]+)/i', $full_name, $matches);
+            $eyebrow = ! empty( $matches[1] ) ? sprintf( __( 'Región %s', 'babel-directory' ), $matches[1] ) : __( 'Región de Chile', 'babel-directory' );
+        } else {
+            $clean_name = $term->name;
+            $eyebrow = __( 'Categoría Comercial', 'babel-directory' );
+        }
 
         // Obtener la imagen
         $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
-        $image_url = '';
+        $bg_style = '';
         if ( $image_id ) {
             $image_url = wp_get_attachment_image_url( $image_id, 'large' );
+            $bg_style = "background-image: url('" . esc_url( $image_url ) . "');";
         } else {
-            $image_url = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"><rect width="1200" height="400" fill="%23023047"/></svg>';
+            // Degradee de portada por defecto
+            $bg_style = "background-image: linear-gradient(180deg, #000f54 42%, #0c71c3 100%);";
         }
 
         // Conteo de negocios
-        $child_ids = get_term_children( $term->term_id, 'babel_region' );
+        $child_ids = get_term_children( $term->term_id, $term->taxonomy );
         $term_ids = array( $term->term_id );
         if ( ! \is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
             $term_ids = array_merge( $term_ids, $child_ids );
@@ -676,7 +678,7 @@ class Shortcodes {
             'no_found_rows'  => false,
             'tax_query'      => array(
                 array(
-                    'taxonomy' => 'babel_region',
+                    'taxonomy' => $term->taxonomy,
                     'field'    => 'term_id',
                     'terms'    => $term_ids,
                     'operator' => 'IN',
@@ -695,8 +697,8 @@ class Shortcodes {
 
             <!-- Hero Section -->
             <div class="bd-region-hero">
-                <div class="bd-region-hero-bg" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
-                <div class="bd-region-hero-overlay"></div>
+                <div class="bd-region-hero-bg" style="<?php echo $bg_style; ?>"></div>
+                <div class="bd-region-hero-overlay" <?php echo empty($image_id) ? 'style="opacity: 0.1;"' : ''; ?>></div>
                 <div class="bd-region-hero-content">
                     <span class="bd-region-hero-eyebrow"><?php echo esc_html( $eyebrow ); ?></span>
                     <h1 class="bd-region-hero-title"><?php echo esc_html( $clean_name ); ?></h1>
@@ -716,6 +718,30 @@ class Shortcodes {
                 <?php echo do_shortcode( '[bd_filter_bar]' ); ?>
             </div>
 
+            <!-- Chips de Subcategorías (Solo para Categorías con hijos) -->
+            <?php
+            if ( 'babel_category' === $term->taxonomy ) {
+                $subcats = get_terms( array(
+                    'taxonomy'   => 'babel_category',
+                    'parent'     => $term->term_id,
+                    'hide_empty' => false,
+                ) );
+
+                if ( ! empty( $subcats ) && ! \is_wp_error( $subcats ) ) {
+                    echo '<div class="bd-taxonomy-chips">';
+                    foreach ( $subcats as $subcat ) {
+                        $subcat_link = get_term_link( $subcat );
+                        if ( ! \is_wp_error( $subcat_link ) ) {
+                            echo '<a href="' . esc_url( $subcat_link ) . '" class="bd-taxonomy-chip">';
+                            echo esc_html( $subcat->name );
+                            echo '</a>';
+                        }
+                    }
+                    echo '</div>';
+                }
+            }
+            ?>
+
             <!-- Results Header Section -->
             <div class="bd-region-results-header">
                 <h2 class="bd-region-results-title">
@@ -730,7 +756,11 @@ class Shortcodes {
 
             <!-- Results Wrap -->
             <div class="bd-region-results-wrap">
-                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $term->slug ); ?>" data-category="">
+                <?php
+                $data_region = ( 'babel_region' === $term->taxonomy ) ? $term->slug : '';
+                $data_category = ( 'babel_category' === $term->taxonomy ) ? $term->slug : '';
+                ?>
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $data_region ); ?>" data-category="<?php echo esc_attr( $data_category ); ?>">
                     <!-- Los resultados se cargan vía AJAX/REST al cargar la página -->
                 </div>
             </div>

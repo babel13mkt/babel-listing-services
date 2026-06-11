@@ -3426,6 +3426,10 @@ header.wp-block-template-part .wp-block-site-title a {
         top: 16px;
     }
 
+    .babel-radar-hint {
+        display: none !important;
+    }
+
     .babel-filter-bar-inner .babel-filter-submit {
         width: 100% !important;
     }
@@ -3470,4 +3474,38 @@ header.wp-block-template-part .wp-block-site-title a {
         height: -moz-fit-content;
         height: fit-content;
     }
+}
+
+/* Taxonomy Chips / Píldoras */
+.bd-taxonomy-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px auto 0;
+    max-width: 1200px;
+    padding: 0 20px;
+    justify-content: center;
+}
+.bd-taxonomy-chip {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(2, 48, 71, 0.05);
+    border: 1px solid rgba(2, 48, 71, 0.1);
+    color: #023047;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.bd-taxonomy-chip:hover {
+    background: #023047;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(2, 48, 71, 0.15);
+}
+.bd-taxonomy-chip .material-symbols-outlined {
+    font-size: 16px;
+    margin-right: 6px;
 }
