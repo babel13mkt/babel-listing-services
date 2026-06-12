@@ -100,6 +100,82 @@ document.addEventListener( 'DOMContentLoaded', function() {
             const emailInput = document.querySelector( '#babel-submission-form [name="email"]' );
             if ( emailInput && ! emailInput.value ) emailInput.value = babel_vars.current_user.email;
         }
+
+        // ── HIDRATACIÓN DE DATOS (EDICIÓN) ───────────────────────
+        if ( babel_vars.edit_data ) {
+            const d = babel_vars.edit_data;
+            const setVal = (name, val) => {
+                if (val) {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el) el.value = val;
+                }
+            };
+
+            setVal('business_name', d.business_name);
+            setVal('business_rut', d.business_rut);
+            setVal('business_category', d.business_category);
+            setVal('business_region', d.business_region);
+            setVal('description', d.description);
+            setVal('phone', d.phone);
+            setVal('whatsapp', d.whatsapp);
+            setVal('email', d.email);
+            setVal('website', d.website);
+            setVal('instagram', d.instagram);
+            setVal('address', d.address);
+            setVal('babel_lat', d.babel_lat);
+            setVal('babel_lng', d.babel_lng);
+
+            if (d.raw_meta) {
+                ['wifi', 'parking', 'delivery', 'accesibilidad', 'tarjetas', 'reservas'].forEach(attr => {
+                    const mk = `_babel_attr_${attr}`;
+                    if (d.raw_meta[mk] && d.raw_meta[mk][0] === '1') {
+                        const chk = document.querySelector(`[name="attr_${attr}"]`);
+                        if (chk) chk.checked = true;
+                    }
+                });
+
+                if (d.raw_meta['_babel_horarios'] && d.raw_meta['_babel_horarios'][0]) {
+                    try {
+                        const h = JSON.parse(d.raw_meta['_babel_horarios'][0]);
+                        Object.keys(h).forEach(day => {
+                            if (h[day].cerrado) {
+                                const c = document.querySelector(`[name="horario_cerrado_${day}"]`);
+                                if (c) { c.checked = true; setTimeout(() => c.dispatchEvent(new Event('change')), 100); }
+                            } else {
+                                setVal(`horario_abre_${day}`, h[day].abre);
+                                setVal(`horario_cierra_${day}`, h[day].cierra);
+                            }
+                        });
+                    } catch(e) {}
+                }
+            }
+
+            // Paywall: Bloquear campos si el plan es gratis
+            if (d.plan_type === 'gratis') {
+                const lockField = (name) => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el) {
+                        el.readOnly = true;
+                        el.classList.add('bg-gray-100', 'text-gray-400');
+                        el.parentElement.style.position = 'relative';
+                        el.parentElement.insertAdjacentHTML('beforeend', `<div class="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10 rounded-lg cursor-pointer" onclick="alert('Esta función es exclusiva de los planes Profesionales. Ve a tu Panel para mejorar tu plan.')" title="Mejora tu plan para editar este campo"><span class="material-symbols-outlined text-amber-500 bg-white border border-amber-200 rounded-full p-1.5 shadow-md">lock</span></div>`);
+                    }
+                };
+                lockField('whatsapp');
+                lockField('website');
+                
+                const gInput = document.getElementById('babel-gallery-input');
+                if (gInput) {
+                    gInput.disabled = true;
+                    const gParent = gInput.closest('label');
+                    if (gParent) {
+                        gParent.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                        gParent.parentElement.style.position = 'relative';
+                        gParent.parentElement.insertAdjacentHTML('beforeend', `<div class="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10 rounded-lg cursor-pointer" onclick="alert('La galería es exclusiva de planes de pago.')"><span class="material-symbols-outlined text-amber-500 bg-white border border-amber-200 rounded-full p-1.5 shadow-md">lock</span></div>`);
+                    }
+                }
+            }
+        }
     }
 
     // ── PREVIEW FOTO PRINCIPAL ──────────────────────────────

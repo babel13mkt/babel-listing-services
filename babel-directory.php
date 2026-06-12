@@ -92,6 +92,16 @@ class Babel_Directory_Core {
             new \Babel\Directory\Assets();
         }
 
+        // 6.5 Panel de Control Frontend (Client Portal)
+        if ( class_exists( 'Babel\Directory\Frontend_Dashboard' ) ) {
+            new \Babel\Directory\Frontend_Dashboard();
+        }
+
+        // 6.6 Integración con WooCommerce para Planes
+        if ( class_exists( 'Babel\Directory\WooCommerce_Integration' ) ) {
+            new \Babel\Directory\WooCommerce_Integration();
+        }
+
         // 7. Sistema de Gestión de Reseñas y Calificaciones
         if ( class_exists( 'Babel\Directory\Reviews' ) ) {
             new \Babel\Directory\Reviews();

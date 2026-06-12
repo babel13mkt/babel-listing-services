@@ -54,6 +54,7 @@ class Submission {
             'google_client_id'   => esc_js( $client_id ),
             'is_logged_in'       => is_user_logged_in() ? '1' : '0',
             'current_user'       => $this->get_current_user_data(),
+            'edit_data'          => $this->get_edit_data( get_current_user_id() )
         ) );
     }
 
@@ -63,9 +64,38 @@ class Submission {
         }
         $user = wp_get_current_user();
         return array(
+            'id'     => $user->ID,
             'name'   => $user->display_name,
             'email'  => $user->user_email,
             'avatar' => get_user_meta( $user->ID, '_babel_google_avatar', true ) ?: get_avatar_url( $user->ID, array( 'size' => 64 ) ),
+        );
+    }
+
+    private function get_edit_data( $user_id ) {
+        $edit_id = isset( $_GET['edit_id'] ) ? intval( $_GET['edit_id'] ) : 0;
+        if ( ! $edit_id || ! $user_id ) return null;
+
+        $post = get_post( $edit_id );
+        if ( ! $post || $post->post_author != $user_id || $post->post_type !== 'babel_business' ) return null;
+
+        return array(
+            'id'                => $post->ID,
+            'business_name'     => $post->post_title,
+            'description'       => $post->post_content,
+            'business_rut'      => get_post_meta( $post->ID, '_babel_rut', true ),
+            'phone'             => get_post_meta( $post->ID, '_babel_phone', true ),
+            'whatsapp'          => get_post_meta( $post->ID, '_babel_whatsapp', true ),
+            'email'             => get_post_meta( $post->ID, '_babel_email', true ),
+            'website'           => get_post_meta( $post->ID, '_babel_website', true ),
+            'instagram'         => get_post_meta( $post->ID, '_babel_instagram', true ),
+            'address'           => get_post_meta( $post->ID, '_babel_address', true ),
+            'babel_lat'         => get_post_meta( $post->ID, '_babel_lat', true ),
+            'babel_lng'         => get_post_meta( $post->ID, '_babel_lng', true ),
+            'business_region'   => wp_get_post_terms( $post->ID, 'babel_region', array('fields' => 'ids') )[0] ?? '',
+            'business_category' => wp_get_post_terms( $post->ID, 'babel_category', array('fields' => 'ids') )[0] ?? '',
+            'plan_type'         => get_post_meta( $post->ID, '_babel_plan_type', true ) ?: 'gratis',
+            // Atributos y Horarios se pueden manejar en JS o PHP, pero por simplicidad pasaremos raw meta
+            'raw_meta'          => get_post_meta( $post->ID )
         );
     }
 
@@ -161,6 +191,9 @@ class Submission {
                     <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
                         <input type="text" name="babel_website_url" tabindex="-1" autocomplete="off" value="">
                     </div>
+
+                    <!-- Hidden Edit ID -->
+                    <input type="hidden" name="edit_id" value="<?php echo esc_attr( isset( $_GET['edit_id'] ) ? intval( $_GET['edit_id'] ) : 0 ); ?>">
 
                     <!-- ── SECCIÓN 1: Información Básica ── -->
                     <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
@@ -515,14 +548,18 @@ class Submission {
 
         $user_id = get_current_user_id();
 
-        // CAPA 3: Rate limiting
-        $timestamps      = get_user_meta( $user_id, '_babel_submission_timestamps', true );
-        $timestamps      = is_array( $timestamps ) ? $timestamps : array();
-        $today_start     = strtotime( 'today midnight' );
-        $today_count     = count( array_filter( $timestamps, fn( $ts ) => $ts >= $today_start ) );
-        if ( $today_count >= 3 ) {
-            wp_send_json_error( array( 'message' => 'Has alcanzado el límite de 3 publicaciones por día.', 'code' => 'rate_limited' ) );
-            return;
+        // CAPA 3: Rate limiting (Solo para nuevos registros, no para edición)
+        $edit_id = isset( $_POST['edit_id'] ) ? intval( $_POST['edit_id'] ) : 0;
+        
+        if ( ! $edit_id ) {
+            $timestamps      = get_user_meta( $user_id, '_babel_submission_timestamps', true );
+            $timestamps      = is_array( $timestamps ) ? $timestamps : array();
+            $today_start     = strtotime( 'today midnight' );
+            $today_count     = count( array_filter( $timestamps, fn( $ts ) => $ts >= $today_start ) );
+            if ( $today_count >= 3 ) {
+                wp_send_json_error( array( 'message' => 'Has alcanzado el límite de 3 publicaciones por día.', 'code' => 'rate_limited' ) );
+                return;
+            }
         }
 
         // VALIDACIÓN DE ARCHIVOS SUBIDOS (Seguridad y Tamaño)
@@ -624,14 +661,34 @@ class Submission {
             return;
         }
 
-        // CAPA 4: Moderación
-        $post_id = wp_insert_post( array(
-            'post_title'   => $title,
-            'post_content' => isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '',
-            'post_status'  => 'pending',
-            'post_type'    => 'babel_business',
-            'post_author'  => $user_id,
-        ) );
+        $edit_id = isset( $_POST['edit_id'] ) ? intval( $_POST['edit_id'] ) : 0;
+        
+        if ( $edit_id ) {
+            // Verificar propiedad
+            $existing_post = get_post( $edit_id );
+            if ( ! $existing_post || $existing_post->post_author != $user_id || $existing_post->post_type !== 'babel_business' ) {
+                wp_send_json_error( array( 'message' => 'No tienes permiso para editar este negocio.' ) );
+                return;
+            }
+            
+            // CAPA 4: Moderación (Edición)
+            $post_id = wp_update_post( array(
+                'ID'           => $edit_id,
+                'post_title'   => $title,
+                'post_content' => isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '',
+                // No cambiamos el estado si ya está publicado para no bajarlos, pero podríamos ponerlo 'pending' si el admin lo requiere.
+                // Por ahora, dejamos el estado actual.
+            ) );
+        } else {
+            // CAPA 4: Moderación (Creación)
+            $post_id = wp_insert_post( array(
+                'post_title'   => $title,
+                'post_content' => isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '',
+                'post_status'  => 'pending',
+                'post_type'    => 'babel_business',
+                'post_author'  => $user_id,
+            ) );
+        }
 
         if ( \is_wp_error( $post_id ) || 0 === $post_id ) {
             wp_send_json_error( array( 'message' => 'Error al crear el registro.' ) );
@@ -732,15 +789,26 @@ class Submission {
         // Datos de autoría
         update_post_meta( $post_id, '_babel_submitted_by', $user_id );
         update_post_meta( $post_id, '_babel_submitted_at', current_time( 'mysql' ) );
+        // Actualizar rate limiting (solo nuevos)
+        $edit_id = isset( $_POST['edit_id'] ) ? intval( $_POST['edit_id'] ) : 0;
+        if ( ! $edit_id ) {
+            $timestamps[] = time();
+            $cutoff       = time() - ( 30 * DAY_IN_SECONDS );
+            $timestamps   = array_values( array_filter( $timestamps, fn( $ts ) => $ts >= $cutoff ) );
+            update_user_meta( $user_id, '_babel_submission_timestamps', $timestamps );
+        }
 
-        // Actualizar rate limiting
-        $timestamps[] = time();
-        $cutoff       = time() - ( 30 * DAY_IN_SECONDS );
-        $timestamps   = array_values( array_filter( $timestamps, fn( $ts ) => $ts >= $cutoff ) );
-        update_user_meta( $user_id, '_babel_submission_timestamps', $timestamps );
+        // Sincronizar motor de búsqueda
+        if ( class_exists( 'Babel\Directory\Search_Index' ) ) {
+            $indexer = new \Babel\Directory\Search_Index();
+            $indexer->sync_business_to_index( $post_id, get_post( $post_id ), true );
+        }
 
+        $msg = $edit_id ? '¡Éxito! Tu comercio ha sido actualizado.' : '¡Tu negocio fue enviado con éxito! Nuestro equipo lo revisará en las próximas 24-48 horas.';
+        
         wp_send_json_success( array(
-            'message' => '¡Tu negocio fue enviado con éxito! Nuestro equipo lo revisará en las próximas 24-48 horas.',
+            'message' => $msg,
+            'post_id' => $post_id
         ) );
     }
 
