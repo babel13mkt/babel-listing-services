@@ -19,12 +19,12 @@ class Ajax {
         add_action( 'wp_ajax_nopriv_bd_filter_listings', array( $this, 'filter_listings' ) );
     }
 
-    /**
-     * Procesa la consulta AJAX de búsqueda y filtrado de negocios.
-     */
     public function filter_listings() {
-        // Verificación de nonce para seguridad
-        check_ajax_referer('babel_search_nonce', 'nonce');
+        // Verificación de nonce desactivada para búsquedas públicas. 
+        // El caché de página (Cloudflare/Divi) almacena el HTML con un nonce estático, 
+        // lo que provoca que check_ajax_referer devuelva -1 (HTTP 200) y rompa el buscador 
+        // aleatoriamente para usuarios que navegan con caché de invitados pero están logueados (o viceversa).
+        // check_ajax_referer('babel_search_nonce', 'nonce');
         
         global $wpdb;
         $table_index = $wpdb->prefix . 'bd_search_index';
