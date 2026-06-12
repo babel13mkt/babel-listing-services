@@ -71,6 +71,14 @@ function transitionToFormScreen( user ) {
         formScreen.style.opacity    = '1';
         formScreen.style.transform  = 'translateY(0)';
         setTimeout( () => formScreen.scrollIntoView( { behavior: 'smooth', block: 'start' } ), 300 );
+        
+        // Auto-pedir ubicación (estilo Trivago)
+        setTimeout( () => {
+            if ( navigator.geolocation ) {
+                const radarBtn = document.getElementById( 'babel-radar-btn' );
+                if ( radarBtn ) radarBtn.click();
+            }
+        }, 1000 );
     }
 }
 
@@ -99,6 +107,18 @@ document.addEventListener( 'DOMContentLoaded', function() {
         if ( babel_vars.current_user && babel_vars.current_user.email ) {
             const emailInput = document.querySelector( '#babel-submission-form [name="email"]' );
             if ( emailInput && ! emailInput.value ) emailInput.value = babel_vars.current_user.email;
+        }
+
+        // Si es una creación nueva (no edición), auto-pedir ubicación
+        if ( ! babel_vars.edit_data ) {
+            setTimeout( () => {
+                if ( navigator.geolocation ) {
+                    const radarBtn = document.getElementById( 'babel-radar-btn' );
+                    if ( radarBtn && ! document.getElementById( 'babel_lat' ).value ) {
+                        radarBtn.click();
+                    }
+                }
+            }, 1000 );
         }
 
         // ── HIDRATACIÓN DE DATOS (EDICIÓN) ───────────────────────
