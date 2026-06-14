@@ -79,12 +79,28 @@ class Divi_Compat {
 
         $tags = [
             'babel_region_grid',
+            'bd_popular_regions',
+            'bd_popular_categories',
             'bd_footer_regions',
             'bd_footer_categories',
             'bd_archive_loop',
             'bd_region_template',
             'bd_business_profile',
-            'bd_filter_bar'
+            'bd_filter_bar',
+            'babel_auth_menu',
+            'babel_claim_business',
+            'bd_user_dashboard',
+            'babel_submission_form',
+            'bd_breadcrumbs',
+            'babel_frontend_dashboard',
+            'bd_business_gallery',
+            'bd_business_hours',
+            'bd_business_map',
+            'bd_business_contact',
+            'bd_business_badges',
+            'bd_ad_space',
+            'bd_featured_businesses',
+            'babel_pricing_tables'
         ];
 
         foreach ( $tags as $tag ) {
@@ -226,6 +242,21 @@ class Divi_Compat {
     flex-direction: row !important;
     flex-wrap: wrap !important;
 }
+
+#et-main-area .babel-regions-carousel,
+#et-boc .babel-regions-carousel,
+.et_pb_section .babel-regions-carousel {
+    display: block !important;
+    width: 100% !important;
+}
+
+#et-main-area .babel-carousel-track,
+#et-boc .babel-carousel-track {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+}
+
 
 /* ──────────────────────────────────────────────────────────────
    RESPONSIVE: En mobile el buscador SÍ colapsa a columna (intencional)

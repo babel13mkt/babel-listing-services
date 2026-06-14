@@ -76,27 +76,14 @@ class Ajax {
             }
         }
 
-        // Prioridad e indexación de ordenamientos compuestos
-        $orderby = "idx.is_featured DESC, idx.post_id DESC";
-        switch ( $sort ) {
-            case 'rating':
-                $orderby = "idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC";
-                break;
-            case 'az':
-                $orderby = "idx.is_featured DESC, p.post_title ASC";
-                break;
-            case 'distance':
-                if ( $lat && $lng ) {
-                    $orderby = "idx.is_featured DESC, distance ASC";
-                }
-                break;
-            case 'newest':
-                $orderby = "idx.is_featured DESC, idx.post_id DESC";
-                break;
-            default:
-                $orderby = "idx.is_featured DESC, idx.post_id DESC";
-                break;
-        }
+        // Prioridad e indexación de ordenamientos compuestos (Whitelist estricta)
+        $allowed_orders = array(
+            'rating'   => 'idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC',
+            'az'       => 'idx.is_featured DESC, p.post_title ASC',
+            'distance' => ( $lat && $lng ) ? 'idx.is_featured DESC, distance ASC' : 'idx.is_featured DESC, idx.post_id DESC',
+            'newest'   => 'idx.is_featured DESC, idx.post_id DESC'
+        );
+        $orderby = isset( $allowed_orders[ $sort ] ) ? $allowed_orders[ $sort ] : 'idx.is_featured DESC, idx.post_id DESC';
 
         if ( ! empty( $keyword ) ) {
             $like_keyword = '%' . $wpdb->esc_like( $keyword ) . '%';
@@ -148,34 +135,33 @@ class Ajax {
             global $post;
             $original_post = $post; // Respaldar post global original
             
-            foreach ( $post_ids as $pid ) {
-                $current_post = get_post( $pid );
-                if ( ! $current_post ) {
-                    continue;
+            try {
+                foreach ( $post_ids as $pid ) {
+                    $current_post = get_post( $pid );
+                    if ( ! $current_post ) {
+                        continue;
+                    }
+                    
+                    // 2. BUCLE AJAX E HIDRATACIÓN DE CONTEXTO
+                    // Forzar el reemplazo del objeto global $post para que Divi 5 (Dynamic Content) reconozca el negocio actual
+                    $post = $current_post;
+                    setup_postdata( $post );
+                    
+                    if ( $is_layout_valid ) {
+                        // 3. RENDERIZADO EFICIENTE
+                        echo '<div class="babel-divi-card-wrapper">';
+                        echo do_shortcode( '[et_pb_layout id="' . absint( $layout_id ) . '"]' );
+                        echo '</div>';
+                    } else {
+                        // 4. BLINDAJE Y FALLBACK (Marcado HTML semántico básico)
+                        $this->render_fallback_card( $pid );
+                    }
                 }
-                
-                // 2. BUCLE AJAX E HIDRATACIÓN DE CONTEXTO
-                // Forzar el reemplazo del objeto global $post para que Divi 5 (Dynamic Content) reconozca el negocio actual
-                $post = $current_post;
-                setup_postdata( $post );
-                
-                if ( $is_layout_valid ) {
-                    // 3. RENDERIZADO EFICIENTE
-                    echo '<div class="babel-divi-card-wrapper">';
-                    echo do_shortcode( '[et_pb_layout id="' . $layout_id . '"]' );
-                    echo '</div>';
-                } else {
-                    // 4. BLINDAJE Y FALLBACK (Marcado HTML semántico básico)
-                    $this->render_fallback_card( $pid );
-                }
-                
-                // 3. LIMPIAR EL CONTEXTO al finalizar cada iteración
+            } finally {
+                // 3. LIMPIAR EL CONTEXTO al terminar el bucle por completo
                 wp_reset_postdata();
+                $post = $original_post;
             }
-            
-            // 3. LIMPIAR EL CONTEXTO al terminar el bucle por completo
-            wp_reset_postdata();
-            $post = $original_post;
             
             echo '</div>';
             
@@ -212,10 +198,6 @@ class Ajax {
     private function render_fallback_card( $post_id ) {
         $title       = get_the_title( $post_id );
         $permalink   = get_permalink( $post_id );
-        $phone       = get_post_meta( $post_id, '_babel_phone', true );
-        $whatsapp    = get_post_meta( $post_id, '_babel_whatsapp', true );
-        $address     = get_post_meta( $post_id, '_babel_address', true );
-        $gmaps       = get_post_meta( $post_id, '_babel_gmaps', true );
         // Variables actualizadas según UX_ROADMAP.md
         $is_verified  = get_post_meta( $post_id, '_babel_verified', true );
         $is_featured  = get_post_meta( $post_id, '_babel_featured', true );

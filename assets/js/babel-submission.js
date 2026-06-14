@@ -431,16 +431,15 @@ document.addEventListener( 'DOMContentLoaded', function() {
 
             // Adjuntar archivos de galería manualmente
             if ( galleryFiles.length > 0 ) {
-                // El input de galería ya tiene los files sincronizados via syncGalleryInput()
-                // pero FormData no los toma si el input es dinámico, así que los añadimos manualmente
                 formData.delete( 'gallery_images[]' );
                 galleryFiles.forEach( ( file, i ) => {
                     if ( i < 5 ) formData.append( 'gallery_images[]', file );
                 } );
             }
 
-            fetch( babel_vars.ajax_url, { method: 'POST', body: formData } )
-                .then( res => res.json() )
+            const executeSubmission = () => {
+                fetch( babel_vars.ajax_url, { method: 'POST', body: formData } )
+                    .then( res => res.json() )
                 .then( data => {
                     if ( submitBtn ) {
                         submitBtn.innerHTML = originalBtnHTML;
@@ -499,6 +498,19 @@ document.addEventListener( 'DOMContentLoaded', function() {
                         </div>`;
                     }
                 } );
+            };
+
+            // Inject reCAPTCHA v3 token if configured
+            if ( babel_vars.recaptcha_site_key && typeof grecaptcha !== 'undefined' ) {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(babel_vars.recaptcha_site_key, {action: 'submit'}).then(function(token) {
+                        formData.append('recaptcha_token', token);
+                        executeSubmission();
+                    });
+                });
+            } else {
+                executeSubmission();
+            }
         } );
     }
 

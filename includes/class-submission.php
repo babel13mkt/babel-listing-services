@@ -47,11 +47,17 @@ class Submission {
             true
         );
 
+        $recaptcha_site_key = get_option( 'babel_recaptcha_site_key', '' );
+        if ( ! empty( $recaptcha_site_key ) ) {
+            wp_enqueue_script( 'google-recaptcha-v3', 'https://www.google.com/recaptcha/api.js?render=' . esc_attr( $recaptcha_site_key ), array(), null, false );
+        }
+
         wp_localize_script( 'babel-submission-js', 'babel_vars', array(
             'ajax_url'           => admin_url( 'admin-ajax.php' ),
             'submission_nonce'   => wp_create_nonce( 'babel_submission_nonce' ),
             'google_login_nonce' => wp_create_nonce( 'babel_google_login_nonce' ),
             'google_client_id'   => esc_js( $client_id ),
+            'recaptcha_site_key' => esc_js( $recaptcha_site_key ),
             'is_logged_in'       => is_user_logged_in() ? '1' : '0',
             'current_user'       => $this->get_current_user_data(),
             'edit_data'          => $this->get_edit_data( get_current_user_id() )
@@ -544,6 +550,31 @@ class Submission {
         if ( ! empty( $honeypot ) ) {
             wp_send_json_success( array( 'message' => '¡Éxito! Tu comercio ha sido enviado y está en revisión.' ) );
             return;
+        }
+
+        // CAPA 2.5: reCAPTCHA v3
+        $recaptcha_secret = get_option( 'babel_recaptcha_secret_key', '' );
+        if ( ! empty( $recaptcha_secret ) ) {
+            $token = isset( $_POST['recaptcha_token'] ) ? sanitize_text_field( $_POST['recaptcha_token'] ) : '';
+            if ( empty( $token ) ) {
+                wp_send_json_error( array( 'message' => 'Falta el token de seguridad reCAPTCHA.' ) );
+                return;
+            }
+            $response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', array(
+                'body' => array(
+                    'secret'   => $recaptcha_secret,
+                    'response' => $token,
+                )
+            ) );
+            if ( is_wp_error( $response ) ) {
+                wp_send_json_error( array( 'message' => 'Error al contactar con el servidor de validación.' ) );
+                return;
+            }
+            $body = json_decode( wp_remote_retrieve_body( $response ), true );
+            if ( ! isset( $body['success'] ) || ! $body['success'] || $body['score'] < 0.5 ) {
+                wp_send_json_error( array( 'message' => 'Verificación reCAPTCHA fallida. Por favor, intenta de nuevo.' ) );
+                return;
+            }
         }
 
         $user_id = get_current_user_id();

@@ -106,8 +106,8 @@ bd_print_line( " - Región:    " . ( $test_region ?: '(Todo Chile)' ) );
 bd_print_line( "----------------------------------------------------------" );
 
 // Verificar que el plugin babel-directory esté activo
-if ( ! class_exists( 'Babel_Directory_Ajax' ) ) {
-    bd_print_line( "Error: La clase Babel_Directory_Ajax no está disponible. Asegúrese de que el plugin babel-directory esté activo.", 'error' );
+if ( ! class_exists( '\Babel\Directory\Ajax' ) ) {
+    bd_print_line( "Error: La clase \\Babel\\Directory\\Ajax no está disponible. Asegúrese de que el plugin babel-directory esté activo.", 'error' );
     exit( 1 );
 }
 
@@ -140,7 +140,7 @@ $start_mem  = memory_get_usage();
 
 bd_print_line( "Ejecutando simulador interno de loop de búsqueda AJAX..." );
 
-$ajax_handler = new Babel_Directory_Ajax();
+$ajax_handler = new \Babel\Directory\Ajax();
 $exception_triggered = false;
 $output_response = '';
 

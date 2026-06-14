@@ -22,6 +22,8 @@ class Shortcodes {
         add_shortcode( 'bd_business_profile', array( $this, 'render_business_profile' ) );
         add_shortcode( 'bd_breadcrumbs', array( $this, 'render_breadcrumbs' ) );
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
+        add_shortcode( 'babel_auth_menu', array( $this, 'render_auth_menu' ) );
+        add_action( 'wp_footer', array( $this, 'render_global_auth_modal' ) );
 
         // Shortcodes adicionales B2B restaurados
         add_shortcode( 'babel_claim_business', array( $this, 'render_claim_business' ) );
@@ -39,10 +41,216 @@ class Shortcodes {
 
         // Shortcode de listado de negocios destacados premium
         add_shortcode( 'bd_featured_businesses', array( $this, 'render_featured_businesses' ) );
+        add_shortcode( 'babel_pricing_tables', array( $this, 'render_pricing_tables' ) );
 
         // Hooks para alertas transaccionales y estadísticas
         add_action( 'post_updated', array( $this, 'notify_user_on_claim_approved' ), 10, 3 );
         add_action( 'wp_head', array( $this, 'track_business_view' ) );
+    }
+
+    public function render_pricing_tables( $atts ) {
+        ob_start();
+        ?>
+        <style>
+            .bp-pricing-wrapper {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 30px;
+                justify-content: center;
+                padding: 40px 20px;
+                font-family: 'Inter', sans-serif;
+                background: transparent;
+            }
+            .bp-card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 24px;
+                padding: 40px 30px;
+                width: 100%;
+                max-width: 340px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                border: 1px solid rgba(0,0,0,0.05);
+            }
+            .bp-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            }
+            .bp-card.bp-popular {
+                border: 2px solid #0c71c3;
+                transform: scale(1.05);
+                box-shadow: 0 20px 50px rgba(12, 113, 195, 0.15);
+                background: #ffffff;
+            }
+            .bp-card.bp-popular:hover {
+                transform: scale(1.05) translateY(-10px);
+            }
+            .bp-popular-badge {
+                position: absolute;
+                top: -16px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #0c71c3, #0a5a9c);
+                color: white;
+                padding: 6px 16px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                box-shadow: 0 4px 10px rgba(12, 113, 195, 0.3);
+            }
+            .bp-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #111827;
+                margin-bottom: 15px;
+                text-align: center;
+            }
+            .bp-price {
+                font-size: 42px;
+                font-weight: 800;
+                color: #0c71c3;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            .bp-price span {
+                font-size: 16px;
+                font-weight: 500;
+                color: #6b7280;
+            }
+            .bp-desc {
+                text-align: center;
+                color: #6b7280;
+                font-size: 15px;
+                margin-bottom: 30px;
+            }
+            .bp-features {
+                list-style: none;
+                padding: 0;
+                margin: 0 0 40px 0;
+                flex-grow: 1;
+            }
+            .bp-features li {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+                color: #374151;
+                font-size: 15px;
+            }
+            .bp-features li.disabled {
+                color: #9ca3af;
+                text-decoration: line-through;
+            }
+            .bp-features .material-symbols-outlined {
+                font-size: 20px;
+                margin-right: 12px;
+            }
+            .bp-features li .material-symbols-outlined {
+                color: #10b981; /* green check */
+            }
+            .bp-features li.disabled .material-symbols-outlined {
+                color: #d1d5db; /* gray disabled */
+            }
+            .bp-btn {
+                display: block;
+                width: 100%;
+                padding: 16px;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 16px;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            .bp-btn-outline {
+                background: transparent;
+                border: 2px solid #e5e7eb;
+                color: #374151;
+            }
+            .bp-btn-outline:hover {
+                border-color: #0c71c3;
+                color: #0c71c3;
+            }
+            .bp-btn-primary {
+                background: linear-gradient(135deg, #0c71c3, #0a5a9c);
+                color: #ffffff;
+                box-shadow: 0 10px 20px rgba(12, 113, 195, 0.2);
+            }
+            .bp-btn-primary:hover {
+                box-shadow: 0 15px 30px rgba(12, 113, 195, 0.3);
+                transform: translateY(-2px);
+                color: #ffffff;
+            }
+            
+            @media (max-width: 768px) {
+                .bp-card.bp-popular {
+                    transform: scale(1);
+                }
+                .bp-card.bp-popular:hover {
+                    transform: translateY(-5px);
+                }
+            }
+        </style>
+
+        <div class="bp-pricing-wrapper">
+            <!-- Plan Basico -->
+            <div class="bp-card">
+                <h3 class="bp-title">Básico</h3>
+                <div class="bp-price">Gratis</div>
+                <div class="bp-desc">Para aparecer en el mapa y empezar a captar clientes locales.</div>
+                <ul class="bp-features">
+                    <li><span class="material-symbols-outlined">check_circle</span> Datos básicos de contacto</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> 1 Foto de portada</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Mapa de ubicación</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span> Enlaces a Redes Sociales</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span> Botón de WhatsApp Directo</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span> Gestión de Reseñas</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span> Posicionamiento Prioritario</li>
+                </ul>
+                <a href="/publicar-negocio/" class="bp-btn bp-btn-outline">Comenzar Gratis</a>
+            </div>
+
+            <!-- Plan Profesional -->
+            <div class="bp-card bp-popular">
+                <div class="bp-popular-badge">Más Popular</div>
+                <h3 class="bp-title">Profesional</h3>
+                <div class="bp-price">$15.000 <span>/mes</span></div>
+                <div class="bp-desc">El plan ideal para atraer más clientes e interactuar con ellos.</div>
+                <ul class="bp-features">
+                    <li><span class="material-symbols-outlined">check_circle</span> Datos básicos de contacto</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Galería (hasta 10 fotos)</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Mapa de ubicación</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Enlaces a Redes Sociales</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Botón de WhatsApp Directo</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Sello de Negocio Verificado</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span> Posicionamiento Prioritario</li>
+                </ul>
+                <a href="/publicar-negocio/" class="bp-btn bp-btn-primary">Elegir Profesional</a>
+            </div>
+
+            <!-- Plan Premium -->
+            <div class="bp-card">
+                <h3 class="bp-title">Premium</h3>
+                <div class="bp-price">$35.000 <span>/mes</span></div>
+                <div class="bp-desc">Máxima exposición y posicionamiento líder en tu categoría.</div>
+                <ul class="bp-features">
+                    <li><span class="material-symbols-outlined">check_circle</span> Todo lo Profesional</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Galería Ilimitada &amp; Video</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Gestión de Reseñas VIP</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Destacado en Portada</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Posicionamiento Top Ranking</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Sin publicidad de terceros</li>
+                    <li><span class="material-symbols-outlined">check_circle</span> Soporte Prioritario 24/7</li>
+                </ul>
+                <a href="/publicar-negocio/" class="bp-btn bp-btn-outline">Elegir Premium</a>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     public function render_filter_bar( $atts ) {
@@ -63,6 +271,16 @@ class Shortcodes {
             }
         }
 
+        // Auto-Detección: Leer cookie de Geolocalización Pasiva si no hay región forzada
+        $auto_region_name = '';
+        if ( empty( $current_region_slug ) && isset( $_COOKIE['babel_user_region_slug'] ) && $_COOKIE['babel_user_region_slug'] !== 'unknown' ) {
+            $current_region_slug = sanitize_text_field( $_COOKIE['babel_user_region_slug'] );
+            $term = get_term_by( 'slug', $current_region_slug, 'babel_region' );
+            if ( $term && ! is_wp_error( $term ) ) {
+                $auto_region_name = $term->name;
+            }
+        }
+
         // Obtener todas las regiones para el dropdown
         $regions = get_transient('bd_filter_bar_regions');
         if ( false === $regions ) {
@@ -77,13 +295,19 @@ class Shortcodes {
         }
 
         ob_start();
+
+        // Modificar el Placeholder del input dinámicamente
+        $placeholder = "ej: Sushi, región metropolitana";
+        if ( ! empty( $auto_region_name ) ) {
+            $placeholder = "ej: Sushi en " . esc_html( $auto_region_name );
+        }
         ?>
         <div class="babel-filter-bar-section">
             <form id="babel-search-form" class="babel-filter-bar-form" action="/buscar/" method="GET" autocomplete="off">
                 <div class="babel-filter-bar-inner" data-babel-filter="true">
                     <!-- 1. Búsqueda libre -->
                     <div class="babel-filter-keyword">
-                        <input type="text" id="babel-search-keyword" name="keyword" placeholder="ej: Sushi, región metropolitana" />
+                        <input type="text" id="babel-search-keyword" name="keyword" placeholder="<?php echo esc_attr( $placeholder ); ?>" />
                     </div>
 
                     <!-- 2. Selector de Región eliminado a petición del usuario -->
@@ -130,16 +354,126 @@ class Shortcodes {
         return ob_get_clean();
     }
 
+    public function render_auth_menu( $atts ) {
+        wp_enqueue_style( 'babel-public-css' );
+        wp_enqueue_style( 'babel-global-auth-css' );
+        $ms_client_id = get_option( 'babel_microsoft_client_id', '' );
+        if ( ! empty( $ms_client_id ) ) {
+            wp_enqueue_script( 'msal-browser' );
+        }
+        $is_logged_in = is_user_logged_in();
+        ob_start();
+        ?>
+        <div class="babel-global-auth-menu">
+            <?php if ( ! $is_logged_in ) : ?>
+                <button type="button" class="babel-auth-login-btn" onclick="openBabelAuthModal()">
+                    <span class="material-symbols-outlined">person</span>
+                    <span>Iniciar sesión</span>
+                </button>
+            <?php else : 
+                $user = wp_get_current_user();
+                $avatar = get_user_meta( $user->ID, '_babel_google_avatar', true ) ?: get_avatar_url( $user->ID, array( 'size' => 32 ) );
+                $dashboard_url = home_url('/mi-cuenta/');
+            ?>
+                <div class="babel-auth-user-dropdown-wrap">
+                    <button type="button" class="babel-auth-user-btn">
+                        <img src="<?php echo esc_url( $avatar ); ?>" alt="Avatar" class="babel-auth-avatar">
+                        <span class="babel-auth-username"><?php echo esc_html( explode(' ', $user->display_name)[0] ); ?></span>
+                        <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                    </button>
+                    <ul class="babel-auth-dropdown-menu">
+                        <li><a href="<?php echo esc_url( $dashboard_url ); ?>"><span class="material-symbols-outlined">dashboard</span> Mi Panel</a></li>
+                        <li><a href="<?php echo wp_logout_url( home_url() ); ?>"><span class="material-symbols-outlined">logout</span> Cerrar sesión</a></li>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    public function render_global_auth_modal() {
+        if ( is_user_logged_in() ) return;
+        $client_id = get_option( 'babel_google_client_id', '' );
+        $ms_client_id = get_option( 'babel_microsoft_client_id', '' );
+        if ( empty( $client_id ) && empty( $ms_client_id ) ) return;
+        ?>
+        <!-- Modal Global de Login (Babel Directory - Trivago Style) -->
+        <div id="babel-auth-modal" class="babel-modal-overlay hidden" aria-hidden="true" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); z-index: 999999; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;">
+            <div class="babel-modal-container" style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); position: relative; overflow: hidden; transform: translateY(20px); transition: transform 0.3s ease;">
+                
+                <!-- Botón Cerrar -->
+                <button type="button" class="babel-modal-close" onclick="closeBabelAuthModal()" aria-label="Cerrar" style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; font-size: 24px; color: #6b7280; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; transition: background 0.2s;">&times;</button>
+                
+                <!-- Cabecera -->
+                <div style="padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid #f3f4f6;">
+                    <h2 style="font-family: 'Inter', -apple-system, sans-serif; font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">Inicia sesión o regístrate</h2>
+                    <p style="font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; color: #6b7280; margin: 0;">Para publicar tu negocio y gestionar reseñas.</p>
+                </div>
+
+                <!-- Contenido -->
+                <div style="padding: 24px 32px 32px;">
+                    <!-- Email Form (Visual Placeholder for Trivago look) -->
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; text-align: left;">Correo electrónico</label>
+                        <input type="email" placeholder="ejemplo@correo.com" style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s; box-sizing: border-box;" onfocus="this.style.borderColor='#0c71c3'" onblur="this.style.borderColor='#d1d5db'">
+                        <button type="button" style="width: 100%; margin-top: 16px; background: #0c71c3; color: white; border: none; padding: 12px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0a5a9c'" onmouseout="this.style.background='#0c71c3'">Continuar con email</button>
+                    </div>
+
+                    <!-- Divisor -->
+                    <div style="display: flex; align-items: center; margin: 24px 0;">
+                        <div style="flex-grow: 1; height: 1px; background: #e5e7eb;"></div>
+                        <span style="padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 13px; color: #9ca3af; text-transform: uppercase; font-weight: 600;">O usar</span>
+                        <div style="flex-grow: 1; height: 1px; background: #e5e7eb;"></div>
+                    </div>
+
+                    <!-- Social Buttons -->
+                    <div class="flex flex-col items-center gap-4" style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                        <?php if ( ! empty( $client_id ) ) : ?>
+                        <div id="babel-global-google-btn-container" style="min-height: 44px; width: 100%; display: flex; justify-content: center;">
+                            <div id="g_id_onload_global" data-client_id="<?php echo esc_attr( $client_id ); ?>" data-callback="handleGlobalBabelGoogleLogin" data-auto_prompt="false"></div>
+                            <!-- Ajustado a width: 100% para simular Trivago -->
+                            <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="continue_with" data-size="large" data-locale="es" data-logo_alignment="center" style="width: 100%;"></div>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ( ! empty( $ms_client_id ) ) : ?>
+                        <button type="button" id="babel-microsoft-login-btn" data-client_id="<?php echo esc_attr( $ms_client_id ); ?>" style="width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; background: #ffffff; border: 1px solid #dadce0; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #3c4043; cursor: pointer; transition: background 0.2s;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21"><path fill="#f35325" d="M1 1h9v9H1z"/><path fill="#81bc06" d="M11 1h9v9h-9z"/><path fill="#05a6f0" d="M1 11h9v9H1z"/><path fill="#ffba08" d="M11 11h9v9h-9z"/></svg>
+                            Continuar con Microsoft
+                        </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="babel-global-login-loading" class="hidden" style="display: none; margin-top: 24px; text-align: center;">
+                        <div style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(12, 113, 195, 0.2); border-top-color: #0c71c3; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #4b5563; margin-top: 12px;">Conectando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+            /* Se removió slideUpFade porque ahora usamos transition transform */
+            .babel-modal-close:hover { background: #f3f4f6 !important; color: #111827 !important; }
+        </style>
+        <?php
+    }
 
     public function render_region_grid( $atts ) {
         wp_enqueue_style( 'babel-public-css' );
         $atts = shortcode_atts( array(
             'columns' => 4,
             'rows'    => 4,
+            'layout'  => 'grid',
+            'orderby' => 'geographic',
         ), $atts, 'babel_region_grid' );
 
         $columns = intval( $atts['columns'] );
         $rows = intval( $atts['rows'] );
+        $layout  = sanitize_key( $atts['layout'] );
+        $orderby = sanitize_key( $atts['orderby'] );
         $limit = $columns * $rows;
 
         $terms_args = array(
@@ -148,66 +482,109 @@ class Shortcodes {
             'parent'     => 0,
         );
 
-        $tkey = 'bd_footer_cats_' . md5(serialize($terms_args));
+        $tkey = 'bd_regions_grid_' . $layout . '_' . $orderby . '_' . $limit . '_' . md5(serialize($terms_args));
         $terms = get_transient($tkey);
         if ( false === $terms ) {
             $terms = get_terms( $terms_args );
-            if ( ! is_wp_error( $terms ) ) { set_transient( $tkey, $terms, 12 * HOUR_IN_SECONDS ); }
+            if ( ! \is_wp_error( $terms ) && ! empty( $terms ) ) {
+                // Función auxiliar para convertir números romanos a enteros
+                $roman_to_int = function( $roman ) {
+                    $romans = array(
+                        'I' => 1, 'V' => 5, 'X' => 10, 'L' => 50, 'C' => 100, 'D' => 500, 'M' => 1000
+                    );
+                    $result = 0;
+                    $roman = strtoupper( trim( $roman ) );
+                    for ( $i = 0; $i < strlen( $roman ); $i++ ) {
+                        if ( $i + 1 < strlen( $roman ) && isset( $romans[$roman[$i]], $romans[$roman[$i + 1]] ) && $romans[$roman[$i]] < $romans[$roman[$i + 1]] ) {
+                            $result -= $romans[$roman[$i]];
+                        } elseif ( isset( $romans[$roman[$i]] ) ) {
+                            $result += $romans[$roman[$i]];
+                        }
+                    }
+                    return $result;
+                };
+
+                // Calcular business_count recursivo para cada región para poder ordenar u optimizar
+                foreach ( $terms as $term ) {
+                    $child_ids = get_term_children( $term->term_id, 'babel_region' );
+                    $term_ids = array( $term->term_id );
+                    if ( ! \is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
+                        $term_ids = array_merge( $term_ids, $child_ids );
+                    }
+
+                    $business_query = new \WP_Query( array(
+                        'post_type'      => 'babel_business',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => 1,
+                        'fields'         => 'ids',
+                        'no_found_rows'  => false,
+                        'tax_query'      => array(
+                            array(
+                                'taxonomy' => 'babel_region',
+                                'field'    => 'term_id',
+                                'terms'    => $term_ids,
+                                'operator' => 'IN',
+                            ),
+                        ),
+                    ) );
+                    $term->business_count = $business_query->found_posts;
+                    
+                    // Pre-calcular imágenes y links para que el transient sea completo
+                    $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
+                    $term->image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'large' ) : '';
+                    $term_link = get_term_link( $term );
+                    $term->term_link = \is_wp_error( $term_link ) ? '' : $term_link;
+                }
+
+                // Ordenar
+                if ( $orderby === 'count' ) {
+                    usort( $terms, function( $a, $b ) {
+                        return $b->business_count <=> $a->business_count;
+                    } );
+                } else {
+                    // Orden por defecto: geográfico por número romano
+                    usort( $terms, function( $a, $b ) use ( $roman_to_int ) {
+                        preg_match( '/^([IVXLCDM]+)/i', $a->name, $a_matches );
+                        preg_match( '/^([IVXLCDM]+)/i', $b->name, $b_matches );
+
+                        $val_a = ! empty( $a_matches[1] ) ? $roman_to_int( $a_matches[1] ) : 999;
+                        $val_b = ! empty( $b_matches[1] ) ? $roman_to_int( $b_matches[1] ) : 999;
+
+                        return $val_a <=> $val_b;
+                    } );
+                }
+
+                // Aplicar el límite
+                if ( $limit > 0 && count( $terms ) > $limit ) {
+                    $terms = array_slice( $terms, 0, $limit );
+                }
+
+                set_transient( $tkey, $terms, 12 * HOUR_IN_SECONDS );
+            }
         }
 
         if ( \is_wp_error( $terms ) || empty( $terms ) ) {
             return '<p>No se encontraron regiones.</p>';
         }
 
-        // Función auxiliar para convertir números romanos a enteros
-        $roman_to_int = function( $roman ) {
-            $romans = array(
-                'I' => 1, 'V' => 5, 'X' => 10, 'L' => 50, 'C' => 100, 'D' => 500, 'M' => 1000
-            );
-            $result = 0;
-            $roman = strtoupper( trim( $roman ) );
-            for ( $i = 0; $i < strlen( $roman ); $i++ ) {
-                if ( $i + 1 < strlen( $roman ) && isset( $romans[$roman[$i]], $romans[$roman[$i + 1]] ) && $romans[$roman[$i]] < $romans[$roman[$i + 1]] ) {
-                    $result -= $romans[$roman[$i]];
-                } elseif ( isset( $romans[$roman[$i]] ) ) {
-                    $result += $romans[$roman[$i]];
-                }
-            }
-            return $result;
-        };
-
-        // Ordenar las regiones geográficamente usando el número romano de la nomenclatura
-        usort( $terms, function( $a, $b ) use ( $roman_to_int ) {
-            preg_match( '/^([IVXLCDM]+)/i', $a->name, $a_matches );
-            preg_match( '/^([IVXLCDM]+)/i', $b->name, $b_matches );
-
-            $val_a = ! empty( $a_matches[1] ) ? $roman_to_int( $a_matches[1] ) : 999;
-            $val_b = ! empty( $b_matches[1] ) ? $roman_to_int( $b_matches[1] ) : 999;
-
-            return $val_a <=> $val_b;
-        } );
-
-        // Aplicar el límite después de la ordenación
-        if ( $limit > 0 && count( $terms ) > $limit ) {
-            $terms = array_slice( $terms, 0, $limit );
-        }
-
         ob_start();
-        echo '<div class="babel-region-grid" style="--babel-grid-cols: ' . esc_attr( $columns ) . ';">';
+        if ( $layout === 'carousel' ) {
+            echo '<div class="babel-regions-carousel" data-carousel="babel-regions">';
+            echo '<button class="babel-carousel-btn babel-carousel-btn--prev" aria-label="Anterior">';
+            echo '    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">';
+            echo '        <polyline points="15 18 9 12 15 6"></polyline>';
+            echo '    </svg>';
+            echo '</button>';
+            echo '<div class="babel-carousel-track-wrap">';
+            echo '<div class="babel-carousel-track">';
+        } else {
+            echo '<div class="babel-region-grid" style="--babel-grid-cols: ' . esc_attr( $columns ) . ';">';
+        }
         
         foreach ( $terms as $term ) {
-            $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
-            $image_url = '';
+            $image_url = ! empty( $term->image_url ) ? $term->image_url : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%232c3e50"/></svg>';
             
-            if ( $image_id ) {
-                $image_url = wp_get_attachment_image_url( $image_id, 'large' );
-            } else {
-                // Fallback a un gradiente bonito si la imagen no cargó aún
-                $image_url = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%232c3e50"/></svg>';
-            }
-
-            $term_link = get_term_link( $term );
-            if ( \is_wp_error( $term_link ) ) {
+            if ( empty( $term->term_link ) ) {
                 continue;
             }
 
@@ -225,33 +602,9 @@ class Shortcodes {
             }
             $pip_class = $has_pip ? ' babel-region-pip-fix' : '';
 
-            // Obtener el conteo recursivo de negocios (región padre + comunas hijas)
-            $child_ids = get_term_children( $term->term_id, 'babel_region' );
-            $term_ids = array( $term->term_id );
-            if ( ! \is_wp_error( $child_ids ) && ! empty( $child_ids ) ) {
-                $term_ids = array_merge( $term_ids, $child_ids );
-            }
-
-            $business_query = new \WP_Query( array(
-                'post_type'      => 'babel_business',
-                'post_status'    => 'publish',
-                'posts_per_page' => 1,
-                'fields'         => 'ids',
-                'no_found_rows'  => false,
-                'tax_query'      => array(
-                    array(
-                        'taxonomy' => 'babel_region',
-                        'field'    => 'term_id',
-                        'terms'    => $term_ids,
-                        'operator' => 'IN',
-                    ),
-                ),
-            ) );
-            $business_count = $business_query->found_posts;
-
             ?>
             <div class="babel-region-wrapper">
-                <a href="<?php echo esc_url( $term_link ); ?>" class="babel-region-card no-lightbox disable-lightbox" target="_self" data-et-has-event-already="true">
+                <a href="<?php echo esc_url( $term->term_link ); ?>" class="babel-region-card no-lightbox disable-lightbox" target="_self" data-et-has-event-already="true">
                     <div class="babel-region-bg<?php echo esc_attr( $pip_class ); ?>" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
                     <div class="babel-region-overlay"></div>
                     <div class="babel-region-content">
@@ -262,7 +615,18 @@ class Shortcodes {
             <?php
         }
         
-        echo '</div>';
+        if ( $layout === 'carousel' ) {
+            echo '</div>'; // babel-carousel-track
+            echo '</div>'; // babel-carousel-track-wrap
+            echo '<button class="babel-carousel-btn babel-carousel-btn--next" aria-label="Siguiente">';
+            echo '    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">';
+            echo '        <polyline points="9 18 15 12 9 6"></polyline>';
+            echo '    </svg>';
+            echo '</button>';
+            echo '</div>'; // babel-regions-carousel
+        } else {
+            echo '</div>'; // babel-region-grid
+        }
         return ob_get_clean();
     }
 
@@ -725,8 +1089,189 @@ class Shortcodes {
                 </div>
             </div>
 
+            <?php
+            // Secciones dinámicas para la taxonomía babel_region (regiones y comunas)
+            if ( 'babel_region' === $term->taxonomy ) {
+                // 3. Instituciones básicas permanentes
+                $institutions_key = 'bd_institutions_' . $term->term_id;
+                $institutions = get_transient( $institutions_key );
+                if ( false === $institutions ) {
+                    $inst_args = array(
+                        'post_type'      => 'babel_business',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => 30,
+                        'meta_query'     => array(
+                            array(
+                                'key'     => '_babel_is_institution',
+                                'value'   => '1',
+                                'compare' => '=',
+                            ),
+                        ),
+                        'tax_query' => array(
+                            array(
+                                'taxonomy' => $term->taxonomy,
+                                'field'    => 'term_id',
+                                'terms'    => $term_ids,
+                                'operator' => 'IN',
+                            ),
+                        ),
+                        'orderby' => 'title',
+                        'order'   => 'ASC',
+                        'fields'  => 'all',
+                    );
+                    $inst_query   = new \WP_Query( $inst_args );
+                    $institutions = $inst_query->posts;
+                    \wp_reset_postdata();
+                    set_transient( $institutions_key, $institutions, 12 * HOUR_IN_SECONDS );
+                }
+
+                if ( ! empty( $institutions ) ) {
+                    $icon_map = array(
+                        'salud'         => 'local_hospital',
+                        'hospital'      => 'local_hospital',
+                        'clínica'       => 'local_hospital',
+                        'clinica'       => 'local_hospital',
+                        'educación'     => 'school',
+                        'educacion'     => 'school',
+                        'escuela'       => 'school',
+                        'universidad'   => 'school',
+                        'banco'         => 'account_balance',
+                        'municipalidad' => 'account_balance',
+                        'municipio'     => 'account_balance',
+                        'policía'       => 'local_police',
+                        'policia'       => 'local_police',
+                        'carabineros'   => 'local_police',
+                        'bomberos'      => 'fire_truck',
+                        'correos'       => 'local_post_office',
+                        'registro'      => 'fact_check',
+                    );
+                    ?>
+                    <div class="bd-region-institutions">
+                        <div class="bd-region-institutions__inner">
+                            <h2 class="bd-region-institutions__title">
+                                <span class="material-symbols-outlined">account_balance</span>
+                                <?php printf( esc_html__( 'Instituciones en %s', 'babel-directory' ), esc_html( $clean_name ) ); ?>
+                            </h2>
+                            <div class="bd-region-institutions__grid">
+                                <?php foreach ( $institutions as $inst_post ) : 
+                                    $cats = \wp_get_post_terms( $inst_post->ID, 'babel_category' );
+                                    $icon = 'business';
+                                    if ( ! empty( $cats ) && ! \is_wp_error( $cats ) ) {
+                                        $cat_slug = strtolower( $cats[0]->slug );
+                                        foreach ( $icon_map as $key => $ico ) {
+                                            if ( strpos( $cat_slug, $key ) !== false ) {
+                                                $icon = $ico;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                ?>
+                                <a href="<?php echo esc_url( get_permalink( $inst_post->ID ) ); ?>" class="bd-institution-card">
+                                    <span class="bd-institution-card__icon material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>
+                                    <span class="bd-institution-card__name"><?php echo esc_html( $inst_post->post_title ); ?></span>
+                                </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
+
+                // 4. Categorías más buscadas de la Región
+                $top_cats_key = 'bd_top_cats_' . $term->term_id;
+                $top_cats = get_transient( $top_cats_key );
+                if ( false === $top_cats ) {
+                    $biz_ids = \get_posts( array(
+                        'post_type'      => 'babel_business',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => -1,
+                        'fields'         => 'ids',
+                        'tax_query'      => array(
+                            array(
+                                'taxonomy' => $term->taxonomy,
+                                'field'    => 'term_id',
+                                'terms'    => $term_ids,
+                                'operator' => 'IN',
+                            ),
+                        ),
+                    ) );
+                    $cat_counts = array();
+                    foreach ( $biz_ids as $biz_id ) {
+                        $biz_cats = \wp_get_post_terms( $biz_id, 'babel_category', array( 'fields' => 'ids' ) );
+                        if ( ! \is_wp_error( $biz_cats ) ) {
+                            foreach ( $biz_cats as $cat_id ) {
+                                $cat_counts[ $cat_id ] = ( isset( $cat_counts[ $cat_id ] ) ? $cat_counts[ $cat_id ] : 0 ) + 1;
+                            }
+                        }
+                    }
+                    \arsort( $cat_counts );
+                    $top_cat_ids = array_slice( array_keys( $cat_counts ), 0, 10 );
+                    $top_cats = array();
+                    foreach ( $top_cat_ids as $cat_id ) {
+                        $cat_term = \get_term( $cat_id, 'babel_category' );
+                        if ( $cat_term && ! \is_wp_error( $cat_term ) ) {
+                            $top_cats[] = $cat_term;
+                        }
+                    }
+                    set_transient( $top_cats_key, $top_cats, 12 * HOUR_IN_SECONDS );
+                }
+
+                if ( ! empty( $top_cats ) ) {
+                    ?>
+                    <div class="bd-region-top-cats">
+                        <div class="bd-region-top-cats__inner">
+                            <h3 class="bd-region-top-cats__title"><?php printf( esc_html__( 'Lo más buscado en %s', 'babel-directory' ), esc_html( $clean_name ) ); ?></h3>
+                            <div class="bd-region-top-cats__chips">
+                                <?php foreach ( $top_cats as $top_cat ) :
+                                    $cat_url = \home_url( '/buscar/?categoria=' . $top_cat->slug . '&region=' . $term->slug );
+                                ?>
+                                <a href="<?php echo esc_url( $cat_url ); ?>" class="bd-top-cat-chip">
+                                    <?php echo esc_html( $top_cat->name ); ?>
+                                </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
+
+                // 5. Negocios Destacados en Página de Región
+                $has_featured = ! empty( \get_posts( array(
+                    'post_type'      => 'babel_business',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => 1,
+                    'fields'         => 'ids',
+                    'meta_query'     => array(
+                        array( 'key' => '_babel_featured', 'value' => '1', 'compare' => '=' ),
+                    ),
+                    'tax_query' => array(
+                        array(
+                            'taxonomy' => $term->taxonomy,
+                            'field'    => 'term_id',
+                            'terms'    => array( $term->term_id ),
+                            'operator' => 'IN',
+                        ),
+                    ),
+                ) ) );
+
+                if ( $has_featured ) {
+                    ?>
+                    <div class="bd-region-featured-wrap">
+                        <div class="bd-region-featured-header">
+                            <h3 class="bd-region-featured-title">
+                                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">stars</span>
+                                <?php esc_html_e( 'Negocios Destacados', 'babel-directory' ); ?>
+                            </h3>
+                        </div>
+                        <?php echo do_shortcode( '[bd_featured_businesses region="' . esc_attr( $term->slug ) . '" limit="4"]' ); ?>
+                    </div>
+                    <?php
+                }
+            }
+            ?>
+
             <!-- Search Filter Bar (Pre-filtrado) -->
-            <div class="bd-region-search-wrapper" style="margin-top: -30px; position: relative; z-index: 10;">
+            <div class="bd-region-search-wrapper" style="position: relative; z-index: 10;">
                 <?php echo do_shortcode( '[bd_filter_bar]' ); ?>
             </div>
 
@@ -1532,6 +2077,29 @@ class Shortcodes {
 
         // Procesar el reclamo cuando se envía el formulario
         if ( isset( $_POST['babel_claim_business_nonce'] ) && wp_verify_nonce( $_POST['babel_claim_business_nonce'], 'babel_claim_business_action' ) ) {
+            
+            // reCAPTCHA v3 Validation
+            $recaptcha_secret = get_option( 'babel_recaptcha_secret_key', '' );
+            if ( ! empty( $recaptcha_secret ) ) {
+                $token = isset( $_POST['recaptcha_token'] ) ? sanitize_text_field( $_POST['recaptcha_token'] ) : '';
+                if ( empty( $token ) ) {
+                    return '<p class="babel-claim-status sdc-text-error" style="margin-top:15px; font-size:14px; color:#d32f2f; font-weight:bold;">❌ Falta el token de seguridad reCAPTCHA.</p>';
+                }
+                $response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', array(
+                    'body' => array(
+                        'secret'   => $recaptcha_secret,
+                        'response' => $token,
+                    )
+                ) );
+                if ( is_wp_error( $response ) ) {
+                    return '<p class="babel-claim-status sdc-text-error" style="margin-top:15px; font-size:14px; color:#d32f2f; font-weight:bold;">❌ Error al contactar con el servidor de validación.</p>';
+                }
+                $body = json_decode( wp_remote_retrieve_body( $response ), true );
+                if ( ! isset( $body['success'] ) || ! $body['success'] || $body['score'] < 0.5 ) {
+                    return '<p class="babel-claim-status sdc-text-error" style="margin-top:15px; font-size:14px; color:#d32f2f; font-weight:bold;">❌ Verificación reCAPTCHA fallida. Eres un bot?</p>';
+                }
+            }
+
             update_post_meta( $post_id, '_babel_claim_pending_user', $current_user_id );
 
             // Notificar al administrador por correo sobre el reclamo pendiente
@@ -1551,8 +2119,9 @@ class Shortcodes {
 
         ob_start();
         ?>
-        <form method="post" action="" class="babel-claim-form" style="margin-top: 15px; display:inline-block;">
+        <form method="post" action="" class="babel-claim-form" id="babel-claim-form-<?php echo esc_attr($post_id); ?>" style="margin-top: 15px; display:inline-block;">
             <?php wp_nonce_field( 'babel_claim_business_action', 'babel_claim_business_nonce' ); ?>
+            <input type="hidden" name="recaptcha_token" class="babel-recaptcha-token" value="">
             <button type="submit" class="babel-btn-claim" style="background:#e5c158; color:#000; padding:10px 20px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;">
                 ¿Eres el dueño? Reclama este negocio
             </button>

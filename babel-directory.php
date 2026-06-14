@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 7.2.6
+ * Version: 8.1.6
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,12 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '8.1.4' );
+define( 'BD_VERSION', '8.1.6' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 // FIX: Forzar HTTPS en la URL del plugin.
 // Detrás de Cloudflare el servidor no ve HTTPS, plugin_dir_url() genera http://
 // y los navegadores bloquean silenciosamente los assets como "mixed content".
-define( 'BD_URL', str_replace( 'http://', 'https://', plugin_dir_url( __FILE__ ) ) );
+define( 'BD_URL', ( defined('WP_DEBUG') && WP_DEBUG ) ? plugin_dir_url( __FILE__ ) : set_url_scheme( plugin_dir_url( __FILE__ ), 'https' ) );
 
 /**
  * Clase principal de inicialización: Babel_Directory_Core (Pattern Singleton).
@@ -117,6 +117,11 @@ class Babel_Directory_Core {
             new \Babel\Directory\Google_Auth();
         }
 
+        // 12.1 Autenticación con Microsoft
+        if ( class_exists( 'Babel\Directory\Microsoft_Auth' ) ) {
+            new \Babel\Directory\Microsoft_Auth();
+        }
+
         // 9. Soporte de Imágenes en Taxonomías
         if ( class_exists( 'Babel\Directory\Taxonomy_Images' ) ) {
             new \Babel\Directory\Taxonomy_Images();
@@ -128,7 +133,7 @@ class Babel_Directory_Core {
         }
 
         // 11. Endpoints de REST API
-        if ( class_exists( '\Babel\Directory\Api\Rest_Endpoints' ) ) {
+        if ( class_exists( 'Babel\Directory\Api\Rest_Endpoints' ) ) {
             new \Babel\Directory\Api\Rest_Endpoints();
         }
 
@@ -142,10 +147,20 @@ class Babel_Directory_Core {
             new \Babel\Directory\Payments();
         }
 
+        // 15. Geolocalización Pasiva (IP Detección)
+        if ( class_exists( 'Babel\Directory\Geolocation' ) ) {
+            new \Babel\Directory\Geolocation();
+        }
+
 
         // 16. API de Publicidad y Redireccionamiento de Clics
         if ( class_exists( 'Babel\Directory\Ads_API' ) ) {
             new \Babel\Directory\Ads_API();
+        }
+
+        // 16.5 Lógica de SEO y Schema Markup
+        if ( class_exists( 'Babel\Directory\SEO' ) ) {
+            new \Babel\Directory\SEO();
         }
 
         // 17. Enrutamiento de Plantillas Autónomas (Fallback Divi/FSE)
@@ -182,33 +197,17 @@ function babel_directory_init() {
 // Arrancar el plugin de forma segura
 babel_directory_init();
 
-
-/**
- * Endpoint temporal para poblar datos de prueba mediante URL
- * Uso: https://tusitio.com/?seed_sushi=1
- */
-add_action( 'init', function() {
-    if ( isset( $_GET['seed_sushi'] ) && $_GET['seed_sushi'] == '1' ) {
-        if ( current_user_can('manage_options') || true ) { // Permitimos temporalmente sin login para facilidad de prueba
-            require_once BD_PATH . 'bin/seed_sushi_club.php';
-            echo "<br><br><a href='/?post_type=babel_business'>Volver</a>";
-            exit;
-        }
-    }
-});
-
 /**
  * Configuración SMTP para wp_mail.
- * Utiliza los datos provistos: contacto@soydechile.cl / Roberto987/ / mail.soydechile.cl
  */
 add_action( 'phpmailer_init', function( $phpmailer ) {
     $phpmailer->isSMTP();
-    $phpmailer->Host       = 'mail.soydechile.cl';
-    $phpmailer->SMTPAuth   = true;
-    $phpmailer->Port       = 587;
-    $phpmailer->Username   = 'contacto@soydechile.cl';
-    $phpmailer->Password   = 'Roberto987/';
-    $phpmailer->SMTPSecure = 'tls';
-    $phpmailer->From       = 'contacto@soydechile.cl';
-    $phpmailer->FromName   = 'Soy de Chile';
+    $phpmailer->Host       = defined('BD_SMTP_HOST') ? BD_SMTP_HOST : 'mail.soydechile.cl';
+    $phpmailer->SMTPAuth   = defined('BD_SMTP_USER') && defined('BD_SMTP_PASS');
+    $phpmailer->Port       = defined('BD_SMTP_PORT') ? BD_SMTP_PORT : 587;
+    $phpmailer->Username   = defined('BD_SMTP_USER') ? BD_SMTP_USER : '';
+    $phpmailer->Password   = defined('BD_SMTP_PASS') ? BD_SMTP_PASS : '';
+    $phpmailer->SMTPSecure = defined('BD_SMTP_SECURE') ? BD_SMTP_SECURE : 'tls';
+    $phpmailer->From       = defined('BD_SMTP_FROM') ? BD_SMTP_FROM : 'contacto@soydechile.cl';
+    $phpmailer->FromName   = defined('BD_SMTP_FROM_NAME') ? BD_SMTP_FROM_NAME : 'Soy de Chile';
 } );

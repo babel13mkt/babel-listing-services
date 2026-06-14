@@ -12,6 +12,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const radiusInput = document.getElementById('babel-search-radius');
     const geoBtn = document.getElementById('babel-geo-btn');
 
+    // reCAPTCHA v3 Interceptor para Claim Forms
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.classList.contains('babel-claim-form')) {
+            const claimForm = e.target;
+            if (typeof babel_vars !== 'undefined' && babel_vars.recaptcha_site_key && typeof grecaptcha !== 'undefined') {
+                const tokenInput = claimForm.querySelector('.babel-recaptcha-token');
+                if (tokenInput && !tokenInput.value) {
+                    e.preventDefault();
+                    
+                    const btn = claimForm.querySelector('button[type="submit"]');
+                    const originalText = btn ? btn.innerHTML : '';
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = 'Verificando...';
+                    }
+
+                    grecaptcha.ready(function() {
+                        grecaptcha.execute(babel_vars.recaptcha_site_key, {action: 'claim'}).then(function(token) {
+                            tokenInput.value = token;
+                            if (btn) btn.innerHTML = originalText;
+                            claimForm.submit();
+                        }).catch(function() {
+                            if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+                            claimForm.submit();
+                        });
+                    });
+                }
+            }
+        }
+    });
+
     if (!searchForm && !resultsContainer) {
         return;
     }
@@ -160,11 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             } else {
-                resultsContainer.innerHTML = `<div class="babel-error-message">${result.data || 'Ocurrió un error inesperado al cargar los resultados.'}</div>`;
+                resultsContainer.innerHTML = '';
+                const errDiv = document.createElement('div');
+                errDiv.className = 'babel-error-message';
+                errDiv.textContent = typeof result.data === 'string' ? result.data : 'Ocurrió un error inesperado al cargar los resultados.';
+                resultsContainer.appendChild(errDiv);
             }
         } catch (error) {
             console.error('Babel Directory Search Error:', error);
-            resultsContainer.innerHTML = `<div class="babel-error-message">Error de conexión con el servidor. Por favor, intenta de nuevo más tarde.</div>`;
+            resultsContainer.innerHTML = '';
+            const errDiv = document.createElement('div');
+            errDiv.className = 'babel-error-message';
+            errDiv.textContent = 'Error de conexión con el servidor. Por favor, intenta de nuevo más tarde.';
+            resultsContainer.appendChild(errDiv);
         } finally {
             resultsContainer.classList.remove('babel-loading-state');
             resultsContainer.style.opacity = '1';
@@ -219,7 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (item.type === 'region') { icon = '📍'; typeLabel = '<span class="babel-ac-type">Región</span>'; }
                         if (item.type === 'business') { icon = '🏪'; }
                         
-                        div.innerHTML = `<span class="babel-ac-icon">${icon}</span> <span class="babel-ac-label">${item.label}</span> ${typeLabel}`;
+                        div.innerHTML = `<span class="babel-ac-icon">${icon}</span> <span class="babel-ac-label"></span> ${typeLabel}`;
+                        div.querySelector('.babel-ac-label').textContent = item.label;
                         
                         div.addEventListener('click', () => {
                             // Si es categoría o región, rellenar el input. Lo ideal es rellenar con el nombre.
@@ -510,3 +550,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }, true); // Fase de captura
     });
 });
+
+// ============================================================
+// BABEL REGIONS CAROUSEL — Vanilla JS (sin jQuery)
+// Patrón: delegación de eventos en document para compatibilidad
+// con nodos reinyectados por AJAX.
+// ============================================================
+(function () {
+    'use strict';
+
+    function initBabelCarousel(carousel) {
+        var track    = carousel.querySelector('.babel-carousel-track');
+        var btnPrev  = carousel.querySelector('.babel-carousel-btn--prev');
+        var btnNext  = carousel.querySelector('.babel-carousel-btn--next');
+        if (!track || !btnPrev || !btnNext) { return; }
+
+        var items        = track.querySelectorAll('.babel-region-wrapper');
+        var total        = items.length;
+        var currentIndex = 0;
+
+        function getVisible() {
+            var w = carousel.offsetWidth;
+            if (w < 640) { return 2; }
+            if (w < 980) { return 3; }
+            return 5;
+        }
+
+        function getItemWidth() {
+            var gap     = 16;
+            var visible = getVisible();
+            var wrap    = carousel.querySelector('.babel-carousel-track-wrap');
+            return (wrap.offsetWidth - gap * (visible - 1)) / visible;
+        }
+
+        function goTo(index) {
+            var visible  = getVisible();
+            var maxIndex = Math.max(0, total - visible);
+            if (index < 0)        { index = maxIndex; }
+            if (index > maxIndex) { index = 0; }
+            currentIndex = index;
+            var itemW  = getItemWidth();
+            var offset = currentIndex * (itemW + 16);
+            track.style.transform = 'translateX(-' + offset + 'px)';
+        }
+
+        btnNext.addEventListener('click', function () { goTo(currentIndex + 1); });
+        btnPrev.addEventListener('click', function () { goTo(currentIndex - 1); });
+
+        // Touch/swipe
+        var touchStartX = 0;
+        carousel.addEventListener('touchstart', function (e) {
+            touchStartX = e.changedTouches[0].clientX;
+        }, { passive: true });
+        carousel.addEventListener('touchend', function (e) {
+            var diff = touchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 40) {
+                goTo(diff > 0 ? currentIndex + 1 : currentIndex - 1);
+            }
+        }, { passive: true });
+
+        // Resize
+        var resizeTimer;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () { goTo(currentIndex); }, 150);
+        });
+    }
+
+    function initAllCarousels() {
+        document.querySelectorAll('[data-carousel="babel-regions"]').forEach(initBabelCarousel);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllCarousels);
+    } else {
+        initAllCarousels();
+    }
+}());

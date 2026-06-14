@@ -22,6 +22,9 @@ class CPT {
         add_action( 'init', array( $this, 'register_cpts' ), 10 );
         add_action( 'init', array( $this, 'register_meta_fields' ), 11 );
         add_action( 'init', array( $this, 'register_rewrite_rules' ), 12 );
+
+        // Invalidación de transients de regiones al actualizar negocios
+        add_action( 'save_post_babel_business', array( $this, 'invalidate_region_transients' ), 10, 1 );
     }
 
     /**
@@ -292,6 +295,32 @@ class CPT {
                 'single'       => true,
                 'type'         => $type,
             ) );
+        }
+    }
+
+    /**
+     * Invalida los transients de instituciones y categorías top de la región/comuna
+     * cuando un negocio de la misma es actualizado o creado.
+     *
+     * @param int $post_id ID del post que se guarda.
+     */
+    public function invalidate_region_transients( $post_id ) {
+        if ( \wp_is_post_revision( $post_id ) ) { return; }
+        
+        $regions = \wp_get_post_terms( $post_id, 'babel_region', array( 'fields' => 'ids' ) );
+        if ( \is_wp_error( $regions ) || empty( $regions ) ) { return; }
+        
+        foreach ( $regions as $region_id ) {
+            \delete_transient( 'bd_institutions_' . $region_id );
+            \delete_transient( 'bd_top_cats_' . $region_id );
+            
+            // También invalidar padres para mantener consistencia recursiva
+            $term_obj = \get_term( $region_id, 'babel_region' );
+            if ( $term_obj && ! \is_wp_error( $term_obj ) && $term_obj->parent ) {
+                $parent_id = $term_obj->parent;
+                \delete_transient( 'bd_institutions_' . $parent_id );
+                \delete_transient( 'bd_top_cats_' . $parent_id );
+            }
         }
     }
 }

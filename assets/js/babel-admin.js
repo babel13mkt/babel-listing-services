@@ -9,6 +9,88 @@ function initBabelAdmin() {
     console.log("🚀 Babel Admin JS Initialized");
     try {
     // 1. Main SPA Tabs Logic
+    let currentSearch = '';
+    let currentPage = 1;
+    let searchTimeout = null;
+
+    function fetchBusinesses(search, paged) {
+        const tableBody = document.getElementById('sdc-table-body');
+        const paginationContainer = document.getElementById('sdc-pagination-container');
+        const spinner = document.getElementById('sdc-search-spinner');
+        
+        if (!tableBody) return;
+        
+        if (spinner) spinner.style.display = 'block';
+        
+        const formData = new FormData();
+        formData.append('action', 'sdc_fetch_businesses');
+        formData.append('search', search);
+        formData.append('paged', paged);
+        
+        const endpoint = (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '');
+        if (!endpoint) {
+            if (spinner) spinner.style.display = 'none';
+            console.error('Error: no se encontró la URL de AJAX.');
+            return;
+        }
+        
+        fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data) {
+                tableBody.innerHTML = res.data.rows;
+                if (paginationContainer) {
+                    paginationContainer.innerHTML = res.data.pagination;
+                }
+                // Reset the select all checkbox
+                const selectAllCb = document.getElementById('sdc-bulk-select-all');
+                if (selectAllCb) selectAllCb.checked = false;
+            } else {
+                console.error('Error fetching businesses:', res.data);
+            }
+        })
+        .catch(err => {
+            console.error('Network error fetching businesses:', err);
+        })
+        .finally(() => {
+            if (spinner) spinner.style.display = 'none';
+        });
+    }
+
+    // Search Input Event Listener
+    const searchInput = document.getElementById('sdc-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            currentSearch = val;
+            currentPage = 1;
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchBusinesses(currentSearch, currentPage);
+            }, 300);
+        });
+    }
+
+    // Pagination Click delegation
+    const paginationContainer = document.getElementById('sdc-pagination-container');
+    if (paginationContainer) {
+        paginationContainer.addEventListener('click', function(e) {
+            const btn = e.target.closest('.sdc-pagination-btn');
+            if (btn && !btn.disabled && !btn.classList.contains('active')) {
+                e.preventDefault();
+                const page = parseInt(btn.getAttribute('data-page'));
+                if (page) {
+                    currentPage = page;
+                    fetchBusinesses(currentSearch, currentPage);
+                }
+            }
+        });
+    }
+
     const mainTabBtns = document.querySelectorAll('.sdc-tab-btn');
     const mainTabContents = document.querySelectorAll('.sdc-tab-content');
 
@@ -281,7 +363,13 @@ function initBabelAdmin() {
         .then(data => {
             if (data.success) {
                 showToast(data.data);
-                setTimeout(() => location.reload(), 800);
+                if (document.getElementById('sdc-table-body')) {
+                    setTimeout(() => {
+                        fetchBusinesses(currentSearch, currentPage);
+                    }, 500);
+                } else {
+                    setTimeout(() => location.reload(), 800);
+                }
             } else {
                 showToast('Error: ' + (data.data || 'Respuesta inesperada del servidor'), 'error');
                 if (btnElement) {
@@ -299,32 +387,31 @@ function initBabelAdmin() {
         });
     }
 
-    // Individual Action Buttons
-    const quickActionBtns = document.querySelectorAll('.sdc-quick-action-btn');
-    quickActionBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const action = this.getAttribute('data-action');
-            const postId = this.getAttribute('data-postid');
-            const originalText = action === 'trash' ? 'Borrar' : 'Suspender';
-            
-            const actionText = action === 'trash' ? 'borrar' : 'suspender';
-            if (!confirm(`¿Estás seguro de que deseas ${actionText} este negocio?`)) {
-                return;
-            }
-            
-            executeQuickAction(action, postId, this, originalText);
-        });
+    // Individual Action Buttons (using Event Delegation to support dynamic table content)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.sdc-quick-action-btn');
+        if (!btn) return;
+        
+        e.preventDefault();
+        const action = btn.getAttribute('data-action');
+        const postId = btn.getAttribute('data-postid');
+        const originalText = action === 'trash' ? 'Borrar' : 'Suspender';
+        
+        const actionText = action === 'trash' ? 'borrar' : 'suspender';
+        if (!confirm(`¿Estás seguro de que deseas ${actionText} este negocio?`)) {
+            return;
+        }
+        
+        executeQuickAction(action, postId, btn, originalText);
     });
 
-    // Bulk Select All Checkbox
-    const selectAllCb = document.getElementById('sdc-bulk-select-all');
-    if (selectAllCb) {
-        selectAllCb.addEventListener('change', function() {
-            const isChecked = this.checked;
+    // Bulk Select All Checkbox (using Event Delegation)
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'sdc-bulk-select-all') {
+            const isChecked = e.target.checked;
             document.querySelectorAll('.sdc-bulk-select-item').forEach(cb => cb.checked = isChecked);
-        });
-    }
+        }
+    });
 
     // Bulk Action Handlers
     function handleBulkAction(action, btnId) {

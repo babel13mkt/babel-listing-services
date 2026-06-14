@@ -87,6 +87,40 @@ class Assets {
             true 
         );
 
+        wp_register_style(
+            'babel-global-auth-css',
+            BD_URL . 'assets/css/babel-global-auth.css',
+            array(),
+            BD_VERSION
+        );
+
+        wp_register_script(
+            'babel-global-auth-js',
+            BD_URL . 'assets/js/babel-global-auth.js',
+            array('jquery'),
+            BD_VERSION,
+            true
+        );
+
+        wp_register_script(
+            'babel-geolocation-js',
+            BD_URL . 'assets/js/babel-geolocation.js',
+            array(),
+            BD_VERSION,
+            true
+        );
+        
+        $client_id = get_option( 'babel_google_client_id', '' );
+        if ( ! empty( $client_id ) ) {
+            wp_register_script( 'google-gsi-client-global', 'https://accounts.google.com/gsi/client', array(), null, false );
+        }
+        $ms_client_id = get_option( 'babel_microsoft_client_id', '' );
+        if ( ! empty( $ms_client_id ) ) {
+            wp_register_script( 'msal-browser', 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js', array(), null, false );
+        }
+
+        $recaptcha_site_key = get_option( 'babel_recaptcha_site_key', '' );
+        
         // Pasar variables de forma segura desde el backend a JavaScript
         wp_localize_script( 'babel-public-js', 'babel_vars', array(
             'ajax_url'         => admin_url( 'admin-ajax.php' ), // Para retrocompatibilidad
@@ -94,6 +128,9 @@ class Assets {
             'nonce'            => wp_create_nonce( 'babel_search_nonce' ),
             'submission_nonce' => wp_create_nonce( 'babel_submission_nonce' ),
             'ajaxUrl'          => admin_url( 'admin-ajax.php' ), // alias para form-submission.js
+            'google_login_nonce' => wp_create_nonce( 'babel_google_login_nonce' ),
+            'microsoft_login_nonce' => wp_create_nonce( 'babel_microsoft_login_nonce' ),
+            'recaptcha_site_key' => esc_js( $recaptcha_site_key ),
         ) );
     }
 
@@ -137,6 +174,20 @@ class Assets {
     public function force_enqueue_babel_css() {
         wp_enqueue_style( 'babel-public-css' );
         wp_enqueue_script( 'babel-public-js' );
+        
+        wp_enqueue_style( 'babel-global-auth-css' );
+        wp_enqueue_script( 'babel-global-auth-js' );
+        wp_enqueue_script( 'babel-geolocation-js' );
+        
+        $client_id = get_option( 'babel_google_client_id', '' );
+        if ( ! empty( $client_id ) && ! is_user_logged_in() ) {
+            wp_enqueue_script( 'google-gsi-client-global' );
+        }
+        
+        $recaptcha_site_key = get_option( 'babel_recaptcha_site_key', '' );
+        if ( ! empty( $recaptcha_site_key ) ) {
+            wp_enqueue_script( 'google-recaptcha-v3-global', 'https://www.google.com/recaptcha/api.js?render=' . esc_attr( $recaptcha_site_key ), array(), null, false );
+        }
     }
 
 }

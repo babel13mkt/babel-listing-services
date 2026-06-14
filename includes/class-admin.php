@@ -26,6 +26,7 @@ class Admin {
         add_action( 'wp_ajax_sdc_save_settings', array( $this, 'ajax_save_settings' ) );
         add_action( 'wp_ajax_sdc_save_business', array( $this, 'ajax_save_business' ) );
         add_action( 'wp_ajax_sdc_quick_action', array( $this, 'ajax_quick_action' ) );
+        add_action( 'wp_ajax_sdc_fetch_businesses', array( $this, 'ajax_fetch_businesses' ) );
     }
 
     /**
@@ -35,6 +36,16 @@ class Admin {
         register_setting(
             'babel_directory_settings_group',
             'babel_google_client_id',
+            array(
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            )
+        );
+
+        register_setting(
+            'babel_directory_settings_group',
+            'babel_microsoft_client_id',
             array(
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
@@ -56,6 +67,45 @@ class Admin {
             'bd-settings',
             'babel_google_section'
         );
+
+        add_settings_section(
+            'babel_microsoft_section',
+            __( 'Integración con Microsoft (Hotmail/Outlook)', 'babel-directory' ),
+            array( $this, 'render_microsoft_section_description' ),
+            'bd-settings'
+        );
+
+        add_settings_field(
+            'babel_microsoft_client_id',
+            __( 'Microsoft Client ID', 'babel-directory' ),
+            array( $this, 'render_microsoft_client_id_field' ),
+            'bd-settings',
+            'babel_microsoft_section'
+        );
+
+        // reCAPTCHA v3 Section
+        add_settings_section(
+            'babel_recaptcha_section',
+            __( 'Google reCAPTCHA v3 (Protección Anti-Spam)', 'babel-directory' ),
+            array( $this, 'render_recaptcha_section_description' ),
+            'bd-settings'
+        );
+
+        add_settings_field(
+            'babel_recaptcha_site_key',
+            __( 'reCAPTCHA Site Key', 'babel-directory' ),
+            array( $this, 'render_recaptcha_site_key_field' ),
+            'bd-settings',
+            'babel_recaptcha_section'
+        );
+
+        add_settings_field(
+            'babel_recaptcha_secret_key',
+            __( 'reCAPTCHA Secret Key', 'babel-directory' ),
+            array( $this, 'render_recaptcha_secret_key_field' ),
+            'bd-settings',
+            'babel_recaptcha_section'
+        );
     }
 
     public function render_google_section_description() {
@@ -71,6 +121,35 @@ class Admin {
         echo '<input type="text" name="babel_google_client_id" id="babel_google_client_id" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="123456789-abc...apps.googleusercontent.com" />';
     }
 
+    public function render_microsoft_section_description() {
+        echo '<p class="sdc-text-muted" style="margin-bottom:12px;">';
+        esc_html_e( 'Configura tu Microsoft Client ID (Id de Aplicación) para habilitar el login con Hotmail/Outlook/Live.', 'babel-directory' );
+        echo '</p>';
+    }
+
+    public function render_microsoft_client_id_field() {
+        $value = get_option( 'babel_microsoft_client_id', '' );
+        echo '<input type="text" name="babel_microsoft_client_id" id="babel_microsoft_client_id" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="11111111-2222-3333-4444-555555555555" />';
+    }
+
+    public function render_recaptcha_section_description() {
+        echo '<p class="sdc-text-muted" style="margin-bottom:12px;">';
+        esc_html_e( 'Configura tus claves de Google reCAPTCHA v3 para proteger los formularios de envíos de SPAM de forma invisible.', 'babel-directory' );
+        echo '</p>';
+    }
+
+    public function render_recaptcha_site_key_field() {
+        $value = get_option( 'babel_recaptcha_site_key', '' );
+        if ( empty( $value ) ) $value = '6Lc0QR8tAAAAALfEQBAWp3MQyluv8gJu1BUfZ-5t'; // Inject default
+        echo '<input type="text" name="babel_recaptcha_site_key" id="babel_recaptcha_site_key" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="6Lc..." />';
+    }
+
+    public function render_recaptcha_secret_key_field() {
+        $value = get_option( 'babel_recaptcha_secret_key', '' );
+        if ( empty( $value ) ) $value = '6Lc0QR8tAAAAAKWv7ddQgzP5MyEtbxmWIQGPYGTx'; // Inject default
+        echo '<input type="password" name="babel_recaptcha_secret_key" id="babel_recaptcha_secret_key" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="6Lc..." />';
+    }
+
     /**
      * Guardado de configuración vía AJAX para la SPA.
      */
@@ -81,6 +160,15 @@ class Admin {
         
         if ( isset( $_POST['babel_google_client_id'] ) ) {
             update_option( 'babel_google_client_id', sanitize_text_field( wp_unslash( $_POST['babel_google_client_id'] ) ) );
+        }
+        if ( isset( $_POST['babel_microsoft_client_id'] ) ) {
+            update_option( 'babel_microsoft_client_id', sanitize_text_field( wp_unslash( $_POST['babel_microsoft_client_id'] ) ) );
+        }
+        if ( isset( $_POST['babel_recaptcha_site_key'] ) ) {
+            update_option( 'babel_recaptcha_site_key', sanitize_text_field( wp_unslash( $_POST['babel_recaptcha_site_key'] ) ) );
+        }
+        if ( isset( $_POST['babel_recaptcha_secret_key'] ) ) {
+            update_option( 'babel_recaptcha_secret_key', sanitize_text_field( wp_unslash( $_POST['babel_recaptcha_secret_key'] ) ) );
         }
         
         wp_send_json_success( 'Guardado correctamente.' );
@@ -261,6 +349,150 @@ class Admin {
         wp_send_json_error( 'Acción desconocida o no se aplicó a ningún negocio.' );
     }
 
+    /**
+     * Endpoint AJAX para buscar y paginar negocios
+     */
+    public function ajax_fetch_businesses() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Permisos insuficientes.' );
+            return;
+        }
+
+        $paged  = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
+        $search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
+
+        $args = array(
+            'post_type'      => 'babel_business',
+            'post_status'    => array( 'publish', 'pending', 'draft' ),
+            'posts_per_page' => 10,
+            'paged'          => $paged,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        );
+
+        if ( ! empty( $search ) ) {
+            $args['s'] = $search;
+        }
+
+        $query = new \WP_Query( $args );
+
+        $rows_html = $this->render_table_rows_html( $query );
+        $pagination_html = $this->render_pagination_html( $query, $paged );
+
+        wp_send_json_success( array(
+            'rows'        => $rows_html,
+            'pagination'  => $pagination_html,
+            'found_posts' => $query->found_posts,
+            'max_pages'   => $query->max_num_pages,
+        ) );
+    }
+
+    /**
+     * Renderiza las filas de la tabla de negocios.
+     *
+     * @param \WP_Query $query Consulta WP_Query.
+     * @return string HTML de las filas de la tabla.
+     */
+    public function render_table_rows_html( $query ) {
+        ob_start();
+        if ( $query->have_posts() ) :
+            while ( $query->have_posts() ) : $query->the_post();
+                $post_status = get_post_status();
+                if ( $post_status === 'publish' ) {
+                    $status_label  = 'Publicado';
+                    $badge_bg      = '#dcfce7';
+                    $badge_color   = '#166534';
+                } elseif ( $post_status === 'pending' ) {
+                    $status_label  = 'Pendiente';
+                    $badge_bg      = '#fef08a';
+                    $badge_color   = '#854d0e';
+                } else {
+                    $status_label  = 'Borrador';
+                    $badge_bg      = '#f1f5f9';
+                    $badge_color   = '#64748b';
+                }
+                $edit_link = admin_url( 'admin.php?page=bd-panel&edit_id=' . get_the_ID() );
+                ?>
+                <tr>
+                    <td><strong><?php echo esc_html( get_the_title() ); ?></strong></td>
+                    <td>
+                        <span style="background:<?php echo esc_attr( $badge_bg ); ?>; color:<?php echo esc_attr( $badge_color ); ?>; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;">
+                            <?php echo esc_html( $status_label ); ?>
+                        </span>
+                    </td>
+                    <td style="display: flex; align-items: center;">
+                        <input type="checkbox" class="sdc-bulk-select-item" value="<?php echo get_the_ID(); ?>" style="margin-right:8px;">
+                        <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#3b82f6; color:#ffffff;">Editar (SPA)</a>
+                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="suspend" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#f59e0b; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Pausar negocio (Borrador)">Suspender</button>
+                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="trash" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#ef4444; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Eliminar negocio">Borrar</button>
+                        <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569; margin-left:8px;">Ver Pág.</a>
+                    </td>
+                </tr>
+            <?php endwhile; wp_reset_postdata(); ?>
+        <?php else : ?>
+            <tr>
+                <td colspan="3" style="text-align:center; padding: 24px; color: var(--sdc-text-muted);">No se encontraron negocios.</td>
+            </tr>
+        <?php endif;
+        return ob_get_clean();
+    }
+
+    /**
+     * Genera el HTML para los controles de paginación.
+     *
+     * @param \WP_Query $query Consulta WP_Query.
+     * @param int       $paged Página actual.
+     * @return string HTML de la paginación.
+     */
+    public function render_pagination_html( $query, $paged ) {
+        $max_pages = $query->max_num_pages;
+        if ( $max_pages <= 1 ) {
+            return '';
+        }
+
+        $html = '<div class="sdc-pagination">';
+
+        // Botón Anterior
+        if ( $paged > 1 ) {
+            $html .= sprintf( '<button class="sdc-pagination-btn" data-page="%d">&larr; Ant.</button>', $paged - 1 );
+        } else {
+            $html .= '<button class="sdc-pagination-btn" disabled>&larr; Ant.</button>';
+        }
+
+        // Números de Página
+        for ( $i = 1; $i <= $max_pages; $i++ ) {
+            if ( $i === $paged ) {
+                $html .= sprintf( '<span class="sdc-pagination-btn active">%d</span>', $i );
+            } else {
+                // Mostrar primer/último y páginas cercanas a la actual si hay demasiadas
+                if ( $max_pages > 8 ) {
+                    if ( $i === 1 || $i === $max_pages || abs( $i - $paged ) <= 2 ) {
+                        $html .= sprintf( '<button class="sdc-pagination-btn" data-page="%d">%d</button>', $i, $i );
+                    } elseif ( $i === 2 || $i === $max_pages - 1 ) {
+                        $html .= '<span class="sdc-pagination-ellipsis">...</span>';
+                    }
+                } else {
+                    $html .= sprintf( '<button class="sdc-pagination-btn" data-page="%d">%d</button>', $i, $i );
+                }
+            }
+        }
+
+        // Botón Siguiente
+        if ( $paged < $max_pages ) {
+            $html .= sprintf( '<button class="sdc-pagination-btn" data-page="%d">Sig. &rarr;</button>', $paged + 1 );
+        } else {
+            $html .= '<button class="sdc-pagination-btn" disabled>Sig. &rarr;</button>';
+        }
+
+        $html .= '</div>';
+
+        // Evitar elipses dobles seguidas en el renderizado
+        $html = str_replace( '<span class="sdc-pagination-ellipsis">...</span><span class="sdc-pagination-ellipsis">...</span>', '<span class="sdc-pagination-ellipsis">...</span>', $html );
+
+        return $html;
+    }
+
+
 
     /**
      * Registra la página de administración única de la SPA.
@@ -342,8 +574,15 @@ class Admin {
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 24px;">
-                    <h3 style="margin:0;">Últimos Negocios Registrados</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 24px; flex-wrap: wrap; gap: 12px;">
+                    <h3 style="margin:0;">Negocios Registrados</h3>
+                    
+                    <div class="sdc-search-wrapper">
+                        <span class="dashicons dashicons-search sdc-search-icon"></span>
+                        <input type="text" id="sdc-search-input" class="sdc-search-input" placeholder="Buscar negocio por nombre..." autocomplete="off">
+                        <span class="dashicons dashicons-update sdc-search-spinner" id="sdc-search-spinner"></span>
+                    </div>
+
                     <div style="display: flex; gap: 8px;">
                         <button type="button" id="sdc-bulk-suspend-btn" class="sdc-btn" style="background:#f59e0b; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer;">Suspender Seleccionados</button>
                         <button type="button" id="sdc-bulk-trash-btn" class="sdc-btn" style="background:#ef4444; color:#fff; border:none; padding:6px 16px; border-radius:6px; cursor:pointer;">Borrar Seleccionados</button>
@@ -361,7 +600,7 @@ class Admin {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="sdc-table-body">
                             <?php
                             $recent_businesses = new \WP_Query( array(
                                 'post_type'      => 'babel_business',
@@ -370,49 +609,13 @@ class Admin {
                                 'orderby'        => 'date',
                                 'order'          => 'DESC'
                             ) );
-
-                            if ( $recent_businesses->have_posts() ) :
-                                while ( $recent_businesses->have_posts() ) : $recent_businesses->the_post();
-                                    $post_status = get_post_status();
-                                    if ( $post_status === 'publish' ) {
-                                        $status_label  = 'Publicado';
-                                        $badge_bg      = '#dcfce7';
-                                        $badge_color   = '#166534';
-                                    } elseif ( $post_status === 'pending' ) {
-                                        $status_label  = 'Pendiente';
-                                        $badge_bg      = '#fef08a';
-                                        $badge_color   = '#854d0e';
-                                    } else {
-                                        $status_label  = 'Borrador';
-                                        $badge_bg      = '#f1f5f9';
-                                        $badge_color   = '#64748b';
-                                    }
-                                    $edit_link = admin_url( 'admin.php?page=bd-panel&edit_id=' . get_the_ID() );
-                                    $native_link = get_edit_post_link( get_the_ID() );
-                                    ?>
-                                    <tr>
-                                        <td><strong><?php echo esc_html( get_the_title() ); ?></strong></td>
-                                        <td>
-                                            <span style="background:<?php echo esc_attr( $badge_bg ); ?>; color:<?php echo esc_attr( $badge_color ); ?>; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;">
-                                                <?php echo esc_html( $status_label ); ?>
-                                            </span>
-                                        </td>
-                                        <td style="display: flex; align-items: center;">
-                                            <input type="checkbox" class="sdc-bulk-select-item" value="<?php echo get_the_ID(); ?>" style="margin-right:8px;">
-                                            <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#3b82f6; color:#ffffff;">Editar (SPA)</a>
-                                            <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="suspend" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#f59e0b; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Pausar negocio (Borrador)">Suspender</button>
-                                            <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="trash" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#ef4444; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Eliminar negocio">Borrar</button>
-                                            <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569; margin-left:8px;">Ver Pág.</a>
-                                        </td>
-                                    </tr>
-                                <?php endwhile; wp_reset_postdata(); ?>
-                            <?php else : ?>
-                                <tr>
-                                    <td colspan="3" style="text-align:center; padding: 24px; color: var(--sdc-text-muted);">No hay negocios registrados aún.</td>
-                                </tr>
-                            <?php endif; ?>
+                            echo $this->render_table_rows_html( $recent_businesses );
+                            ?>
                         </tbody>
                     </table>
+                </div>
+                <div id="sdc-pagination-container" class="sdc-pagination-container">
+                    <?php echo $this->render_pagination_html( $recent_businesses, 1 ); ?>
                 </div>
             </div>
 
@@ -434,8 +637,8 @@ class Admin {
                 <div class="sdc-card">
                     <form id="sdc-settings-form">
                         <?php
-                        // Renderiza los campos de configuración registrados
-                        do_settings_fields( 'bd-settings', 'babel_google_section' );
+                        // Renderiza las secciones y campos
+                        do_settings_sections( 'bd-settings' );
                         ?>
                         <div style="margin-top: 24px;">
                             <button type="submit" class="sdc-btn sdc-btn-primary">Guardar Configuración</button>
@@ -522,6 +725,20 @@ class Admin {
                                 </div>
                                 <p style="margin: 0; font-size:13.5px; color:var(--sdc-text-muted); line-height: 1.5;">
                                     Renderiza el panel privado de cara al comercio. Permite a los usuarios registrados auditar el estado de sus publicaciones (Aprobadas / Pendientes), visualizar el número total de visitas registradas en sus perfiles individuales y actualizar de forma instantánea y segura sus teléfonos de WhatsApp sin necesidad de acceder al panel de WordPress de administración estándar.
+                                </p>
+                            </div>
+
+                            <!-- babel_auth_menu -->
+                            <div style="background: #F9FAFB; border: 1px solid var(--sdc-border); border-radius: 8px; padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+                                    <h3 style="margin:0; font-size:18px; color:var(--sdc-blue);">Menú de Login Global (Estilo Trivago)</h3>
+                                    <div style="display:flex; gap:8px;">
+                                        <code style="padding: 6px 12px; background: #E0E7FF; color: var(--sdc-blue); border-radius: 6px; font-weight: bold; font-size: 13px;">[babel_auth_menu]</code>
+                                        <button type="button" id="copy-auth-menu" onclick="copyShortcode('[babel_auth_menu]', 'copy-auth-menu')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar</button>
+                                    </div>
+                                </div>
+                                <p style="margin: 0; font-size:13.5px; color:var(--sdc-text-muted); line-height: 1.5;">
+                                    Dibuja el botón dinámico de "Iniciar sesión" con Google para el Encabezado Global de Divi. Si el visitante no está logueado, muestra el botón y abre un Modal emergente en cualquier página. Si ya está logueado, muestra automáticamente su Avatar de Google y un menú desplegable moderno para ir a "Mi Panel" o "Cerrar sesión".
                                 </p>
                             </div>
 
@@ -718,7 +935,9 @@ class Admin {
                                     <h3 style="margin:0; font-size:18px; color:var(--sdc-blue);">Grilla de Regiones Populares (Portada)</h3>
                                     <div style="display:flex; gap:8px;">
                                         <code style="padding: 6px 12px; background: #E0E7FF; color: var(--sdc-blue); border-radius: 6px; font-weight: bold; font-size: 13px;">[bd_popular_regions]</code>
-                                        <button type="button" id="copy-pop-reg" onclick="copyShortcode('[bd_popular_regions columns=&quot;4&quot; rows=&quot;4&quot;]', 'copy-pop-reg')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Ejemplo</button>
+                                        <button type="button" id="copy-pop-reg" onclick="copyShortcode('[bd_popular_regions columns=&quot;4&quot; rows=&quot;4&quot;]', 'copy-pop-reg')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Ejemplo Grid</button>
+                                        <button type="button" id="copy-pop-reg-car" onclick="copyShortcode('[bd_popular_regions layout=&quot;carousel&quot;]', 'copy-pop-reg-car')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Carrusel</button>
+                                        <button type="button" id="copy-pop-reg-car-count" onclick="copyShortcode('[bd_popular_regions layout=&quot;carousel&quot; orderby=&quot;count&quot;]', 'copy-pop-reg-car-count')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Carrusel (Count)</button>
                                     </div>
                                 </div>
                                 <p style="margin: 0 0 16px 0; font-size:13.5px; color:var(--sdc-text-muted); line-height: 1.5;">
@@ -739,12 +958,22 @@ class Admin {
                                             <tr>
                                                 <td><code>columns</code></td>
                                                 <td><code>4</code></td>
-                                                <td>Cantidad de columnas de la cuadrícula en pantallas de escritorio.</td>
+                                                <td>Cantidad de columnas de la cuadrícula en pantallas de escritorio (cuando el layout es "grid").</td>
                                             </tr>
                                             <tr>
                                                 <td><code>rows</code></td>
                                                 <td><code>4</code></td>
                                                 <td>Filas a renderizar (Ej. 4x4 = 16 regiones máximas).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>layout</code></td>
+                                                <td><code>"grid"</code></td>
+                                                <td>Estilo visual: <code>"grid"</code> (cuadrícula estática) o <code>"carousel"</code> (fila de carrusel con flechas de navegación).</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>orderby</code></td>
+                                                <td><code>"geographic"</code></td>
+                                                <td>Orden de los elementos: <code>"geographic"</code> (norte a sur) o <code>"count"</code> (regiones más buscadas/activas por cantidad de locales).</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -758,7 +987,7 @@ class Admin {
                                     <h3 style="margin:0; font-size:18px; color:var(--sdc-blue);">Grilla de Categorías Populares</h3>
                                     <div style="display:flex; gap:8px;">
                                         <code style="padding: 6px 12px; background: #E0E7FF; color: var(--sdc-blue); border-radius: 6px; font-weight: bold; font-size: 13px;">[bd_popular_categories]</code>
-                                        <button type="button" id="copy-pop-cat" onclick="copyShortcode('[bd_popular_categories columns=&quot;4&quot; rows=&quot;4&quot;]', 'copy-pop-cat')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Ejemplo</button>
+                                        <button type="button" id="copy-pop-cat" onclick="copyShortcode('[bd_popular_categories columns=&quot;6&quot; rows=&quot;2&quot;]', 'copy-pop-cat')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar Ejemplo (6x2)</button>
                                     </div>
                                 </div>
                                 <p style="margin: 0 0 16px 0; font-size:13.5px; color:var(--sdc-text-muted); line-height: 1.5;">

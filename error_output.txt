@@ -1,0 +1,1076 @@
+{
+  "regiones": [
+    {
+      "nombre": "Arica y Parinacota",
+      "comunas": [
+        {
+          "nombre": "Arica",
+          "municipalidad": {
+            "nombre": "Municipalidad de Arica",
+            "sitio_web": "https://www.municipalidadarica.cl"
+          }
+        },
+        {
+          "nombre": "Camarones",
+          "municipalidad": {
+            "nombre": "Municipalidad de Camarones",
+            "sitio_web": "http://www.camarones.cl"
+          }
+        },
+        {
+          "nombre": "Putre",
+          "municipalidad": {
+            "nombre": "Municipalidad de Putre",
+            "sitio_web": "http://www.putre.cl"
+          }
+        },
+        {
+          "nombre": "General Lagos",
+          "municipalidad": {
+            "nombre": "Municipalidad de General Lagos",
+            "sitio_web": "http://www.generallagos.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Tarapacá",
+      "comunas": [
+        {
+          "nombre": "Iquique",
+          "municipalidad": {
+            "nombre": "Municipalidad de Iquique",
+            "sitio_web": "https://www.municipioiquique.cl"
+          }
+        },
+        {
+          "nombre": "Alto Hospicio",
+          "municipalidad": {
+            "nombre": "Municipalidad de Alto Hospicio",
+            "sitio_web": "https://www.altohospicio.cl"
+          }
+        },
+        {
+          "nombre": "Pozo Almonte",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pozo Almonte",
+            "sitio_web": "http://www.pozoalmonte.cl"
+          }
+        },
+        {
+          "nombre": "Camiña",
+          "municipalidad": {
+            "nombre": "Municipalidad de Camiña",
+            "sitio_web": "http://www.camina.cl"
+          }
+        },
+        {
+          "nombre": "Colchane",
+          "municipalidad": {
+            "nombre": "Municipalidad de Colchane",
+            "sitio_web": "http://www.colchane.cl"
+          }
+        },
+        {
+          "nombre": "Huara",
+          "municipalidad": {
+            "nombre": "Municipalidad de Huara",
+            "sitio_web": "http://www.huara.cl"
+          }
+        },
+        {
+          "nombre": "Pica",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pica",
+            "sitio_web": "http://www.pica.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Antofagasta",
+      "comunas": [
+        {
+          "nombre": "Antofagasta",
+          "municipalidad": {
+            "nombre": "Municipalidad de Antofagasta",
+            "sitio_web": "https://www.municipalidadantofagasta.cl"
+          }
+        },
+        {
+          "nombre": "Mejillones",
+          "municipalidad": {
+            "nombre": "Municipalidad de Mejillones",
+            "sitio_web": "https://www.mejillones.cl"
+          }
+        },
+        {
+          "nombre": "Sierra Gorda",
+          "municipalidad": {
+            "nombre": "Municipalidad de Sierra Gorda",
+            "sitio_web": "http://www.sierragorda.cl"
+          }
+        },
+        {
+          "nombre": "Taltal",
+          "municipalidad": {
+            "nombre": "Municipalidad de Taltal",
+            "sitio_web": "http://www.taltal.cl"
+          }
+        },
+        {
+          "nombre": "Calama",
+          "municipalidad": {
+            "nombre": "Municipalidad de Calama",
+            "sitio_web": "https://www.municipalidadcalama.cl"
+          }
+        },
+        {
+          "nombre": "Ollagüe",
+          "municipalidad": {
+            "nombre": "Municipalidad de Ollagüe",
+            "sitio_web": "http://www.ollague.cl"
+          }
+        },
+        {
+          "nombre": "San Pedro de Atacama",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Pedro de Atacama",
+            "sitio_web": "http://www.sanpedrodeatacama.cl"
+          }
+        },
+        {
+          "nombre": "Tocopilla",
+          "municipalidad": {
+            "nombre": "Municipalidad de Tocopilla",
+            "sitio_web": "https://www.tocopilla.cl"
+          }
+        },
+        {
+          "nombre": "María Elena",
+          "municipalidad": {
+            "nombre": "Municipalidad de María Elena",
+            "sitio_web": "http://www.mariaelena.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Atacama",
+      "comunas": [
+        {
+          "nombre": "Copiapó",
+          "municipalidad": {
+            "nombre": "Municipalidad de Copiapó",
+            "sitio_web": "https://www.copiapo.cl"
+          }
+        },
+        {
+          "nombre": "Caldera",
+          "municipalidad": {
+            "nombre": "Municipalidad de Caldera",
+            "sitio_web": "https://www.caldera.cl"
+          }
+        },
+        {
+          "nombre": "Tierra Amarilla",
+          "municipalidad": {
+            "nombre": "Municipalidad de Tierra Amarilla",
+            "sitio_web": "https://www.tierraamarilla.cl"
+          }
+        },
+        {
+          "nombre": "Chañaral",
+          "municipalidad": {
+            "nombre": "Municipalidad de Chañaral",
+            "sitio_web": "http://www.chanaral.cl"
+          }
+        },
+        {
+          "nombre": "Diego de Almagro",
+          "municipalidad": {
+            "nombre": "Municipalidad de Diego de Almagro",
+            "sitio_web": "http://www.diegodealmagro.cl"
+          }
+        },
+        {
+          "nombre": "Vallenar",
+          "municipalidad": {
+            "nombre": "Municipalidad de Vallenar",
+            "sitio_web": "https://www.vallenar.cl"
+          }
+        },
+        {
+          "nombre": "Alto del Carmen",
+          "municipalidad": {
+            "nombre": "Municipalidad de Alto del Carmen",
+            "sitio_web": "http://www.altodelcarmen.cl"
+          }
+        },
+        {
+          "nombre": "Freirina",
+          "municipalidad": {
+            "nombre": "Municipalidad de Freirina",
+            "sitio_web": "http://www.freirina.cl"
+          }
+        },
+        {
+          "nombre": "Huasco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Huasco",
+            "sitio_web": "http://www.huasco.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Coquimbo",
+      "comunas": [
+        {
+          "nombre": "La Serena",
+          "municipalidad": {
+            "nombre": "Municipalidad de La Serena",
+            "sitio_web": "https://www.laserena.cl"
+          }
+        },
+        {
+          "nombre": "Coquimbo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Coquimbo",
+            "sitio_web": "https://www.municoquimbo.cl"
+          }
+        },
+        {
+          "nombre": "Andacollo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Andacollo",
+            "sitio_web": "http://www.andacollo.cl"
+          }
+        },
+        {
+          "nombre": "La Higuera",
+          "municipalidad": {
+            "nombre": "Municipalidad de La Higuera",
+            "sitio_web": "http://www.lahiguera.cl"
+          }
+        },
+        {
+          "nombre": "Paihuano",
+          "municipalidad": {
+            "nombre": "Municipalidad de Paihuano",
+            "sitio_web": "http://www.paihuano.cl"
+          }
+        },
+        {
+          "nombre": "Vicuña",
+          "municipalidad": {
+            "nombre": "Municipalidad de Vicuña",
+            "sitio_web": "https://www.municipalidadvicuna.cl"
+          }
+        },
+        {
+          "nombre": "Illapel",
+          "municipalidad": {
+            "nombre": "Municipalidad de Illapel",
+            "sitio_web": "http://www.illapel.cl"
+          }
+        },
+        {
+          "nombre": "Canela",
+          "municipalidad": {
+            "nombre": "Municipalidad de Canela",
+            "sitio_web": "http://www.canela.cl"
+          }
+        },
+        {
+          "nombre": "Los Vilos",
+          "municipalidad": {
+            "nombre": "Municipalidad de Los Vilos",
+            "sitio_web": "http://www.losvilos.cl"
+          }
+        },
+        {
+          "nombre": "Salamanca",
+          "municipalidad": {
+            "nombre": "Municipalidad de Salamanca",
+            "sitio_web": "https://www.salamanca.cl"
+          }
+        },
+        {
+          "nombre": "Ovalle",
+          "municipalidad": {
+            "nombre": "Municipalidad de Ovalle",
+            "sitio_web": "https://www.ovalle.cl"
+          }
+        },
+        {
+          "nombre": "Combarbalá",
+          "municipalidad": {
+            "nombre": "Municipalidad de Combarbalá",
+            "sitio_web": "http://www.combarbala.cl"
+          }
+        },
+        {
+          "nombre": "Monte Patria",
+          "municipalidad": {
+            "nombre": "Municipalidad de Monte Patria",
+            "sitio_web": "http://www.montepatria.cl"
+          }
+        },
+        {
+          "nombre": "Punitaqui",
+          "municipalidad": {
+            "nombre": "Municipalidad de Punitaqui",
+            "sitio_web": "http://www.punitaqui.cl"
+          }
+        },
+        {
+          "nombre": "Río Hurtado",
+          "municipalidad": {
+            "nombre": "Municipalidad de Río Hurtado",
+            "sitio_web": "http://www.riohurtado.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Valparaíso",
+      "comunas": [
+        {
+          "nombre": "Valparaíso",
+          "municipalidad": {
+            "nombre": "Municipalidad de Valparaíso",
+            "sitio_web": "https://www.municipalidaddevalparaiso.cl"
+          }
+        },
+        {
+          "nombre": "Casablanca",
+          "municipalidad": {
+            "nombre": "Municipalidad de Casablanca",
+            "sitio_web": "https://www.casablancachile.cl"
+          }
+        },
+        {
+          "nombre": "Concón",
+          "municipalidad": {
+            "nombre": "Municipalidad de Concón",
+            "sitio_web": "https://www.concon.cl"
+          }
+        },
+        {
+          "nombre": "Juan Fernández",
+          "municipalidad": {
+            "nombre": "Municipalidad de Juan Fernández",
+            "sitio_web": "http://www.juanfernandez.cl"
+          }
+        },
+        {
+          "nombre": "Puchuncaví",
+          "municipalidad": {
+            "nombre": "Municipalidad de Puchuncaví",
+            "sitio_web": "http://www.puchuncavi.cl"
+          }
+        },
+        {
+          "nombre": "Quintero",
+          "municipalidad": {
+            "nombre": "Municipalidad de Quintero",
+            "sitio_web": "http://www.quintero.cl"
+          }
+        },
+        {
+          "nombre": "Viña del Mar",
+          "municipalidad": {
+            "nombre": "Municipalidad de Viña del Mar",
+            "sitio_web": "https://www.vinadelmarchile.cl"
+          }
+        },
+        {
+          "nombre": "Isla de Pascua",
+          "municipalidad": {
+            "nombre": "Municipalidad de Isla de Pascua",
+            "sitio_web": "http://www.municipioisladepascua.cl"
+          }
+        },
+        {
+          "nombre": "Los Andes",
+          "municipalidad": {
+            "nombre": "Municipalidad de Los Andes",
+            "sitio_web": "https://www.losandes.cl"
+          }
+        },
+        {
+          "nombre": "Calle Larga",
+          "municipalidad": {
+            "nombre": "Municipalidad de Calle Larga",
+            "sitio_web": "http://www.callelarga.cl"
+          }
+        },
+        {
+          "nombre": "Rinconada",
+          "municipalidad": {
+            "nombre": "Municipalidad de Rinconada",
+            "sitio_web": "http://www.rinconada.cl"
+          }
+        },
+        {
+          "nombre": "San Esteban",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Esteban",
+            "sitio_web": "http://www.sanesteban.cl"
+          }
+        },
+        {
+          "nombre": "La Ligua",
+          "municipalidad": {
+            "nombre": "Municipalidad de La Ligua",
+            "sitio_web": "http://www.laligua.cl"
+          }
+        },
+        {
+          "nombre": "Cabildo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Cabildo",
+            "sitio_web": "http://www.cabildo.cl"
+          }
+        },
+        {
+          "nombre": "Papudo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Papudo",
+            "sitio_web": "http://www.papudo.cl"
+          }
+        },
+        {
+          "nombre": "Petorca",
+          "municipalidad": {
+            "nombre": "Municipalidad de Petorca",
+            "sitio_web": "http://www.petorca.cl"
+          }
+        },
+        {
+          "nombre": "Zapallar",
+          "municipalidad": {
+            "nombre": "Municipalidad de Zapallar",
+            "sitio_web": "http://www.zapallar.cl"
+          }
+        },
+        {
+          "nombre": "Quillota",
+          "municipalidad": {
+            "nombre": "Municipalidad de Quillota",
+            "sitio_web": "https://www.quillota.cl"
+          }
+        },
+        {
+          "nombre": "Calera",
+          "municipalidad": {
+            "nombre": "Municipalidad de Calera",
+            "sitio_web": "http://www.calera.cl"
+          }
+        },
+        {
+          "nombre": "Hijuelas",
+          "municipalidad": {
+            "nombre": "Municipalidad de Hijuelas",
+            "sitio_web": "http://www.hijuelas.cl"
+          }
+        },
+        {
+          "nombre": "La Cruz",
+          "municipalidad": {
+            "nombre": "Municipalidad de La Cruz",
+            "sitio_web": "http://www.lacruz.cl"
+          }
+        },
+        {
+          "nombre": "Nogales",
+          "municipalidad": {
+            "nombre": "Municipalidad de Nogales",
+            "sitio_web": "http://www.nogales.cl"
+          }
+        },
+        {
+          "nombre": "San Antonio",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Antonio",
+            "sitio_web": "https://www.sanantonio.cl"
+          }
+        },
+        {
+          "nombre": "Algarrobo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Algarrobo",
+            "sitio_web": "http://www.algarrobo.cl"
+          }
+        },
+        {
+          "nombre": "Cartagena",
+          "municipalidad": {
+            "nombre": "Municipalidad de Cartagena",
+            "sitio_web": "http://www.cartagena.cl"
+          }
+        },
+        {
+          "nombre": "El Quisco",
+          "municipalidad": {
+            "nombre": "Municipalidad de El Quisco",
+            "sitio_web": "http://www.quisco.cl"
+          }
+        },
+        {
+          "nombre": "El Tabo",
+          "municipalidad": {
+            "nombre": "Municipalidad de El Tabo",
+            "sitio_web": "http://www.eltabo.cl"
+          }
+        },
+        {
+          "nombre": "Santo Domingo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Santo Domingo",
+            "sitio_web": "http://www.santodomingo.cl"
+          }
+        },
+        {
+          "nombre": "San Felipe",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Felipe",
+            "sitio_web": "http://www.sanfelipe.cl"
+          }
+        },
+        {
+          "nombre": "Catemu",
+          "municipalidad": {
+            "nombre": "Municipalidad de Catemu",
+            "sitio_web": "http://www.catemu.cl"
+          }
+        },
+        {
+          "nombre": "Llay-Llay",
+          "municipalidad": {
+            "nombre": "Municipalidad de Llay-Llay",
+            "sitio_web": "http://www.llayllay.cl"
+          }
+        },
+        {
+          "nombre": "Panquehue",
+          "municipalidad": {
+            "nombre": "Municipalidad de Panquehue",
+            "sitio_web": "http://www.panquehue.cl"
+          }
+        },
+        {
+          "nombre": "Putaendo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Putaendo",
+            "sitio_web": "http://www.putaendo.cl"
+          }
+        },
+        {
+          "nombre": "Santa María",
+          "municipalidad": {
+            "nombre": "Municipalidad de Santa María",
+            "sitio_web": "http://www.santamaria.cl"
+          }
+        },
+        {
+          "nombre": "Quilpué",
+          "municipalidad": {
+            "nombre": "Municipalidad de Quilpué",
+            "sitio_web": "https://www.quilpue.cl"
+          }
+        },
+        {
+          "nombre": "Limache",
+          "municipalidad": {
+            "nombre": "Municipalidad de Limache",
+            "sitio_web": "http://www.limache.cl"
+          }
+        },
+        {
+          "nombre": "Olmué",
+          "municipalidad": {
+            "nombre": "Municipalidad de Olmué",
+            "sitio_web": "http://www.olmue.cl"
+          }
+        },
+        {
+          "nombre": "Villa Alemana",
+          "municipalidad": {
+            "nombre": "Municipalidad de Villa Alemana",
+            "sitio_web": "https://www.villaalemana.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Región del Libertador General Bernardo O'Higgins",
+      "comunas": [
+        {
+          "nombre": "Rancagua",
+          "municipalidad": {
+            "nombre": "Municipalidad de Rancagua",
+            "sitio_web": "https://www.rancagua.cl"
+          }
+        },
+        {
+          "nombre": "Codegua",
+          "municipalidad": {
+            "nombre": "Municipalidad de Codegua",
+            "sitio_web": "http://www.codegua.cl"
+          }
+        },
+        {
+          "nombre": "Coinco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Coinco",
+            "sitio_web": "http://www.coinco.cl"
+          }
+        },
+        {
+          "nombre": "Coltauco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Coltauco",
+            "sitio_web": "http://www.coltauco.cl"
+          }
+        },
+        {
+          "nombre": "Doñihue",
+          "municipalidad": {
+            "nombre": "Municipalidad de Doñihue",
+            "sitio_web": "http://www.donihue.cl"
+          }
+        },
+        {
+          "nombre": "Graneros",
+          "municipalidad": {
+            "nombre": "Municipalidad de Graneros",
+            "sitio_web": "http://www.graneros.cl"
+          }
+        },
+        {
+          "nombre": "Las Cabras",
+          "municipalidad": {
+            "nombre": "Municipalidad de Las Cabras",
+            "sitio_web": "http://www.lascabras.cl"
+          }
+        },
+        {
+          "nombre": "Machalí",
+          "municipalidad": {
+            "nombre": "Municipalidad de Machalí",
+            "sitio_web": "http://www.machali.cl"
+          }
+        },
+        {
+          "nombre": "Malloa",
+          "municipalidad": {
+            "nombre": "Municipalidad de Malloa",
+            "sitio_web": "http://www.malloa.cl"
+          }
+        },
+        {
+          "nombre": "Mostazal",
+          "municipalidad": {
+            "nombre": "Municipalidad de Mostazal",
+            "sitio_web": "http://www.mostazal.cl"
+          }
+        },
+        {
+          "nombre": "Olivar",
+          "municipalidad": {
+            "nombre": "Municipalidad de Olivar",
+            "sitio_web": "http://www.olivar.cl"
+          }
+        },
+        {
+          "nombre": "Peumo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Peumo",
+            "sitio_web": "http://www.peumo.cl"
+          }
+        },
+        {
+          "nombre": "Pichidegua",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pichidegua",
+            "sitio_web": "http://www.pichidegua.cl"
+          }
+        },
+        {
+          "nombre": "Quinta de Tilcoco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Quinta de Tilcoco",
+            "sitio_web": "http://www.quintadetilcoco.cl"
+          }
+        },
+        {
+          "nombre": "Rengo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Rengo",
+            "sitio_web": "http://www.rengo.cl"
+          }
+        },
+        {
+          "nombre": "Requínoa",
+          "municipalidad": {
+            "nombre": "Municipalidad de Requínoa",
+            "sitio_web": "http://www.requinoa.cl"
+          }
+        },
+        {
+          "nombre": "San Vicente",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Vicente",
+            "sitio_web": "http://www.sanvicente.cl"
+          }
+        },
+        {
+          "nombre": "Pichilemu",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pichilemu",
+            "sitio_web": "http://www.pichilemu.cl"
+          }
+        },
+        {
+          "nombre": "La Estrella",
+          "municipalidad": {
+            "nombre": "Municipalidad de La Estrella",
+            "sitio_web": "http://www.laestrella.cl"
+          }
+        },
+        {
+          "nombre": "Litueche",
+          "municipalidad": {
+            "nombre": "Municipalidad de Litueche",
+            "sitio_web": "http://www.litueche.cl"
+          }
+        },
+        {
+          "nombre": "Marchihue",
+          "municipalidad": {
+            "nombre": "Municipalidad de Marchihue",
+            "sitio_web": "http://www.marchihue.cl"
+          }
+        },
+        {
+          "nombre": "Navidad",
+          "municipalidad": {
+            "nombre": "Municipalidad de Navidad",
+            "sitio_web": "http://www.navidad.cl"
+          }
+        },
+        {
+          "nombre": "Paredones",
+          "municipalidad": {
+            "nombre": "Municipalidad de Paredones",
+            "sitio_web": "http://www.paredones.cl"
+          }
+        },
+        {
+          "nombre": "San Fernando",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Fernando",
+            "sitio_web": "http://www.sanfernando.cl"
+          }
+        },
+        {
+          "nombre": "Chépica",
+          "municipalidad": {
+            "nombre": "Municipalidad de Chépica",
+            "sitio_web": "http://www.chepica.cl"
+          }
+        },
+        {
+          "nombre": "Chimbarongo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Chimbarongo",
+            "sitio_web": "http://www.chimbarongo.cl"
+          }
+        },
+        {
+          "nombre": "Lolol",
+          "municipalidad": {
+            "nombre": "Municipalidad de Lolol",
+            "sitio_web": "http://www.lolol.cl"
+          }
+        },
+        {
+          "nombre": "Nancagua",
+          "municipalidad": {
+            "nombre": "Municipalidad de Nancagua",
+            "sitio_web": "http://www.nancagua.cl"
+          }
+        },
+        {
+          "nombre": "Palmilla",
+          "municipalidad": {
+            "nombre": "Municipalidad de Palmilla",
+            "sitio_web": "http://www.palmilla.cl"
+          }
+        },
+        {
+          "nombre": "Peralillo",
+          "municipalidad": {
+            "nombre": "Municipalidad de Peralillo",
+            "sitio_web": "http://www.peralillo.cl"
+          }
+        },
+        {
+          "nombre": "Placilla",
+          "municipalidad": {
+            "nombre": "Municipalidad de Placilla",
+            "sitio_web": "http://www.placilla.cl"
+          }
+        },
+        {
+          "nombre": "Pumanque",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pumanque",
+            "sitio_web": "http://www.pumanque.cl"
+          }
+        },
+        {
+          "nombre": "Santa Cruz",
+          "municipalidad": {
+            "nombre": "Municipalidad de Santa Cruz",
+            "sitio_web": "http://www.santacruz.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Región del Maule",
+      "comunas": [
+        {
+          "nombre": "Talca",
+          "municipalidad": {
+            "nombre": "Municipalidad de Talca",
+            "sitio_web": "https://www.talca.cl"
+          }
+        },
+        {
+          "nombre": "Constitución",
+          "municipalidad": {
+            "nombre": "Municipalidad de Constitución",
+            "sitio_web": "http://www.constitucion.cl"
+          }
+        },
+        {
+          "nombre": "Curepto",
+          "municipalidad": {
+            "nombre": "Municipalidad de Curepto",
+            "sitio_web": "http://www.curepto.cl"
+          }
+        },
+        {
+          "nombre": "Empedrado",
+          "municipalidad": {
+            "nombre": "Municipalidad de Empedrado",
+            "sitio_web": "http://www.empedrado.cl"
+          }
+        },
+        {
+          "nombre": "Maule",
+          "municipalidad": {
+            "nombre": "Municipalidad de Maule",
+            "sitio_web": "http://www.maule.cl"
+          }
+        },
+        {
+          "nombre": "Pelarco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pelarco",
+            "sitio_web": "http://www.pelarco.cl"
+          }
+        },
+        {
+          "nombre": "Pencahue",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pencahue",
+            "sitio_web": "http://www.pencahue.cl"
+          }
+        },
+        {
+          "nombre": "Río Claro",
+          "municipalidad": {
+            "nombre": "Municipalidad de Río Claro",
+            "sitio_web": "http://www.rioclaro.cl"
+          }
+        },
+        {
+          "nombre": "San Clemente",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Clemente",
+            "sitio_web": "http://www.sanclemente.cl"
+          }
+        },
+        {
+          "nombre": "San Rafael",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Rafael",
+            "sitio_web": "http://www.sanrafael.cl"
+          }
+        },
+        {
+          "nombre": "Cauquenes",
+          "municipalidad": {
+            "nombre": "Municipalidad de Cauquenes",
+            "sitio_web": "http://www.cauquenes.cl"
+          }
+        },
+        {
+          "nombre": "Chanco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Chanco",
+            "sitio_web": "http://www.chanco.cl"
+          }
+        },
+        {
+          "nombre": "Pelluhue",
+          "municipalidad": {
+            "nombre": "Municipalidad de Pelluhue",
+            "sitio_web": "http://www.pelluhue.cl"
+          }
+        },
+        {
+          "nombre": "Curicó",
+          "municipalidad": {
+            "nombre": "Municipalidad de Curicó",
+            "sitio_web": "https://www.curico.cl"
+          }
+        },
+        {
+          "nombre": "Hualañé",
+          "municipalidad": {
+            "nombre": "Municipalidad de Hualañé",
+            "sitio_web": "http://www.hualane.cl"
+          }
+        },
+        {
+          "nombre": "Licantén",
+          "municipalidad": {
+            "nombre": "Municipalidad de Licantén",
+            "sitio_web": "http://www.licanten.cl"
+          }
+        },
+        {
+          "nombre": "Molina",
+          "municipalidad": {
+            "nombre": "Municipalidad de Molina",
+            "sitio_web": "http://www.molina.cl"
+          }
+        },
+        {
+          "nombre": "Rauco",
+          "municipalidad": {
+            "nombre": "Municipalidad de Rauco",
+            "sitio_web": "http://www.rauco.cl"
+          }
+        },
+        {
+          "nombre": "Romeral",
+          "municipalidad": {
+            "nombre": "Municipalidad de Romeral",
+            "sitio_web": "http://www.romeral.cl"
+          }
+        },
+        {
+          "nombre": "Sagrada Familia",
+          "municipalidad": {
+            "nombre": "Municipalidad de Sagrada Familia",
+            "sitio_web": "http://www.sagradafamilia.cl"
+          }
+        },
+        {
+          "nombre": "Teno",
+          "municipalidad": {
+            "nombre": "Municipalidad de Teno",
+            "sitio_web": "http://www.teno.cl"
+          }
+        },
+        {
+          "nombre": "Vichuquén",
+          "municipalidad": {
+            "nombre": "Municipalidad de Vichuquén",
+            "sitio_web": "http://www.vichuquen.cl"
+          }
+        },
+        {
+          "nombre": "Linares",
+          "municipalidad": {
+            "nombre": "Municipalidad de Linares",
+            "sitio_web": "http://www.linares.cl"
+          }
+        },
+        {
+          "nombre": "Colbún",
+          "municipalidad": {
+            "nombre": "Municipalidad de Colbún",
+            "sitio_web": "http://www.colbun.cl"
+          }
+        },
+        {
+          "nombre": "Longaví",
+          "municipalidad": {
+            "nombre": "Municipalidad de Longaví",
+            "sitio_web": "http://www.longavi.cl"
+          }
+        },
+        {
+          "nombre": "Parral",
+          "municipalidad": {
+            "nombre": "Municipalidad de Parral",
+            "sitio_web": "http://www.parral.cl"
+          }
+        },
+        {
+          "nombre": "Retiro",
+          "municipalidad": {
+            "nombre": "Municipalidad de Retiro",
+            "sitio_web": "http://www.retiro.cl"
+          }
+        },
+        {
+          "nombre": "San Javier",
+          "municipalidad": {
+            "nombre": "Municipalidad de San Javier",
+            "sitio_web": "http://www.sanjavier.cl"
+          }
+        },
+        {
+          "nombre": "Villa Alegre",
+          "municipalidad": {
+            "nombre": "Municipalidad de Villa Alegre",
+            "sitio_web": "http://www.villaalegre.cl"
+          }
+        },
+        {
+          "nombre": "Yerbas Buenas",
+          "municipalidad": {
+            "nombre": "Municipalidad de Yerbas Buenas",
+            "sitio_web": "http://www.yerbasbuenas.cl"
+          }
+        }
+      ]
+    },
+    {
+      "nombre": "Región de Ñuble",
+      "comunas": [
+        {
+          "nombre": "Chillán",
+          "municipalidad": {
+            "nombre": "Municipalidad de Chillán",
+            "sitio_web": "https://www.municipalidadchillan.cl"
+          }
+        },
+        {
+          "nombre": "Bulnes",
+          "municipalidad": {
+            "nombre": "Municipalidad de Bulnes",
+            "sitio_web": "http://www.bulnes.cl"
+          }
+        },
+        {
+          "nombre": "Chillán Viejo",
