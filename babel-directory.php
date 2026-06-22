@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 8.1.6
+ * Version: 8.2.0
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '8.1.6' );
+define( 'BD_VERSION', '8.2.0' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 // FIX: Forzar HTTPS en la URL del plugin.
 // Detrás de Cloudflare el servidor no ve HTTPS, plugin_dir_url() genera http://
@@ -67,6 +67,11 @@ class Babel_Directory_Core {
             new \Babel\Directory\CPT();
         }
 
+        // 1.5 Estructura de Datos: CPT de Instituciones (Escuelas, Universidades, Bancos, Organismos)
+        if ( class_exists( 'Babel\Directory\Institution' ) ) {
+            new \Babel\Directory\Institution();
+        }
+
         // 2. Estructura de Datos: Metaboxes de Datos de Negocios
         if ( class_exists( 'Babel\Directory\Metaboxes' ) ) {
             new \Babel\Directory\Metaboxes();
@@ -110,6 +115,11 @@ class Babel_Directory_Core {
         // 8. Procesamiento Seguro de Envío de Negocios desde el Frontend
         if ( class_exists( 'Babel\Directory\Submission' ) ) {
             new \Babel\Directory\Submission();
+        }
+
+        // 8.5 Formulario Multi-step de Auto-registro Frontend
+        if ( class_exists( 'Babel\Directory\Frontend_Registration' ) ) {
+            new \Babel\Directory\Frontend_Registration();
         }
 
         // 12. Autenticación con Google Identity Services
@@ -173,6 +183,10 @@ class Babel_Directory_Core {
                 $plugin_template = BD_PATH . 'templates/single-babel_business.php';
                 if ( file_exists( $plugin_template ) ) return $plugin_template;
             }
+            if ( is_singular( 'bd_institution' ) ) {
+                $plugin_template = BD_PATH . 'templates/single-bd_institution.php';
+                if ( file_exists( $plugin_template ) ) return $plugin_template;
+            }
             return $template;
         }, 99 );
     }
@@ -183,7 +197,7 @@ class Babel_Directory_Core {
  * Vincula el método estático de creación de la tabla física de búsquedas rápidas.
  * Se ejecuta exclusivamente al activar el plugin para garantizar integridad.
  */
-register_activation_hook( __FILE__, array( 'Babel\\Directory\\Search_Index', 'create_table' ) );
+register_activation_hook( __FILE__, array( 'Babel\Directory\Search_Index', 'create_table' ) );
 
 /**
  * Inicializa y retorna la instancia principal de la arquitectura del plugin.

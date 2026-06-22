@@ -65,6 +65,20 @@ class Metaboxes {
             wp_enqueue_script( 'jquery-ui-sortable' );
             wp_enqueue_script( 'category' ); // WordPress hierarchical checklist helper
         }
+
+        // Cargar script de geocoding Nominatim solo en la metabox del negocio
+        if ( $screen && 'babel_business' === $screen->post_type && ( $hook === 'post.php' || $hook === 'post-new.php' ) ) {
+            wp_enqueue_script(
+                'babel-metabox-geocoding',
+                BD_URL . 'assets/js/babel-metabox-geocoding.js',
+                array( 'jquery' ),
+                BD_VERSION,
+                true
+            );
+            wp_localize_script( 'babel-metabox-geocoding', 'babel_geocoding_vars', array(
+                'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            ) );
+        }
     }
 
     /**

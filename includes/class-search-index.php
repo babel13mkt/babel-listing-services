@@ -19,7 +19,8 @@ class Search_Index {
 
         // Hooks de sincronización automática
         add_action( 'save_post_babel_business', array( $this, 'sync_business_to_index' ), 10, 3 );
-        add_action( 'delete_post', array( $this, 'delete_business_from_index' ) );
+        add_action( 'save_post_bd_institution', array( $this, 'sync_institution_to_index' ), 10, 3 );
+        add_action( 'delete_post', array( $this, 'delete_from_index' ) );
         
         // Hook personalizado para sincronizar DESPUÉS de que se hayan guardado todos los metadatos en AJAX
         add_action( 'bd_after_business_saved', array( $this, 'sync_after_ajax_save' ) );
@@ -42,6 +43,7 @@ class Search_Index {
 
         $sql = "CREATE TABLE IF NOT EXISTS $table_name (
             post_id bigint(20) UNSIGNED NOT NULL,
+            post_type varchar(20) DEFAULT 'babel_business',
             category_id bigint(20) UNSIGNED DEFAULT 0,
             region_id bigint(20) UNSIGNED DEFAULT 0,
             latitude decimal(10,8) DEFAULT NULL,
@@ -50,6 +52,7 @@ class Search_Index {
             is_verified tinyint(1) DEFAULT 0,
             is_featured tinyint(1) DEFAULT 0,
             PRIMARY KEY (post_id),
+            KEY post_type (post_type),
             KEY category_id (category_id),
             KEY region_id (region_id),
             KEY coords (latitude, longitude),
@@ -73,7 +76,7 @@ class Search_Index {
 
         // Asegurar que el estado del post sea 'publish' (no indexar borradores)
         if ( $post->post_status !== 'publish' ) {
-            $this->delete_business_from_index( $post_id );
+            $this->delete_from_index( $post_id );
             return;
         }
 
@@ -85,11 +88,24 @@ class Search_Index {
         $region_id   = ! empty( $regions ) && ! \is_wp_error( $regions ) ? intval( $regions[0] ) : 0;
 
         // 2. Obtener y sanitizar Coordenadas desde Meta (tratados estrictamente como floats)
-        $lat = get_post_meta( $post_id, '_babel_latitude', true ); // Asegura mapear tus llaves correctas
+        // Soporte de múltiples llaves para compatibilidad con distintos flujos de guardado
+        $lat = get_post_meta( $post_id, '_babel_latitude', true );
+        if ( empty( $lat ) ) {
+            $lat = get_post_meta( $post_id, '_babel_lat', true );
+        }
+        if ( empty( $lat ) ) {
+            $lat = get_post_meta( $post_id, '_bd_latitud', true );
+        }
         $lng = get_post_meta( $post_id, '_babel_longitude', true );
+        if ( empty( $lng ) ) {
+            $lng = get_post_meta( $post_id, '_babel_lng', true );
+        }
+        if ( empty( $lng ) ) {
+            $lng = get_post_meta( $post_id, '_bd_longitud', true );
+        }
 
-        $latitude  = ( $lat !== '' ) ? filter_var( $lat, FILTER_VALIDATE_FLOAT ) : null;
-        $longitude = ( $lng !== '' ) ? filter_var( $lng, FILTER_VALIDATE_FLOAT ) : null;
+        $latitude  = ( $lat !== '' && $lat !== false ) ? filter_var( $lat, FILTER_VALIDATE_FLOAT ) : null;
+        $longitude = ( $lng !== '' && $lng !== false ) ? filter_var( $lng, FILTER_VALIDATE_FLOAT ) : null;
 
         // 3. Obtener Flags de Control e Impacto Visual
         $is_verified = get_post_meta( $post_id, '_babel_is_verified', true ) ? 1 : 0;
@@ -104,6 +120,7 @@ class Search_Index {
             $this->table_name,
             array(
                 'post_id'     => $post_id,
+                'post_type'   => 'babel_business',
                 'category_id' => $category_id,
                 'region_id'   => $region_id,
                 'latitude'    => $latitude,
@@ -112,47 +129,122 @@ class Search_Index {
                 'is_verified' => $is_verified,
                 'is_featured' => $is_featured,
             ),
-            array( '%d', '%d', '%d', '%f', '%f', '%f', '%d', '%d' )
+            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' );
+    }
+
+    /**
+     * Sincroniza al guardar/actualizar un CPT bd_institution
+     */
+    public function sync_institution_to_index( $post_id, $post, $update ) {
+        global $wpdb;
+
+        // Evitar ejecuciones duplicadas en revisiones o autosaves
+        if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+            return;
+        }
+
+        // Asegurar que el estado del post sea 'publish' (no indexar borradores)
+        if ( $post->post_status !== 'publish' ) {
+            $this->delete_from_index( $post_id );
+            return;
+        }
+
+        // 1. Obtener Taxonomías
+        $categories = wp_get_post_terms( $post_id, 'babel_category', array( 'fields' => 'ids' ) );
+        $regions    = wp_get_post_terms( $post_id, 'babel_region', array( 'fields' => 'ids' ) );
+
+        $category_id = ! empty( $categories ) && ! \is_wp_error( $categories ) ? intval( $categories[0] ) : 0;
+        $region_id   = ! empty( $regions ) && ! \is_wp_error( $regions ) ? intval( $regions[0] ) : 0;
+
+        // 2. Obtener Coordenadas
+        $lat = get_post_meta( $post_id, '_babel_latitude', true );
+        if ( empty( $lat ) ) {
+            $lat = get_post_meta( $post_id, '_babel_lat', true );
+        }
+        $lng = get_post_meta( $post_id, '_babel_longitude', true );
+        if ( empty( $lng ) ) {
+            $lng = get_post_meta( $post_id, '_babel_lng', true );
+        }
+
+        $latitude  = ( $lat !== '' ) ? filter_var( $lat, FILTER_VALIDATE_FLOAT ) : null;
+        $longitude = ( $lng !== '' ) ? filter_var( $lng, FILTER_VALIDATE_FLOAT ) : null;
+
+        // 3. Flags
+        $is_verified = get_post_meta( $post_id, '_babel_is_verified', true ) ? 1 : 0;
+        $is_featured = get_post_meta( $post_id, '_babel_is_featured', true ) ? 1 : 0;
+
+        // 4. Inserción/Reemplazo Atómico
+        $wpdb->replace(
+            $this->table_name,
+            array(
+                'post_id'     => $post_id,
+                'post_type'   => 'bd_institution',
+                'category_id' => $category_id,
+                'region_id'   => $region_id,
+                'latitude'    => $latitude,
+                'longitude'   => $longitude,
+                'rating_avg'  => 0.00,
+                'is_verified' => $is_verified,
+                'is_featured' => $is_featured,
+            ),
+            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' )
         );
     }
 
     /**
-     * MICRO-PASO 3: Limpieza Inmediata de Registros Eliminados
+     * Limpieza Inmediata de Registros Eliminados (soporta ambos CPTs)
      */
-    public function delete_business_from_index( $post_id ) {
+    public function delete_from_index( $post_id ) {
         global $wpdb;
         
-        // Verificar si el post eliminado pertenece a nuestro CPT antes de ejecutar la Query
-        if ( get_post_type( $post_id ) === 'babel_business' ) {
+        $post_type = get_post_type( $post_id );
+        if ( in_array( $post_type, array( 'babel_business', 'bd_institution' ), true ) ) {
             $wpdb->delete( $this->table_name, array( 'post_id' => $post_id ), array( '%d' ) );
         }
     }
 
     /**
-     * MICRO-PASO 4: Indexador Masivo (Herramienta de migración para CLI o Panel de Control)
+     * Indexador Masivo (migración para CLI o Panel de Control)
+     * Indexa tanto negocios como instituciones.
      */
-    public function bulk_index_all_businesses() {
+    public function bulk_index_all() {
         global $wpdb;
 
-        $args = array(
-            'post_type'      => 'babel_business',
-            'posts_per_page' => -1,
-            'post_status'    => 'publish',
-            'fields'         => 'ids'
-        );
-
-        $query = new \WP_Query( $args );
+        $post_types = array( 'babel_business', 'bd_institution' );
         $count = 0;
 
-        if ( $query->have_posts() ) {
-            foreach ( $query->posts as $post_id ) {
-                $post = get_post( $post_id );
-                $this->sync_business_to_index( $post_id, $post, true );
-                $count++;
+        foreach ( $post_types as $pt ) {
+            $args = array(
+                'post_type'      => $pt,
+                'posts_per_page' => -1,
+                'post_status'    => 'publish',
+                'fields'         => 'ids'
+            );
+
+            $query = new \WP_Query( $args );
+
+            if ( $query->have_posts() ) {
+                foreach ( $query->posts as $post_id ) {
+                    $post = get_post( $post_id );
+                    if ( 'bd_institution' === $pt ) {
+                        $this->sync_institution_to_index( $post_id, $post, true );
+                    } else {
+                        $this->sync_business_to_index( $post_id, $post, true );
+                    }
+                    $count++;
+                }
             }
+            wp_reset_postdata();
         }
 
         return $count;
+    }
+
+    /**
+     * @deprecated Usar bulk_index_all() en su lugar
+     */
+    public function bulk_index_all_businesses() {
+        return $this->bulk_index_all();
     }
 }
 
@@ -177,9 +269,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
             $wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}bd_search_index" );
 
             $indexer = new Search_Index();
-            $count   = $indexer->bulk_index_all_businesses();
+            $count   = $indexer->bulk_index_all();
 
-            \WP_CLI::success( "Se indexaron {$count} negocios correctamente." );
+            \WP_CLI::success( "Se indexaron {$count} elementos (negocios + instituciones) correctamente." );
         }
     }
     \WP_CLI::add_command( 'babel-directory', __NAMESPACE__ . '\CLI_Command' );

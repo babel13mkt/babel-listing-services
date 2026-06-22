@@ -408,6 +408,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Selector de radio de búsqueda
+        const radiusSelect = document.getElementById('babel-radius-select');
+        if (radiusSelect) {
+            radiusSelect.addEventListener('change', function() {
+                if (radiusInput) {
+                    radiusInput.value = this.value;
+                }
+                if (resultsContainer) {
+                    performSearch(1);
+                }
+            });
+        }
+
         // Evitar envío tradicional del formulario solo si estamos en la página de resultados
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();

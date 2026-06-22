@@ -16,6 +16,101 @@ class Geolocation {
         // En vez de template_redirect (que muere con la caché), exponemos un endpoint AJAX
         add_action( 'wp_ajax_nopriv_babel_geolocate_me', array( $this, 'ajax_geolocate_me' ) );
         add_action( 'wp_ajax_babel_geolocate_me', array( $this, 'ajax_geolocate_me' ) );
+
+        // Endpoint AJAX para geocoding de direcciones (Nominatim) desde el admin
+        add_action( 'wp_ajax_babel_geocode_address', array( $this, 'ajax_geocode_address' ) );
+
+        // Endpoint AJAX para autocompletado de direcciones (Nominatim) desde el admin
+        add_action( 'wp_ajax_babel_autocomplete_address', array( $this, 'ajax_autocomplete_address' ) );
+    }
+
+    /**
+     * Geocoding de dirección a coordenadas vía Nominatim.
+     * Espera $_POST['address'] y retorna JSON con lat/lng.
+     */
+    public function ajax_geocode_address() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
+        }
+
+        $address = isset( $_POST['address'] ) ? sanitize_text_field( wp_unslash( $_POST['address'] ) ) : '';
+        if ( empty( $address ) ) {
+            wp_send_json_error( array( 'message' => 'Dirección vacía.' ) );
+        }
+
+        // Añadir 'Chile' si no está presente para mejorar resultados
+        if ( stripos( $address, 'chile' ) === false ) {
+            $address .= ', Chile';
+        }
+
+        $url = 'https://nominatim.openstreetmap.org/search?format=json&q=' . urlencode( $address ) . '&limit=1&accept-language=es';
+        $response = wp_remote_get( $url, array(
+            'timeout' => 10,
+            'headers' => array( 'User-Agent' => 'Babel-Directory-Plugin/' . BD_VERSION ),
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            wp_send_json_error( array( 'message' => 'Error de conexión con Nominatim.' ) );
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        $data = json_decode( $body, true );
+
+        if ( ! empty( $data ) && isset( $data[0]['lat'], $data[0]['lon'] ) ) {
+            wp_send_json_success( array(
+                'lat'     => $data[0]['lat'],
+                'lng'     => $data[0]['lon'],
+                'display' => isset( $data[0]['display_name'] ) ? $data[0]['display_name'] : $address,
+            ) );
+        }
+
+        wp_send_json_error( array( 'message' => 'No se encontró la dirección. Intenta simplificarla.' ) );
+    }
+
+    /**
+     * Autocompletado de direcciones vía Nominatim.
+     * Espera $_POST['q'] y retorna JSON con sugerencias.
+     */
+    public function ajax_autocomplete_address() {
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
+        }
+
+        $query = isset( $_POST['q'] ) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '';
+        if ( strlen( $query ) < 3 ) {
+            wp_send_json_success( array() );
+        }
+
+        $address = $query;
+        if ( stripos( $address, 'chile' ) === false ) {
+            $address .= ', Chile';
+        }
+
+        $url = 'https://nominatim.openstreetmap.org/search?format=json&q=' . urlencode( $address ) . '&limit=5&accept-language=es';
+        $response = wp_remote_get( $url, array(
+            'timeout' => 10,
+            'headers' => array( 'User-Agent' => 'Babel-Directory-Plugin/' . BD_VERSION ),
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            wp_send_json_error( array( 'message' => 'Error de conexión.' ) );
+        }
+
+        $body = wp_remote_retrieve_body( $response );
+        $data = json_decode( $body, true );
+
+        $suggestions = array();
+        if ( ! empty( $data ) ) {
+            foreach ( $data as $item ) {
+                $suggestions[] = array(
+                    'label' => isset( $item['display_name'] ) ? $item['display_name'] : '',
+                    'lat'   => isset( $item['lat'] ) ? $item['lat'] : '',
+                    'lng'   => isset( $item['lon'] ) ? $item['lon'] : '',
+                );
+            }
+        }
+
+        wp_send_json_success( $suggestions );
     }
 
     public function ajax_geolocate_me() {

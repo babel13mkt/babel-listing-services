@@ -77,13 +77,19 @@ class Ajax {
         }
 
         // Prioridad e indexación de ordenamientos compuestos (Whitelist estricta)
+        // Cuando hay coordenadas, el orden por defecto es por distancia (más cercanos primero)
         $allowed_orders = array(
             'rating'   => 'idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC',
             'az'       => 'idx.is_featured DESC, p.post_title ASC',
             'distance' => ( $lat && $lng ) ? 'idx.is_featured DESC, distance ASC' : 'idx.is_featured DESC, idx.post_id DESC',
             'newest'   => 'idx.is_featured DESC, idx.post_id DESC'
         );
-        $orderby = isset( $allowed_orders[ $sort ] ) ? $allowed_orders[ $sort ] : 'idx.is_featured DESC, idx.post_id DESC';
+        // Si hay coordenadas y el sort es 'featured', usar distancia por defecto
+        if ( $lat && $lng && ( $sort === 'featured' || ! isset( $allowed_orders[ $sort ] ) ) ) {
+            $orderby = 'idx.is_featured DESC, distance ASC';
+        } else {
+            $orderby = isset( $allowed_orders[ $sort ] ) ? $allowed_orders[ $sort ] : 'idx.is_featured DESC, idx.post_id DESC';
+        }
 
         if ( ! empty( $keyword ) ) {
             $like_keyword = '%' . $wpdb->esc_like( $keyword ) . '%';
@@ -108,9 +114,22 @@ class Ajax {
         $sql = "SELECT idx.post_id $distance_select FROM $table_index idx $join WHERE $where_str ORDER BY $orderby LIMIT $offset, $posts_per_page";
         $total_sql = "SELECT COUNT(idx.post_id) FROM $table_index idx $join WHERE $where_str";
 
-        $post_ids = $wpdb->get_col( $sql );
+        // Usamos get_results para capturar distancia cuando hay geolocalización
+        $results = $wpdb->get_results( $sql, ARRAY_A );
         $total_posts = $wpdb->get_var( $total_sql );
         $max_pages = ceil( $total_posts / $posts_per_page );
+
+        // Extraer post_ids y distancias
+        $post_ids = array();
+        $GLOBALS['bd_search_distance'] = array();
+        if ( $results ) {
+            foreach ( $results as $row ) {
+                $post_ids[] = (int) $row['post_id'];
+                if ( isset( $row['distance'] ) ) {
+                    $GLOBALS['bd_search_distance'][ (int) $row['post_id'] ] = (float) $row['distance'];
+                }
+            }
+        }
 
         // 1. CONFIGURACIÓN DEL LAYOUT ID
         $layout_id = intval( get_option( 'babel_divi_grid_layout_id', 0 ) );
@@ -216,6 +235,9 @@ class Ajax {
 
         $thumb_id  = get_post_thumbnail_id( $post_id );
         $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
+
+        // Distancia (si viene de búsqueda geolocalizada)
+        $distance_km = isset( $GLOBALS['bd_search_distance'][ $post_id ] ) ? $GLOBALS['bd_search_distance'][ $post_id ] : null;
         ?>
         <a href="<?php echo esc_url( $permalink ); ?>" class="babel-biz-card" aria-label="<?php echo esc_attr( $title ); ?>">
 
@@ -266,7 +288,7 @@ class Ajax {
                     </div>
                 <?php endif; ?>
 
-                <?php if ( $category_name || $region_name ) : ?>
+                <?php if ( $category_name || $region_name || $distance_km ) : ?>
                     <div class="babel-biz-card__meta">
                         <?php if ( $category_name ) : ?>
                             <span class="babel-biz-card__meta-item">
@@ -281,6 +303,13 @@ class Ajax {
                             <span class="babel-biz-card__meta-item">
                                 <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
                                 <?php echo esc_html( $region_name ); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php if ( $distance_km !== null ) : ?>
+                            <span class="babel-biz-card__meta-sep" aria-hidden="true"></span>
+                            <span class="babel-biz-card__meta-item">
+                                <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+                                <?php echo esc_html( number_format( $distance_km, 1 ) ); ?> km
                             </span>
                         <?php endif; ?>
                     </div>

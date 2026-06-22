@@ -331,6 +331,20 @@ class Shortcodes {
                         <input type="hidden" id="babel-search-radius" name="radius" value="25" />
                     </div>
 
+                    <!-- 3b. Selector de Radio de Búsqueda -->
+                    <div class="babel-filter-radius" style="display: flex; align-items: center; gap: 8px;">
+                        <label for="babel-radius-select" style="font-size: 13px; color: #94a3b8; font-weight: 500; white-space: nowrap;">Radio:</label>
+                        <select id="babel-radius-select" name="radius_select" style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 13px; color: #334155; background: #f8fafc; cursor: pointer;">
+                            <option value="2">2 km</option>
+                            <option value="5">5 km</option>
+                            <option value="10">10 km</option>
+                            <option value="25" selected>25 km</option>
+                            <option value="50">50 km</option>
+                            <option value="100">100 km</option>
+                            <option value="0">Sin límite</option>
+                        </select>
+                    </div>
+
                     <!-- 4. Botón Buscar -->
                     <div class="babel-filter-submit">
                         <button type="submit" class="babel-search-submit-btn">BUSCAR</button>

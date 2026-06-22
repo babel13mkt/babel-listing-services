@@ -23,8 +23,9 @@ class CPT {
         add_action( 'init', array( $this, 'register_meta_fields' ), 11 );
         add_action( 'init', array( $this, 'register_rewrite_rules' ), 12 );
 
-        // Invalidación de transients de regiones al actualizar negocios
+        // Invalidación de transients de regiones al actualizar negocios e instituciones
         add_action( 'save_post_babel_business', array( $this, 'invalidate_region_transients' ), 10, 1 );
+        add_action( 'save_post_bd_institution', array( $this, 'invalidate_region_transients' ), 10, 1 );
     }
 
     /**
@@ -46,7 +47,7 @@ class CPT {
     }
 
     /**
-     * Registra los Custom Post Types 'babel_business' (Negocios) y 'bd_ad_banner' (Anuncios).
+     * Registra los Custom Post Types 'babel_business' (Negocios), 'bd_ad_banner' (Anuncios) y 'bd_institution' (Instituciones).
      */
     public function register_cpts() {
         $labels = array(
@@ -145,6 +146,62 @@ class CPT {
         );
 
         register_post_type( 'bd_ad_banner', $args_ads );
+
+        // Registrar CPT para Instituciones (Escuelas, Universidades, Bancos, Organismos)
+        $labels_institution = array(
+            'name'                  => _x( 'Instituciones', 'Post Type General Name', 'babel-directory' ),
+            'singular_name'         => _x( 'Institución', 'Post Type Singular Name', 'babel-directory' ),
+            'menu_name'             => __( 'Instituciones', 'babel-directory' ),
+            'name_admin_bar'        => __( 'Institución', 'babel-directory' ),
+            'archives'              => __( 'Archivo de Instituciones', 'babel-directory' ),
+            'attributes'            => __( 'Atributos de Institución', 'babel-directory' ),
+            'parent_item_colon'     => __( 'Institución Padre:', 'babel-directory' ),
+            'all_items'             => __( 'Todas las Instituciones', 'babel-directory' ),
+            'add_new_item'          => __( 'Añadir Nueva Institución', 'babel-directory' ),
+            'add_new'               => __( 'Añadir Nueva', 'babel-directory' ),
+            'new_item'              => __( 'Nueva Institución', 'babel-directory' ),
+            'edit_item'             => __( 'Editar Institución', 'babel-directory' ),
+            'update_item'           => __( 'Actualizar Institución', 'babel-directory' ),
+            'view_item'             => __( 'Ver Institución', 'babel-directory' ),
+            'view_items'            => __( 'Ver Instituciones', 'babel-directory' ),
+            'search_items'          => __( 'Buscar Institución', 'babel-directory' ),
+            'not_found'             => __( 'No se encontraron instituciones', 'babel-directory' ),
+            'not_found_in_trash'    => __( 'No se encontraron instituciones en la papelera', 'babel-directory' ),
+            'featured_image'        => __( 'Logo/Imagen Destacada', 'babel-directory' ),
+            'set_featured_image'    => __( 'Establecer logo/imagen', 'babel-directory' ),
+            'remove_featured_image' => __( 'Eliminar logo/imagen', 'babel-directory' ),
+            'use_featured_image'    => __( 'Usar como logo/imagen', 'babel-directory' ),
+            'insert_into_item'      => __( 'Insertar en institución', 'babel-directory' ),
+            'uploaded_to_this_item' => __( 'Subido a esta institución', 'babel-directory' ),
+            'items_list'            => __( 'Lista de instituciones', 'babel-directory' ),
+            'items_list_navigation' => __( 'Navegación de lista de instituciones', 'babel-directory' ),
+            'filter_items_list'     => __( 'Filtrar lista de instituciones', 'babel-directory' ),
+        );
+
+        $args_institution = array(
+            'label'                 => __( 'Institución', 'babel-directory' ),
+            'description'           => __( 'Directorio de Instituciones: Escuelas, Universidades, Bancos y Organismos', 'babel-directory' ),
+            'labels'                => $labels_institution,
+            'supports'              => array( 'title', 'editor', 'thumbnail', 'revisions' ),
+            'taxonomies'            => array( 'babel_region', 'babel_category' ),
+            'hierarchical'          => false,
+            'public'                => true,
+            'show_ui'               => true,
+            'show_in_menu'          => true,
+            'menu_position'         => 4,
+            'menu_icon'             => 'dashicons-building',
+            'show_in_admin_bar'     => true,
+            'show_in_nav_menus'     => true,
+            'can_export'            => true,
+            'has_archive'           => true,
+            'exclude_from_search'   => false,
+            'publicly_queryable'    => true,
+            'capability_type'       => 'post',
+            'show_in_rest'          => true,
+            'rewrite'               => array( 'slug' => 'institucion' ),
+        );
+
+        register_post_type( 'bd_institution', $args_institution );
     }
 
     /**
@@ -188,7 +245,7 @@ class CPT {
             'rewrite'           => array( 'slug' => 'region' ),
         );
 
-        register_taxonomy( 'babel_region', array( 'babel_business', 'bd_ad_banner' ), $args_region );
+        register_taxonomy( 'babel_region', array( 'babel_business', 'bd_ad_banner', 'bd_institution' ), $args_region );
 
         // 2. Taxonomía Categoría de Negocio (babel_category)
         $labels_category = array(
@@ -227,7 +284,7 @@ class CPT {
             'rewrite'           => array( 'slug' => 'categoria' ),
         );
 
-        register_taxonomy( 'babel_category', array( 'babel_business' ), $args_category );
+        register_taxonomy( 'babel_category', array( 'babel_business', 'bd_institution' ), $args_category );
     }
 
     /**
@@ -273,6 +330,23 @@ class CPT {
 
         foreach ( $meta_keys as $key => $type ) {
             register_post_meta( 'babel_business', $key, array(
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => $type,
+            ) );
+        }
+
+        // Meta campos para el CPT de instituciones (bd_institution)
+        $institution_meta_keys = array(
+            '_bd_institucion_tipo'            => 'string',
+            '_bd_institucion_nivel_educativo' => 'string',
+            '_bd_institucion_dependencia'     => 'string',
+            '_bd_institucion_codigo_rbd'      => 'string',
+            '_bd_institucion_horario'         => 'string',
+        );
+
+        foreach ( $institution_meta_keys as $key => $type ) {
+            register_post_meta( 'bd_institution', $key, array(
                 'show_in_rest' => true,
                 'single'       => true,
                 'type'         => $type,
