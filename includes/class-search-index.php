@@ -129,7 +129,8 @@ class Search_Index {
                 'is_verified' => $is_verified,
                 'is_featured' => $is_featured,
             ),
-            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' );
+            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' )
+        );
     }
 
     /**
