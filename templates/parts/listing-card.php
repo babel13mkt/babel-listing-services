@@ -19,10 +19,10 @@ $review_count = get_post_meta( $post_id, '_bd_review_count', true );
 $rango_precio = get_post_meta( $post_id, '_bd_rango_precio', true );
 
 // Categoría / Región Principal
-$categorias = get_the_terms( $post_id, 'directorio_categoria' );
+$categorias = get_the_terms( $post_id, 'babel_category' );
 $cat_name = ( $categorias && ! is_wp_error( $categorias ) ) ? $categorias[0]->name : '';
 
-$regiones = get_the_terms( $post_id, 'directorio_region' );
+$regiones = get_the_terms( $post_id, 'babel_region' );
 $region_name = ( $regiones && ! is_wp_error( $regiones ) ) ? $regiones[0]->name : '';
 
 // Imagen destacada
@@ -30,11 +30,13 @@ $thumb_url = get_the_post_thumbnail_url( $post_id, 'medium_large' );
 if ( ! $thumb_url ) $thumb_url = BD_URL . 'assets/images/default-hero.jpg';
 
 // Función Helper para Formato Romano (Portado de class-frontend.php si existiera globalmente)
-function bd_format_region_name( $name ) {
-    if ( preg_match( '/^REG-([IVXLCDM]+)\s+(.*)$/', $name, $matches ) ) {
-        return $matches[1] . ' REG - ' . $matches[2];
+if ( ! function_exists( 'bd_format_region_name' ) ) {
+    function bd_format_region_name( $name ) {
+        if ( preg_match( '/^REG-([IVXLCDM]+)\s+(.*)$/', $name, $matches ) ) {
+            return $matches[1] . ' REG - ' . $matches[2];
+        }
+        return $name;
     }
-    return $name;
 }
 
 // Badge a mostrar en la foto

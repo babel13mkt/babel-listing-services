@@ -774,6 +774,27 @@ class Submission {
         }
         update_post_meta( $post_id, '_babel_horarios', wp_json_encode( $horarios ) );
 
+        // Dual-write: también guardar en _babel_hours para compatibilidad con templates/shortcodes
+        $hours_for_babel = array();
+        $day_map = array(
+            'lun' => 'lunes',
+            'mar' => 'martes',
+            'mie' => 'miercoles',
+            'jue' => 'jueves',
+            'vie' => 'viernes',
+            'sab' => 'sabado',
+            'dom' => 'domingo',
+        );
+        foreach ( $horarios as $day_abbr => $data ) {
+            $full_day = $day_map[ $day_abbr ] ?? $day_abbr;
+            $hours_for_babel[ $full_day ] = array(
+                'open'   => $data['abre'] ?? '',
+                'close'  => $data['cierra'] ?? '',
+                'closed' => ! empty( $data['cerrado'] ) ? '1' : '',
+            );
+        }
+        update_post_meta( $post_id, '_babel_hours', $hours_for_babel );
+
         // Foto principal
         if ( ! empty( $_FILES['featured_image']['name'] ) ) {
             require_once ABSPATH . 'wp-admin/includes/image.php';

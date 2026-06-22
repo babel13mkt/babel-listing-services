@@ -162,6 +162,7 @@ class Assets {
         wp_localize_script( 'babel-admin-js', 'sdc_admin_vars', array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'sdc_quick_action_nonce' ),
+            'admin_nonce' => wp_create_nonce( 'babel_admin_nonce' ),
         ) );
     }
 

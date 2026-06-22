@@ -19,19 +19,9 @@ class Geolocation {
     }
 
     public function ajax_geolocate_me() {
-        // Nonce verification
-        if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'babel_geolocate_nonce' ) ) {
-            wp_send_json_error( array( 'message' => 'Nonce inválido' ) );
-        }
-
         // Verificamos si ya hay cookie para no abusar de la API
         if ( isset( $_COOKIE['babel_user_region_slug'] ) && ! empty( $_COOKIE['babel_user_region_slug'] ) ) {
             wp_send_json_success( array( 'region' => $_COOKIE['babel_user_region_slug'] ) );
-        }
-
-        // Si la cookie ya existe, ya localizamos al usuario, no hacer nada para ahorrar recursos.
-        if ( isset( $_COOKIE['babel_user_region_slug'] ) && ! empty( $_COOKIE['babel_user_region_slug'] ) ) {
-            return;
         }
 
         $ip = $this->get_user_ip();
@@ -118,7 +108,7 @@ class Geolocation {
     }
 
     private function set_region_cookie( $slug ) {
-        // La cookie dura 24 horas y es accesible por PHP y JS (HttpOnly = false para poder leer en JS si hiciese falta)
+        // La cookie dura 24 horas, accesible solo por HTTPS y no accesible por JS
         setcookie( 'babel_user_region_slug', $slug, time() + 86400, '/', '', true, true );
     }
 }

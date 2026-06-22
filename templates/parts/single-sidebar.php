@@ -25,9 +25,36 @@ $lat      = babel_meta( $post_id, '_babel_lat',      '_bd_latitud'  );
 $lng      = babel_meta( $post_id, '_babel_lng',      '_bd_longitud' );
 $address  = babel_meta( $post_id, '_babel_address',  '_bd_direccion' );
 
-// Horarios (sólo sistema nuevo)
-$horarios_json = get_post_meta( $post_id, '_babel_horarios', true );
-$horarios      = $horarios_json ? json_decode( $horarios_json, true ) : array();
+// Horarios — leer _babel_hours (unificado) con fallback a _babel_horarios
+$horarios = array();
+$hours_meta = get_post_meta( $post_id, '_babel_hours', true );
+if ( ! empty( $hours_meta ) ) {
+    $hours = is_array( $hours_meta ) ? $hours_meta : json_decode( $hours_meta, true );
+    if ( is_array( $hours ) ) {
+        // Normalizar formato _babel_hours (open/close/closed, días completos) a abre/cierra/cerrado
+        $day_reverse_map = array(
+            'lunes'    => 'lun',
+            'martes'   => 'mar',
+            'miercoles' => 'mie',
+            'jueves'   => 'jue',
+            'viernes'  => 'vie',
+            'sabado'   => 'sab',
+            'domingo'  => 'dom',
+        );
+        foreach ( $hours as $day_full => $data ) {
+            $day_abbr = $day_reverse_map[ strtolower( $day_full ) ] ?? $day_full;
+            $horarios[ $day_abbr ] = array(
+                'cerrado' => ! empty( $data['closed'] ),
+                'abre'    => $data['open'] ?? '',
+                'cierra'  => $data['close'] ?? '',
+            );
+        }
+    }
+}
+if ( empty( $horarios ) ) {
+    $horarios_json = get_post_meta( $post_id, '_babel_horarios', true );
+    $horarios      = $horarios_json ? json_decode( $horarios_json, true ) : array();
+}
 $days_labels   = array(
     'lun' => 'Lunes', 'mar' => 'Martes', 'mie' => 'Miércoles',
     'jue' => 'Jueves', 'vie' => 'Viernes', 'sab' => 'Sábado', 'dom' => 'Domingo',

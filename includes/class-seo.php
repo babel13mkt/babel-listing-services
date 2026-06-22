@@ -482,7 +482,7 @@ class SEO {
         
         // Calificaciones
         $rating_avg = get_post_meta( $post_id, '_babel_rating_avg', true );
-        $rating_count = get_post_meta( $post_id, '_babel_rating_count', true );
+        $rating_count = get_post_meta( $post_id, '_babel_review_count', true );
 
         // Redes sociales
         $same_as = array();

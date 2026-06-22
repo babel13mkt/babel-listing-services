@@ -24,9 +24,9 @@ class Payments {
      */
     public function register_webhook_route() {
         register_rest_route( 'babel/v1', '/payments/webhook', array(
-            'methods'             => array( 'GET', 'POST' ),
+            'methods'             => 'POST',
             'callback'            => array( $this, 'handle_webhook' ),
-            'permission_callback' => '__return_true', // Permitir acceso público para webhooks externos
+            'permission_callback' => array( $this, 'check_webhook_permission' ),
         ) );
     }
 
@@ -37,6 +37,25 @@ class Payments {
      * @return \WP_REST_Response
      */
     public function handle_webhook( \WP_REST_Request $request ) {
+        // --- Signature verification (defense in depth) ---
+        $mercadopago_signature = $request->get_header( 'X-Signature' );
+        $webpay_signature      = $request->get_header( 'Tbk-Api-Signature' );
+
+        $signature_valid = false;
+
+        if ( ! empty( $mercadopago_signature ) ) {
+            $signature_valid = $this->verify_mercadopago_signature( $mercadopago_signature, $request->get_body() );
+        } elseif ( ! empty( $webpay_signature ) ) {
+            $signature_valid = $this->verify_webpay_signature( $webpay_signature, $request->get_body() );
+        }
+
+        if ( ! $signature_valid ) {
+            return new \WP_REST_Response( array(
+                'success' => false,
+                'error'   => 'Invalid or missing webhook signature.',
+            ), 401 );
+        }
+
         $params = $request->get_params();
 
         // Registrar en el log del servidor para auditorías de transacciones
@@ -116,5 +135,72 @@ class Payments {
             'success' => true, 
             'message' => 'Business was already published or not in pending state. Current state: ' . $post->post_status 
         ), 200 );
+    }
+
+    /**
+     * Permission callback: validate HMAC signature before processing the webhook.
+     *
+     * @param \WP_REST_Request $request The request object.
+     * @return bool|\WP_Error True if valid, WP_Error with 401 if invalid.
+     */
+    public function check_webhook_permission( $request ) {
+        $mercadopago_signature = $request->get_header( 'X-Signature' );
+        $webpay_signature      = $request->get_header( 'Tbk-Api-Signature' );
+
+        if ( ! empty( $mercadopago_signature ) ) {
+            if ( $this->verify_mercadopago_signature( $mercadopago_signature, $request->get_body() ) ) {
+                return true;
+            }
+        } elseif ( ! empty( $webpay_signature ) ) {
+            if ( $this->verify_webpay_signature( $webpay_signature, $request->get_body() ) ) {
+                return true;
+            }
+        }
+
+        return new \WP_Error(
+            'rest_forbidden',
+            'Invalid or missing webhook signature.',
+            array( 'status' => 401 )
+        );
+    }
+
+    /**
+     * Verify MercadoPago webhook signature (X-Signature header).
+     *
+     * Calcula HMAC-SHA256 del payload con la clave secreta y compara
+     * contra el valor recibido via hash_equals() para prevenir timing attacks.
+     *
+     * @param string $signature_header The X-Signature header value.
+     * @param string $payload          The raw request body.
+     * @return bool True if signature matches, false otherwise.
+     */
+    private function verify_mercadopago_signature( $signature_header, $payload ) {
+        $secret = get_option( 'babel_mercadopago_webhook_secret', '' );
+        if ( empty( $secret ) ) {
+            return false;
+        }
+
+        $expected = hash_hmac( 'sha256', $payload, $secret );
+        return hash_equals( $expected, $signature_header );
+    }
+
+    /**
+     * Verify WebPay (Transbank) webhook signature (Tbk-Api-Signature header).
+     *
+     * Calcula HMAC-SHA256 del payload con la clave secreta y compara
+     * contra el valor recibido via hash_equals() para prevenir timing attacks.
+     *
+     * @param string $signature_header The Tbk-Api-Signature header value.
+     * @param string $payload          The raw request body.
+     * @return bool True if signature matches, false otherwise.
+     */
+    private function verify_webpay_signature( $signature_header, $payload ) {
+        $secret = get_option( 'babel_webpay_webhook_secret', '' );
+        if ( empty( $secret ) ) {
+            return false;
+        }
+
+        $expected = hash_hmac( 'sha256', $payload, $secret );
+        return hash_equals( $expected, $signature_header );
     }
 }

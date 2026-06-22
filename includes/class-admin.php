@@ -140,13 +140,11 @@ class Admin {
 
     public function render_recaptcha_site_key_field() {
         $value = get_option( 'babel_recaptcha_site_key', '' );
-        if ( empty( $value ) ) $value = '6Lc0QR8tAAAAALfEQBAWp3MQyluv8gJu1BUfZ-5t'; // Inject default
         echo '<input type="text" name="babel_recaptcha_site_key" id="babel_recaptcha_site_key" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="6Lc..." />';
     }
 
     public function render_recaptcha_secret_key_field() {
         $value = get_option( 'babel_recaptcha_secret_key', '' );
-        if ( empty( $value ) ) $value = '6Lc0QR8tAAAAAKWv7ddQgzP5MyEtbxmWIQGPYGTx'; // Inject default
         echo '<input type="password" name="babel_recaptcha_secret_key" id="babel_recaptcha_secret_key" value="' . esc_attr( $value ) . '" class="sdc-input" placeholder="6Lc..." />';
     }
 
@@ -154,6 +152,9 @@ class Admin {
      * Guardado de configuración vía AJAX para la SPA.
      */
     public function ajax_save_settings() {
+        if ( ! check_ajax_referer( 'babel_admin_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Nonce invalido' );
+        }
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permisos insuficientes.' );
         }
@@ -178,6 +179,9 @@ class Admin {
      * Guarda los datos del Editor de Negocios de la SPA
      */
     public function ajax_save_business() {
+        if ( ! check_ajax_referer( 'babel_admin_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Nonce invalido' );
+        }
         if ( ! current_user_can( 'edit_posts' ) ) {
             wp_send_json_error( 'Permisos insuficientes.' );
         }
@@ -353,6 +357,9 @@ class Admin {
      * Endpoint AJAX para buscar y paginar negocios
      */
     public function ajax_fetch_businesses() {
+        if ( ! check_ajax_referer( 'babel_admin_nonce', 'nonce', false ) ) {
+            wp_send_json_error( 'Nonce invalido' );
+        }
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permisos insuficientes.' );
             return;

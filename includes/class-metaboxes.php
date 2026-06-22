@@ -2890,9 +2890,11 @@ class Metaboxes {
 
                     </div> <!-- End sdc-bento-grid -->
                     <div class="sdc-editor-footer" style="position: sticky; bottom: 0; background: white; padding: 16px 24px; border-top: 1px solid var(--sdc-border); z-index: 10;">
-                        <button type="button" class="sdc-btn sdc-btn-primary" onclick="alert('Funcionalidad de guardado en desarrollo.')" style="width: 100%;">
-                            <span class="dashicons dashicons-saved"></span> Guardar Negocio Completamente
+                        <button type="button" id="sdc-save-btn" class="sdc-btn sdc-btn-primary" style="width: 100%;">
+                            <span class="dashicons dashicons-saved"></span> <span id="sdc-save-btn-text">Guardar Negocio Completamente</span>
+                            <span id="sdc-save-spinner" style="display:none;" class="spinner"></span>
                         </button>
+                        <div id="sdc-save-feedback" style="display:none; margin-top: 8px; text-align: center; font-weight: 500;"></div>
                     </div>
 
                 </form>
@@ -3077,6 +3079,70 @@ class Metaboxes {
                 } else {
                     $(this).parent('.sdc-day-pill').removeClass('active');
                 }
+            });
+
+            // --- AJAX Save Handler ---
+            $('#sdc-save-btn').on('click', function(e){
+                e.preventDefault();
+
+                var $btn = $(this);
+                var $spinner = $('#sdc-save-spinner');
+                var $feedback = $('#sdc-save-feedback');
+                var $text = $('#sdc-save-btn-text');
+
+                // Reset feedback
+                $feedback.hide().removeClass('sdc-save-success sdc-save-error').text('');
+
+                // Show spinner
+                $btn.prop('disabled', true);
+                $text.text('Guardando...');
+                $spinner.show();
+
+                // Collect hours blocks dynamically (they use indexed names)
+                var formData = $('#sdc-business-form').serialize();
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: formData + '&action=sdc_save_business',
+                    dataType: 'json',
+                    success: function(response){
+                        $spinner.hide();
+                        $btn.prop('disabled', false);
+                        $text.text('Guardar Negocio Completamente');
+
+                        if(response.success){
+                            $feedback
+                                .addClass('sdc-save-success')
+                                .html('<span class="dashicons dashicons-yes-alt" style="color:#22c55e;"></span> Guardado exitoso')
+                                .css('color', '#22c55e')
+                                .show();
+                        } else {
+                            var errMsg = response.data ? response.data : 'Error desconocido';
+                            $feedback
+                                .addClass('sdc-save-error')
+                                .html('<span class="dashicons dashicons-warning" style="color:#ef4444;"></span> Error: ' + errMsg)
+                                .css('color', '#ef4444')
+                                .show();
+                        }
+
+                        // Auto-hide feedback after 5 seconds
+                        setTimeout(function(){
+                            $feedback.fadeOut(300);
+                        }, 5000);
+                    },
+                    error: function(jqXHR, textStatus){
+                        $spinner.hide();
+                        $btn.prop('disabled', false);
+                        $text.text('Guardar Negocio Completamente');
+
+                        $feedback
+                            .addClass('sdc-save-error')
+                            .html('<span class="dashicons dashicons-warning" style="color:#ef4444;"></span> Error: ' + textStatus)
+                            .css('color', '#ef4444')
+                            .show();
+                    }
+                });
             });
 
         });
