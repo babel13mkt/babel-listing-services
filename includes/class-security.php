@@ -49,15 +49,17 @@ class Security {
      * Obtiene la IP real del cliente superando proxies como Cloudflare.
      */
     public static function get_client_ip() {
+        $ip = '';
         if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-            return $_SERVER['HTTP_CF_CONNECTING_IP'];
+            $ip = filter_var( $_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP );
         } elseif ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-            return $_SERVER['HTTP_CLIENT_IP'];
+            $ip = filter_var( $_SERVER['HTTP_CLIENT_IP'], FILTER_VALIDATE_IP );
         } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
             $ips = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
-            return trim( $ips[0] );
+            $ip = filter_var( trim( $ips[0] ), FILTER_VALIDATE_IP );
         } else {
-            return isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+            $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? filter_var( $_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP ) : '';
         }
+        return $ip ? $ip : '';
     }
 }

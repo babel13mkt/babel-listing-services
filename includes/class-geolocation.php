@@ -139,15 +139,15 @@ class Geolocation {
 
     private function get_user_ip() {
         $ip = '';
-        // Soporte nativo para Cloudflare Tunnels (AR1/MORDOR)
         if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+            $ip = filter_var( $_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP );
         } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-            $ip = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] )[0];
+            $ips = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
+            $ip = filter_var( trim( $ips[0] ), FILTER_VALIDATE_IP );
         } else {
-            $ip = $_SERVER['REMOTE_ADDR'];
+            $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? filter_var( $_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP ) : '';
         }
-        return trim( $ip );
+        return $ip ? $ip : '';
     }
 
     private function resolve_ip_to_region( $ip ) {

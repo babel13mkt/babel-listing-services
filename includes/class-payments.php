@@ -144,6 +144,15 @@ class Payments {
      * @return bool|\WP_Error True if valid, WP_Error with 401 if invalid.
      */
     public function check_webhook_permission( $request ) {
+        // Modo debug para testing: permite webhooks sin signature si BD_WEBHOOK_DEBUG está activo
+        if ( defined( 'BD_WEBHOOK_DEBUG' ) && BD_WEBHOOK_DEBUG ) {
+            $debug_token = $request->get_header( 'X-Debug-Token' );
+            $expected_token = defined( 'BD_WEBHOOK_DEBUG_TOKEN' ) ? BD_WEBHOOK_DEBUG_TOKEN : '';
+            if ( ! empty( $debug_token ) && ! empty( $expected_token ) && hash_equals( $expected_token, $debug_token ) ) {
+                return true;
+            }
+        }
+
         $mercadopago_signature = $request->get_header( 'X-Signature' );
         $webpay_signature      = $request->get_header( 'Tbk-Api-Signature' );
 

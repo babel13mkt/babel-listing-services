@@ -41,9 +41,10 @@ class Magic_Link {
         // Si ya hay un token pendiente, lo sobreescribimos (rate limiting implícito por la expiración)
         set_transient( $transient_key, $token, 15 * MINUTE_IN_SECONDS );
 
-        // Construir la URL mágica
+        // Construir la URL mágica con token hasheado (no exponer token plano en URL)
+        $token_hash = wp_hash( $token );
         $magic_url = add_query_arg( array(
-            'babel_magic_login' => $token,
+            'babel_magic_login' => $token_hash,
             'email'             => rawurlencode( $email )
         ), home_url( '/' ) );
 
@@ -99,9 +100,9 @@ class Magic_Link {
                     $random_password = wp_generate_password( 12, false );
                     $username = sanitize_user( current( explode( '@', $email_from_url ) ), true );
                     
-                    // Si el username ya existe, le agregamos números
+                    // Si el username ya existe, le agregamos números aleatorios seguros
                     if ( username_exists( $username ) ) {
-                        $username .= rand( 100, 999 );
+                        $username .= wp_rand( 100000, 999999 );
                     }
 
                     $user_id = wp_create_user( $username, $random_password, $email_from_url );

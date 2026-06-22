@@ -238,14 +238,18 @@ class Rest_Endpoints {
 	 * @return string IP del cliente.
 	 */
 	private function get_client_ip() {
+		$ip = '';
 		if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) );
+			$ip = filter_var( $_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP );
 		}
-		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+		if ( ! $ip && ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			$ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
-			return trim( $ips[0] );
+			$ip = filter_var( trim( $ips[0] ), FILTER_VALIDATE_IP );
 		}
-		return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
+		if ( ! $ip && isset( $_SERVER['REMOTE_ADDR'] ) ) {
+			$ip = filter_var( $_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP );
+		}
+		return $ip ? $ip : '0.0.0.0';
 	}
 
 	// ──────────────────────────────────────────────
