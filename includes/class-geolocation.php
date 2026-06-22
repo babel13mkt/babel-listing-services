@@ -19,6 +19,11 @@ class Geolocation {
     }
 
     public function ajax_geolocate_me() {
+        // Nonce verification
+        if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'babel_geolocate_nonce' ) ) {
+            wp_send_json_error( array( 'message' => 'Nonce inválido' ) );
+        }
+
         // Verificamos si ya hay cookie para no abusar de la API
         if ( isset( $_COOKIE['babel_user_region_slug'] ) && ! empty( $_COOKIE['babel_user_region_slug'] ) ) {
             wp_send_json_success( array( 'region' => $_COOKIE['babel_user_region_slug'] ) );
@@ -62,7 +67,7 @@ class Geolocation {
 
     private function resolve_ip_to_region( $ip ) {
         // Llamada a API ultra-rápida y gratuita sin auth.
-        $url = 'http://ip-api.com/json/' . $ip . '?lang=es&fields=status,regionName,countryCode';
+        $url = 'https://ip-api.com/json/' . $ip . '?lang=es&fields=status,regionName,countryCode';
         $response = wp_remote_get( $url, array( 'timeout' => 3 ) ); // Timeout ultra corto para no bloquear el LCP
 
         if ( is_wp_error( $response ) ) {
@@ -114,6 +119,6 @@ class Geolocation {
 
     private function set_region_cookie( $slug ) {
         // La cookie dura 24 horas y es accesible por PHP y JS (HttpOnly = false para poder leer en JS si hiciese falta)
-        setcookie( 'babel_user_region_slug', $slug, time() + 86400, '/', '', false, false );
+        setcookie( 'babel_user_region_slug', $slug, time() + 86400, '/', '', true, true );
     }
 }
