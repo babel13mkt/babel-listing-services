@@ -137,6 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Categorías y Regiones obtenidas dinámicamente desde el contenedor de resultados
         const category = resultsContainer.getAttribute('data-category') || '';
         let region = resultsContainer.getAttribute('data-region') || '';
+        
+        // Entidad y categoría de institución (NUEVO)
+        const entityType = resultsContainer.getAttribute('data-entity-type') || 'business';
+        const instCategory = resultsContainer.getAttribute('data-inst-category') || '';
+
+        // Si estamos en la pestaña instituciones y hay un instCategory, esa es la categoría a buscar
+        const finalCategory = (entityType === 'institution' && instCategory) ? instCategory : category;
 
         // Si hay un selector de región interactivo, usar su valor
         const regionSelectEl = searchForm ? searchForm.querySelector('#babel-search-region-select') : null;
@@ -155,9 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
         payload.append('action', 'bd_filter_listings');
         payload.append('nonce', babel_vars.nonce);
         payload.append('keyword', keyword);
-        payload.append('category', category);
+        payload.append('category', finalCategory);
         payload.append('region', region);
         payload.append('paged', currentPaged);
+        payload.append('entity_type', entityType);
 
         // Adjuntar geolocalización si el radar está activo
         if (lat && lng) {
@@ -167,8 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Usamos la nueva REST API de alto rendimiento en lugar de admin-ajax
-            const fetchUrl = babel_vars.rest_url ? babel_vars.rest_url : babel_vars.ajax_url;
+            // Usamos admin-ajax porque performSearch espera HTML pre-renderizado (bd_filter_listings)
+            const fetchUrl = babel_vars.ajax_url;
 
             const response = await fetch(fetchUrl, {
                 method: 'POST',
@@ -408,19 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Selector de radio de búsqueda
-        const radiusSelect = document.getElementById('babel-radius-select');
-        if (radiusSelect) {
-            radiusSelect.addEventListener('change', function() {
-                if (radiusInput) {
-                    radiusInput.value = this.value;
-                }
-                if (resultsContainer) {
-                    performSearch(1);
-                }
-            });
-        }
-
         // Evitar envío tradicional del formulario solo si estamos en la página de resultados
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -541,6 +536,10 @@ document.addEventListener('DOMContentLoaded', () => {
             performSearch(1);
         }
     };
+
+    // ==========================================================================
+    // 6. TABS REMOVED - Utiliza pastillas globales de categoría en su lugar.
+    // ==========================================================================
 
     // Cargar resultados iniciales de forma asíncrona al cargar la página
     if (resultsContainer) {
