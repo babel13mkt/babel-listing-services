@@ -75,6 +75,7 @@ foreach ( $records as $record ) {
     $website     = isset( $record['website'] ) ? trim( $record['website'] ) : '';
     $descripcion = isset( $record['descripcion'] ) ? trim( $record['descripcion'] ) : '';
     $imagen_url  = isset( $record['imagen_destacada'] ) ? trim( $record['imagen_destacada'] ) : '';
+    $servicios   = isset( $record['servicios'] ) ? $record['servicios'] : array();
 
     // Determinar Post Type
     $is_institution = in_array( strtolower($categoria), ['municipalidad', 'municipalidades', 'salud', 'educacion', 'educación', 'seguridad', 'gobierno'] );
@@ -132,6 +133,14 @@ foreach ( $records as $record ) {
         if ( ! is_wp_error( $term_region ) ) {
             wp_set_object_terms( $post_id, (int) $term_region['term_id'], 'bd_region' );
         }
+    }
+
+    // Gestionar Servicios / Tags Dinámicos
+    if ( ! empty( $servicios ) && is_array( $servicios ) ) {
+        $servicios_sanitizados = array_map( 'sanitize_text_field', $servicios );
+        update_post_meta( $post_id, '_babel_biz_tags', implode( ',', $servicios_sanitizados ) );
+    } elseif ( ! empty( $servicios ) && is_string( $servicios ) ) {
+        update_post_meta( $post_id, '_babel_biz_tags', sanitize_text_field( $servicios ) );
     }
 
     // Imagen Destacada
