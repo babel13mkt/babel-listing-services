@@ -9,8 +9,7 @@ if ( php_sapi_name() !== 'cli' || ! defined( 'WP_CLI' ) || ! WP_CLI ) {
     die( 'Este script solo puede ejecutarse mediante WP-CLI.' );
 }
 
-$args = WP_CLI::get_runner()->arguments;
-// WP-CLI eval-file strips the first argument (the script itself), so the next arguments are in $args.
+// WP-CLI eval-file passes arguments directly via the local $args array.
 $json_file = isset($args[0]) ? $args[0] : '';
 
 if ( empty( $json_file ) || ! file_exists( $json_file ) ) {
