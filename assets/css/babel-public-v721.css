@@ -3176,7 +3176,7 @@ header.wp-block-template-part .wp-block-site-title a {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;
     background: #ffffff !important;
     border-radius: 50px !important;
     padding: 8px 12px 8px 24px !important;
@@ -3194,7 +3194,7 @@ header.wp-block-template-part .wp-block-site-title a {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;
     gap: 12px !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -3216,7 +3216,7 @@ header.wp-block-template-part .wp-block-site-title a {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;
     gap: 12px !important;
     width: 100% !important;
 }
@@ -3387,6 +3387,7 @@ header.wp-block-template-part .wp-block-site-title a {
     height: auto !important;
     width: auto !important;
     text-decoration: none !important;
+    box-sizing: border-box !important;
 }
 
 .babel-filter-bar-inner .babel-filter-submit .babel-search-submit-btn:hover {
