@@ -357,9 +357,9 @@ class Shortcodes {
             </form>
 
             <!-- FILTROS RÁPIDOS DE CATEGORÍA (PASTILLAS) -->
-            <div class="babel-search-tabs-container">
+            <div class="babel-search-tabs-container" style="margin-top: 16px;">
                 <div id="babel-institutions-filters" class="babel-institutions-filters">
-                    <div class="babel-inst-carousel">
+                    <div class="bd-category-pills">
                         <button type="button" class="babel-inst-pill bd-category-pill active" data-category="">Todas</button>
                         <button type="button" class="babel-inst-pill bd-category-pill" data-category="municipalidades">Municipalidades</button>
                         <button type="button" class="babel-inst-pill bd-category-pill" data-category="carabineros-y-pdi">Policía</button>
