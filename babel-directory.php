@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '8.1.10' );
+define( 'BD_VERSION', '8.1.12' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 // FIX: Forzar HTTPS en la URL del plugin.
 // Detrás de Cloudflare el servidor no ve HTTPS, plugin_dir_url() genera http://

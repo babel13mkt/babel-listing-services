@@ -3185,6 +3185,7 @@ header.wp-block-template-part .wp-block-site-title a {
     gap: 12px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    position: relative !important;
 }
 
 /* ── CAPA 2: ID del form + atributo de datos (1,1,0) ────── */
@@ -3240,12 +3241,14 @@ header.wp-block-template-part .wp-block-site-title a {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
+    min-width: 0 !important;
 }
 
 .babel-filter-bar-inner .babel-filter-keyword input,
 .babel-filter-bar-inner .babel-filter-keyword input[type="text"],
 .babel-filter-bar-inner .babel-filter-keyword input[type="search"] {
     width: 100% !important;
+    min-width: 0 !important;
     flex: 1 1 auto !important;
     border: none !important;
     background: transparent !important;
@@ -3404,6 +3407,9 @@ header.wp-block-template-part .wp-block-site-title a {
         padding: 16px !important;
         gap: 16px !important;
         align-items: stretch !important;
+        position: relative !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
     }
 
     .babel-filter-bar-inner .babel-filter-region::before {
