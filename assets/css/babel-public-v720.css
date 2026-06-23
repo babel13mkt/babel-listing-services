@@ -3401,7 +3401,11 @@ header.wp-block-template-part .wp-block-site-title a {
 ----------------------------------------------------------------------- */
 @media (max-width: 768px) {
     .babel-filter-bar-inner,
-    #babel-search-form [data-babel-filter="true"] {
+    #babel-search-form [data-babel-filter="true"],
+    #et-main-area #babel-search-form [data-babel-filter="true"],
+    #et-boc #babel-search-form [data-babel-filter="true"],
+    .et_pb_section #babel-search-form [data-babel-filter="true"],
+    .et_pb_row #babel-search-form [data-babel-filter="true"] {
         flex-direction: column !important;
         border-radius: 20px !important;
         padding: 16px !important;
