@@ -709,7 +709,7 @@ class Shortcodes {
         $limit = $columns * $rows;
 
         $terms_args = array(
-            'taxonomy'   => 'babel_category',
+            'taxonomy'   => 'bd_category',
             'hide_empty' => false,
             'parent'     => 0,
             'orderby'    => 'count',
