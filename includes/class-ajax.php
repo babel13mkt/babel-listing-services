@@ -20,11 +20,6 @@ class Ajax {
     }
 
     public function filter_listings() {
-        // [NUEVO] Middleware de Seguridad: Máximo 30 peticiones de búsqueda por minuto por IP
-        if ( class_exists( '\Babel\Directory\Security' ) && ! \Babel\Directory\Security::check_rate_limit( 'ajax_search', 30, 60 ) ) {
-            wp_send_json_error( 'Rate limit exceeded. Please wait a moment.' );
-        }
-
         // Verificación de nonce desactivada para búsquedas públicas. 
         // El caché de página (Cloudflare/Divi) almacena el HTML con un nonce estático, 
         // lo que provoca que check_ajax_referer devuelva -1 (HTTP 200) y rompa el buscador 
@@ -35,12 +30,11 @@ class Ajax {
         $table_index = $wpdb->prefix . 'bd_search_index';
 
         // Sanitización de parámetros recibidos
-        $keyword     = isset( $_POST['keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['keyword'] ) ) : '';
-        $cat         = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
-        $region      = isset( $_POST['region'] ) ? sanitize_text_field( wp_unslash( $_POST['region'] ) ) : '';
-        $sort        = isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'featured';
-        $paged       = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
-        $entity_type = isset( $_POST['entity_type'] ) ? sanitize_text_field( wp_unslash( $_POST['entity_type'] ) ) : 'business';
+        $keyword = isset( $_POST['keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['keyword'] ) ) : '';
+        $cat     = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+        $region  = isset( $_POST['region'] ) ? sanitize_text_field( wp_unslash( $_POST['region'] ) ) : '';
+        $sort    = isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'featured';
+        $paged   = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
         
         $lat    = isset( $_POST['lat'] ) ? floatval( $_POST['lat'] ) : 0;
         $lng    = isset( $_POST['lng'] ) ? floatval( $_POST['lng'] ) : 0;
@@ -49,49 +43,15 @@ class Ajax {
         $posts_per_page = 12;
         $offset = ( $paged - 1 ) * $posts_per_page;
 
-        // [NUEVO] Interceptar con Caché (Transients)
-        $cache_key = md5( serialize( $_POST ) );
-        if ( class_exists( '\Babel\Directory\Cache' ) ) {
-            $cached_result = \Babel\Directory\Cache::get_transient( $cache_key );
-            if ( false !== $cached_result ) {
-                wp_send_json_success( $cached_result );
-            }
-        }
-
         // Construir consulta SQL optimizada sobre el índice
         $where = array( "p.post_status = 'publish'" );
         $join  = " INNER JOIN {$wpdb->posts} p ON idx.post_id = p.ID";
         
-        // Filtro Entidad (Comercios vs Instituciones)
-        $institution_term_ids = array_merge( array(74), get_term_children( 74, 'babel_category' ) );
-        $inst_ids_sql = implode(',', array_map('intval', $institution_term_ids));
-
-        if ( $entity_type === 'institution' ) {
-            if ( ! empty( $cat ) ) {
-                $term = get_term_by( 'slug', $cat, 'babel_category' );
-                if ( $term ) {
-                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
-                }
-            } else {
-                $where[] = "idx.category_id IN ($inst_ids_sql)";
-            }
-        } elseif ( $entity_type === 'business' ) {
-            if ( ! empty( $cat ) ) {
-                $term = get_term_by( 'slug', $cat, 'babel_category' );
-                if ( $term ) {
-                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
-                }
-            } else {
-                // Solo comercios (excluimos instituciones y sus hijas por defecto)
-                $where[] = "idx.category_id NOT IN ($inst_ids_sql)";
-            }
-        } else {
-            // entity_type == 'all'
-            if ( ! empty( $cat ) ) {
-                $term = get_term_by( 'slug', $cat, 'babel_category' );
-                if ( $term ) {
-                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
-                }
+        // Filtro por Categoría (slug a ID)
+        if ( ! empty( $cat ) ) {
+            $term = get_term_by( 'slug', $cat, 'babel_category' );
+            if ( $term ) {
+                $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
             }
         }
 
@@ -117,13 +77,19 @@ class Ajax {
         }
 
         // Prioridad e indexación de ordenamientos compuestos (Whitelist estricta)
+        // Cuando hay coordenadas, el orden por defecto es por distancia (más cercanos primero)
         $allowed_orders = array(
             'rating'   => 'idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC',
             'az'       => 'idx.is_featured DESC, p.post_title ASC',
             'distance' => ( $lat && $lng ) ? 'idx.is_featured DESC, distance ASC' : 'idx.is_featured DESC, idx.post_id DESC',
             'newest'   => 'idx.is_featured DESC, idx.post_id DESC'
         );
-        $orderby = isset( $allowed_orders[ $sort ] ) ? $allowed_orders[ $sort ] : 'idx.is_featured DESC, idx.post_id DESC';
+        // Si hay coordenadas y el sort es 'featured', usar distancia por defecto
+        if ( $lat && $lng && ( $sort === 'featured' || ! isset( $allowed_orders[ $sort ] ) ) ) {
+            $orderby = 'idx.is_featured DESC, distance ASC';
+        } else {
+            $orderby = isset( $allowed_orders[ $sort ] ) ? $allowed_orders[ $sort ] : 'idx.is_featured DESC, idx.post_id DESC';
+        }
 
         if ( ! empty( $keyword ) ) {
             $like_keyword = '%' . $wpdb->esc_like( $keyword ) . '%';
@@ -148,9 +114,22 @@ class Ajax {
         $sql = "SELECT idx.post_id $distance_select FROM $table_index idx $join WHERE $where_str ORDER BY $orderby LIMIT $offset, $posts_per_page";
         $total_sql = "SELECT COUNT(idx.post_id) FROM $table_index idx $join WHERE $where_str";
 
-        $post_ids = $wpdb->get_col( $sql );
+        // Usamos get_results para capturar distancia cuando hay geolocalización
+        $results = $wpdb->get_results( $sql, ARRAY_A );
         $total_posts = $wpdb->get_var( $total_sql );
         $max_pages = ceil( $total_posts / $posts_per_page );
+
+        // Extraer post_ids y distancias
+        $post_ids = array();
+        $GLOBALS['bd_search_distance'] = array();
+        if ( $results ) {
+            foreach ( $results as $row ) {
+                $post_ids[] = (int) $row['post_id'];
+                if ( isset( $row['distance'] ) ) {
+                    $GLOBALS['bd_search_distance'][ (int) $row['post_id'] ] = (float) $row['distance'];
+                }
+            }
+        }
 
         // 1. CONFIGURACIÓN DEL LAYOUT ID
         $layout_id = intval( get_option( 'babel_divi_grid_layout_id', 0 ) );
@@ -223,19 +202,11 @@ class Ajax {
         }
         
         $html = ob_get_clean();
-        
-        $result_data = array( 
+        wp_send_json_success( array( 
             'html'  => $html, 
             'count' => intval( $total_posts ), 
             'max'   => intval( $max_pages ) 
-        );
-
-        // [NUEVO] Guardar en Caché por 30 minutos
-        if ( class_exists( '\Babel\Directory\Cache' ) ) {
-            \Babel\Directory\Cache::set_transient( $cache_key, $result_data, 1800 );
-        }
-
-        wp_send_json_success( $result_data );
+        ) );
     }
 
     /**
@@ -264,6 +235,9 @@ class Ajax {
 
         $thumb_id  = get_post_thumbnail_id( $post_id );
         $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
+
+        // Distancia (si viene de búsqueda geolocalizada)
+        $distance_km = isset( $GLOBALS['bd_search_distance'][ $post_id ] ) ? $GLOBALS['bd_search_distance'][ $post_id ] : null;
         ?>
         <a href="<?php echo esc_url( $permalink ); ?>" class="babel-biz-card" aria-label="<?php echo esc_attr( $title ); ?>">
 
@@ -314,7 +288,7 @@ class Ajax {
                     </div>
                 <?php endif; ?>
 
-                <?php if ( $category_name || $region_name ) : ?>
+                <?php if ( $category_name || $region_name || $distance_km ) : ?>
                     <div class="babel-biz-card__meta">
                         <?php if ( $category_name ) : ?>
                             <span class="babel-biz-card__meta-item">
@@ -329,6 +303,13 @@ class Ajax {
                             <span class="babel-biz-card__meta-item">
                                 <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
                                 <?php echo esc_html( $region_name ); ?>
+                            </span>
+                        <?php endif; ?>
+                        <?php if ( $distance_km !== null ) : ?>
+                            <span class="babel-biz-card__meta-sep" aria-hidden="true"></span>
+                            <span class="babel-biz-card__meta-item">
+                                <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+                                <?php echo esc_html( number_format( $distance_km, 1 ) ); ?> km
                             </span>
                         <?php endif; ?>
                     </div>

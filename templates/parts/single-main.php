@@ -71,10 +71,6 @@ foreach ( $attributes as $key => $data ) {
         $active_attrs[ $key ] = $data;
     }
 }
-
-// Atributos dinámicos (Tags extríadas vía IA / Manual)
-$biz_tags_meta = babel_meta( $post_id, '_babel_biz_tags' );
-$dynamic_tags = ! empty( $biz_tags_meta ) ? explode( ',', $biz_tags_meta ) : array();
 ?>
 
 <div class="bd-single-main-card">
@@ -87,8 +83,8 @@ $dynamic_tags = ! empty( $biz_tags_meta ) ? explode( ',', $biz_tags_meta ) : arr
         </div>
     </section>
 
-    <!-- Atributos Modulares y Dinámicos -->
-    <?php if ( ! empty( $active_attrs ) || ! empty( $dynamic_tags ) ) : ?>
+    <!-- Atributos Modulares -->
+    <?php if ( ! empty( $active_attrs ) ) : ?>
     <section class="bd-single-section bd-single-section-divider">
         <h2 class="bd-single-section-title">Servicios y Comodidades</h2>
         <div class="bd-single-attributes" style="display:flex;flex-wrap:wrap;gap:10px;">
@@ -96,13 +92,6 @@ $dynamic_tags = ! empty( $biz_tags_meta ) ? explode( ',', $biz_tags_meta ) : arr
                 <div class="bd-attr-item" style="display:flex;align-items:center;gap:8px;background:#f4f3f9;border-radius:8px;padding:8px 14px;">
                     <span class="material-symbols-outlined" style="font-size:20px;color:#00205b;"><?php echo esc_html( $data['icon'] ); ?></span>
                     <span style="font-size:14px;font-weight:500;color:#1a1b20;"><?php echo esc_html( $data['label'] ); ?></span>
-                </div>
-            <?php endforeach; ?>
-            
-            <?php foreach ( $dynamic_tags as $tag ) : $tag = trim($tag); if(empty($tag)) continue; ?>
-                <div class="bd-attr-item bd-tag-item" style="display:flex;align-items:center;gap:8px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:8px;padding:8px 14px;">
-                    <span class="material-symbols-outlined" style="font-size:20px;color:#0369a1;">check_circle</span>
-                    <span style="font-size:14px;font-weight:600;color:#0369a1;"><?php echo esc_html( $tag ); ?></span>
                 </div>
             <?php endforeach; ?>
         </div>

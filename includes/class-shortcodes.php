@@ -14,7 +14,6 @@ class Shortcodes {
     public function __construct() {
         add_shortcode( 'babel_region_grid', array( $this, 'render_region_grid' ) );
         add_shortcode( 'bd_popular_regions', array( $this, 'render_region_grid' ) ); // Alias simétrico
-        add_shortcode( 'babel_region_carousel', array( $this, 'render_region_carousel' ) );
         add_shortcode( 'bd_popular_categories', array( $this, 'render_category_grid' ) );
         add_shortcode( 'bd_footer_regions', array( $this, 'render_footer_regions' ) );
         add_shortcode( 'bd_footer_categories', array( $this, 'render_footer_categories' ) );
@@ -25,9 +24,6 @@ class Shortcodes {
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
         add_shortcode( 'babel_auth_menu', array( $this, 'render_auth_menu' ) );
         add_action( 'wp_footer', array( $this, 'render_global_auth_modal' ) );
-        add_action( 'wp_footer', array( $this, 'render_mobile_footer' ) );
-        add_shortcode( 'babel_institutions', array( $this, 'render_region_institutions_pills' ) );
-        add_shortcode( 'bd_region_institutions_pills', array( $this, 'render_region_institutions_pills' ) );
 
         // Shortcodes adicionales B2B restaurados
         add_shortcode( 'babel_claim_business', array( $this, 'render_claim_business' ) );
@@ -301,9 +297,9 @@ class Shortcodes {
         ob_start();
 
         // Modificar el Placeholder del input dinámicamente
-        $placeholder = "Buscar comercios o instituciones...";
+        $placeholder = "ej: Sushi, región metropolitana";
         if ( ! empty( $auto_region_name ) ) {
-            $placeholder = "Buscar comercios o instituciones en " . esc_html( $auto_region_name );
+            $placeholder = "ej: Sushi en " . esc_html( $auto_region_name );
         }
         ?>
         <div class="babel-filter-bar-section">
@@ -356,21 +352,6 @@ class Shortcodes {
                 </div>
             </form>
 
-            <!-- FILTROS RÁPIDOS DE CATEGORÍA (PASTILLAS) -->
-            <div class="babel-search-tabs-container" style="margin-top: 16px;">
-                <div id="babel-institutions-filters" class="babel-institutions-filters">
-                    <div class="bd-category-pills">
-                        <button type="button" class="babel-inst-pill bd-category-pill active" data-category="">Todas</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="municipalidades">Municipalidades</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="carabineros-y-pdi">Policía</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="hospitales-y-sapu">Salud</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="bomberos">Bomberos</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="registro-civil">Registro Civil</button>
-                        <button type="button" class="babel-inst-pill bd-category-pill" data-category="correos-y-encomiendas">Correos</button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Contenedor Dinámico para Carga Asíncrona (AJAX) -->
             <!-- Usamos data-region dinámico basado en PHP para heredar el contexto -->
             <?php if ( 'yes' === $atts['show_results'] || 'true' === $atts['show_results'] || true === $atts['show_results'] || '1' === $atts['show_results'] ) : ?>
@@ -380,7 +361,7 @@ class Shortcodes {
                     #sidebar { display: none !important; }
                     #left-area { width: 100% !important; padding-right: 0 !important; border-right: none !important; float: none !important; }
                 </style>
-                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category="" data-entity-type="all"></div>
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category=""></div>
             <?php endif; ?>
         </div>
         <?php
@@ -423,30 +404,6 @@ class Shortcodes {
         </div>
         <?php
         return ob_get_clean();
-    }
-
-    public function render_mobile_footer() {
-        if ( is_admin() ) return;
-        ?>
-        <div class="babel-mobile-bottom-nav">
-            <a href="/" class="babel-mb-nav-item">
-                <span class="material-symbols-outlined">home</span>
-                <span class="babel-mb-nav-label">Home</span>
-            </a>
-            <a href="/buscar/" class="babel-mb-nav-item">
-                <span class="material-symbols-outlined">search</span>
-                <span class="babel-mb-nav-label">Buscar</span>
-            </a>
-            <a href="/buscar/" class="babel-mb-nav-item" onclick="document.getElementById('babel-geo-btn') && document.getElementById('babel-geo-btn').click(); return false;">
-                <span class="material-symbols-outlined">location_on</span>
-                <span class="babel-mb-nav-label">Mapa</span>
-            </a>
-            <a href="#" class="babel-mb-nav-item babel-trigger-auth">
-                <span class="material-symbols-outlined">person</span>
-                <span class="babel-mb-nav-label">Perfil</span>
-            </a>
-        </div>
-        <?php
     }
 
     public function render_global_auth_modal() {
@@ -516,16 +473,6 @@ class Shortcodes {
             .babel-modal-close:hover { background: #f3f4f6 !important; color: #111827 !important; }
         </style>
         <?php
-    }
-
-    public function render_region_carousel( $atts ) {
-        if ( ! is_array( $atts ) ) {
-            $atts = array();
-        }
-        $atts['layout']  = 'carousel';
-        $atts['rows']    = 1;
-        $atts['columns'] = 20; // Enough to fit all regions
-        return $this->render_region_grid( $atts );
     }
 
     public function render_region_grid( $atts ) {
@@ -732,113 +679,30 @@ class Shortcodes {
         }
 
         ob_start();
-        ?>
-        <style>
-        .babel-category-grid-ml {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 16px;
-            padding: 20px 0;
-        }
-        .babel-cat-card {
-            background: #ffffff;
-            border: 1px solid #eaeaea;
-            border-radius: 16px;
-            padding: 24px 12px;
-            text-align: center;
-            text-decoration: none !important;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            position: relative;
-            overflow: hidden;
-        }
-        .babel-cat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 57, 166, 0.12);
-            border-color: transparent;
-        }
-        .babel-cat-icon-wrapper {
-            width: 64px;
-            height: 64px;
-            background: #f0f4ff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-            color: #0039A6;
-            transition: all 0.3s ease;
-        }
-        .babel-cat-card:hover .babel-cat-icon-wrapper {
-            background: #0039A6;
-            color: #ffffff;
-            transform: scale(1.05);
-        }
-        .babel-cat-icon-wrapper .dashicons {
-            font-size: 32px;
-            width: 32px;
-            height: 32px;
-        }
-        .babel-cat-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1f2937;
-            line-height: 1.3;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin-bottom: 6px;
-        }
-        .babel-cat-count {
-            font-size: 12px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        @media (max-width: 768px) {
-            .babel-category-grid-ml {
-                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-                gap: 12px;
-            }
-            .babel-cat-card {
-                padding: 16px 8px;
-            }
-            .babel-cat-icon-wrapper {
-                width: 52px;
-                height: 52px;
-                margin-bottom: 12px;
-            }
-            .babel-cat-icon-wrapper .dashicons {
-                font-size: 26px;
-                width: 26px;
-                height: 26px;
-            }
-            .babel-cat-title {
-                font-size: 13px;
-            }
-        }
-        </style>
-        <div class="babel-category-grid-ml">
-        <?php
+        echo '<div class="babel-region-grid" style="--babel-grid-cols: ' . esc_attr( $columns ) . ';">';
         
         foreach ( $terms as $term ) {
-            $cat_url = home_url( '/buscar/?categoria=' . $term->slug );
-            $icon = get_term_meta( $term->term_id, 'dashicon', true );
-            if ( empty( $icon ) ) {
-                $icon = 'dashicons-store'; // Ícono premium por defecto
+            $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
+            $image_url = '';
+            
+            if ( $image_id ) {
+                $image_url = wp_get_attachment_image_url( $image_id, 'large' );
+            } else {
+                $image_url = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23e67e22"/></svg>';
             }
 
+            $cat_url = home_url( '/buscar/?categoria=' . $term->slug );
+
             ?>
-            <a href="<?php echo esc_url( $cat_url ); ?>" class="babel-cat-card no-lightbox disable-lightbox" target="_self">
-                <div class="babel-cat-icon-wrapper">
-                    <span class="dashicons <?php echo esc_attr( $icon ); ?>"></span>
-                </div>
-                <span class="babel-cat-title"><?php echo esc_html( $term->name ); ?></span>
-                <span class="babel-cat-count"><?php echo esc_html( $term->count ); ?> locales</span>
-            </a>
+            <div class="babel-region-wrapper">
+                <a href="<?php echo esc_url( $cat_url ); ?>" class="babel-region-card no-lightbox disable-lightbox" target="_self">
+                    <div class="babel-region-bg" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
+                    <div class="babel-region-overlay"></div>
+                    <div class="babel-region-content">
+                        <span class="babel-region-title"><?php echo esc_html( $term->name ); ?></span>
+                    </div>
+                </a>
+            </div>
             <?php
         }
         
@@ -1242,7 +1106,90 @@ class Shortcodes {
             <?php
             // Secciones dinámicas para la taxonomía babel_region (regiones y comunas)
             if ( 'babel_region' === $term->taxonomy ) {
-                // 3. Instituciones removido de aquí (ahora es shortcode independiente)
+                // 3. Instituciones básicas permanentes
+                $institutions_key = 'bd_institutions_' . $term->term_id;
+                $institutions = get_transient( $institutions_key );
+                if ( false === $institutions ) {
+                    $inst_args = array(
+                        'post_type'      => 'babel_business',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => 30,
+                        'meta_query'     => array(
+                            array(
+                                'key'     => '_babel_is_institution',
+                                'value'   => '1',
+                                'compare' => '=',
+                            ),
+                        ),
+                        'tax_query' => array(
+                            array(
+                                'taxonomy' => $term->taxonomy,
+                                'field'    => 'term_id',
+                                'terms'    => $term_ids,
+                                'operator' => 'IN',
+                            ),
+                        ),
+                        'orderby' => 'title',
+                        'order'   => 'ASC',
+                        'fields'  => 'all',
+                    );
+                    $inst_query   = new \WP_Query( $inst_args );
+                    $institutions = $inst_query->posts;
+                    \wp_reset_postdata();
+                    set_transient( $institutions_key, $institutions, 12 * HOUR_IN_SECONDS );
+                }
+
+                if ( ! empty( $institutions ) ) {
+                    $icon_map = array(
+                        'salud'         => 'local_hospital',
+                        'hospital'      => 'local_hospital',
+                        'clínica'       => 'local_hospital',
+                        'clinica'       => 'local_hospital',
+                        'educación'     => 'school',
+                        'educacion'     => 'school',
+                        'escuela'       => 'school',
+                        'universidad'   => 'school',
+                        'banco'         => 'account_balance',
+                        'municipalidad' => 'account_balance',
+                        'municipio'     => 'account_balance',
+                        'policía'       => 'local_police',
+                        'policia'       => 'local_police',
+                        'carabineros'   => 'local_police',
+                        'bomberos'      => 'fire_truck',
+                        'correos'       => 'local_post_office',
+                        'registro'      => 'fact_check',
+                    );
+                    ?>
+                    <div class="bd-region-institutions">
+                        <div class="bd-region-institutions__inner">
+                            <h2 class="bd-region-institutions__title">
+                                <span class="material-symbols-outlined">account_balance</span>
+                                <?php printf( esc_html__( 'Instituciones en %s', 'babel-directory' ), esc_html( $clean_name ) ); ?>
+                            </h2>
+                            <div class="bd-region-institutions__grid">
+                                <?php foreach ( $institutions as $inst_post ) : 
+                                    $cats = \wp_get_post_terms( $inst_post->ID, 'babel_category' );
+                                    $icon = 'business';
+                                    if ( ! empty( $cats ) && ! \is_wp_error( $cats ) ) {
+                                        $cat_slug = strtolower( $cats[0]->slug );
+                                        foreach ( $icon_map as $key => $ico ) {
+                                            if ( strpos( $cat_slug, $key ) !== false ) {
+                                                $icon = $ico;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                ?>
+                                <a href="<?php echo esc_url( get_permalink( $inst_post->ID ) ); ?>" class="bd-institution-card">
+                                    <span class="bd-institution-card__icon material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>
+                                    <span class="bd-institution-card__name"><?php echo esc_html( $inst_post->post_title ); ?></span>
+                                </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php
+                }
 
                 // 4. Categorías más buscadas de la Región
                 $top_cats_key = 'bd_top_cats_' . $term->term_id;
