@@ -75,7 +75,7 @@ class Rest_Endpoints {
 
 		// GET /wp-json/babel/v1/search
 		register_rest_route( self::NAMESPACE, '/search', array(
-			'methods'             => \WP_REST_Server::READABLE,
+			'methods'             => 'GET, POST',
 			'callback'            => array( $this, 'handle_search' ),
 			'permission_callback' => '__return_true',
 			'args'                => $this->get_search_schema(),
