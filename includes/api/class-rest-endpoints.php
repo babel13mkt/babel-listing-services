@@ -161,11 +161,11 @@ class Rest_Endpoints {
 			),
 			'lat'      => array(
 				'default'           => 0,
-				'sanitize_callback' => 'floatval',
+				'sanitize_callback' => function( $param ) { return floatval( $param ); },
 			),
 			'lng'      => array(
 				'default'           => 0,
-				'sanitize_callback' => 'floatval',
+				'sanitize_callback' => function( $param ) { return floatval( $param ); },
 			),
 			'radius'   => array(
 				'default'           => 50,
