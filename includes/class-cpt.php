@@ -334,6 +334,13 @@ class CPT {
                 'single'       => true,
                 'type'         => $type,
             ) );
+            
+            // Fix: Register these fields for institutions as well so Divi Dynamic Content can read them via REST
+            register_post_meta( 'bd_institution', $key, array(
+                'show_in_rest' => true,
+                'single'       => true,
+                'type'         => $type,
+            ) );
         }
 
         // Meta campos para el CPT de instituciones (bd_institution)

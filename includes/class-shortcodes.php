@@ -14,6 +14,7 @@ class Shortcodes {
     public function __construct() {
         add_shortcode( 'babel_region_grid', array( $this, 'render_region_grid' ) );
         add_shortcode( 'bd_popular_regions', array( $this, 'render_region_grid' ) ); // Alias simétrico
+        add_shortcode( 'babel_region_carousel', array( $this, 'render_region_carousel' ) );
         add_shortcode( 'bd_popular_categories', array( $this, 'render_category_grid' ) );
         add_shortcode( 'bd_footer_regions', array( $this, 'render_footer_regions' ) );
         add_shortcode( 'bd_footer_categories', array( $this, 'render_footer_categories' ) );
@@ -473,6 +474,16 @@ class Shortcodes {
             .babel-modal-close:hover { background: #f3f4f6 !important; color: #111827 !important; }
         </style>
         <?php
+    }
+
+    public function render_region_carousel( $atts ) {
+        if ( ! is_array( $atts ) ) {
+            $atts = array();
+        }
+        $atts['layout']  = 'carousel';
+        $atts['rows']    = 1;
+        $atts['columns'] = 20; // Enough to fit all regions
+        return $this->render_region_grid( $atts );
     }
 
     public function render_region_grid( $atts ) {
