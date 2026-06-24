@@ -48,7 +48,11 @@ class Divi_Compat {
             define( 'BD_DIVI_COMPAT_ACTIVE', true );
         }
 
-        // Si el Divi Builder está activo, pausar el renderizado de shortcodes pesados
+        // Registrar nuestros shortcodes en la cache dinámica de Divi para que
+        // no los trate como texto plano (fix del bug de _et_dynamic_cached_shortcodes)
+        add_filter( 'et_pb_third_party_shortcode_in_use', [ $this, 'register_babel_shortcodes_with_divi' ], 10, 2 );
+
+        // Si el Divi Builder está activo en modo EDICIÓN, pausar shortcodes pesados
         if ( $this->is_divi_builder_active() ) {
             add_action( 'init', [ $this, 'register_dummy_shortcodes' ], 999 );
         }
@@ -56,14 +60,72 @@ class Divi_Compat {
         add_action( 'wp_enqueue_scripts', [ $this, 'force_enqueue_assets' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'inject_compat_css' ], 100 );
         add_action( 'wp_head', [ $this, 'remove_divi_input_styles' ], 999 );
+
+        // FIX CRÍTICO: Divi usa el sistema MultiView para et_pb_code con raw_content,
+        // lo que causa que los shortcodes no sean parseados por the_content de manera nativa
+        // y puedan codificarse como entidades HTML si el usuario los inserta ahí.
+        // Solución: Usamos the_content con prioridad muy baja (9999) para interceptar
+        // el output de Divi, extraer nuestros shortcodes y forzar su renderizado.
+        add_filter( 'the_content', function( $content ) {
+            if ( strpos( $content, 'babel_' ) !== false || strpos( $content, 'bd_' ) !== false ) {
+                // Captura tanto [babel_...] como versiones codificadas &#91;babel_...&#93;
+                $content = preg_replace_callback( '/(?:&#91;|\[)(babel_|bd_)(.*?)(?:&#93;|\])/', function($m) {
+                    return do_shortcode('[' . $m[1] . $m[2] . ']');
+                }, $content );
+            }
+            return $content;
+        }, 9999 );
     }
 
+    /**
+     * NOTA LEGACY: process_babel_shortcodes() fue eliminado en favor de la regex directa en the_content.
+     */
+
     private function is_divi_active() {
-        $is_divi_theme = function_exists( 'wp_get_theme' ) && 'Divi' === wp_get_theme()->get( 'Name' );
+        // Detectar tema activo O tema padre (compatible con child themes de Divi)
+        $current_theme  = function_exists( 'wp_get_theme' ) ? wp_get_theme() : null;
+        $is_divi_theme  = $current_theme && ( 'Divi' === $current_theme->get( 'Name' ) || 'Divi' === $current_theme->parent_theme );
         $is_divi_builder = defined( 'ET_CORE_VERSION' );
         $has_divi_functions = function_exists( 'et_divi_fonts_url' );
 
         return $is_divi_theme || $is_divi_builder || $has_divi_functions;
+    }
+
+    /**
+     * Registra los shortcodes de Babel en el sistema de cache dinámica de Divi.
+     * Esto evita que Divi guarde [babel_region_carousel] como texto plano.
+     */
+    public function register_babel_shortcodes_with_divi( $is_in_use, $shortcode_tag ) {
+        $babel_shortcodes = [
+            'babel_region_carousel',
+            'babel_region_grid',
+            'bd_popular_regions',
+            'bd_popular_categories',
+            'babel_auth_menu',
+            'bd_filter_bar',
+            'bd_archive_loop',
+            'bd_region_template',
+            'bd_business_profile',
+            'bd_breadcrumbs',
+            'bd_user_dashboard',
+            'bd_business_gallery',
+            'bd_business_hours',
+            'bd_business_map',
+            'bd_business_contact',
+            'bd_business_badges',
+            'bd_ad_space',
+            'bd_featured_businesses',
+            'babel_pricing_tables',
+            'babel_submission_form',
+            'babel_claim_business',
+            'babel_frontend_dashboard',
+        ];
+
+        if ( in_array( $shortcode_tag, $babel_shortcodes, true ) ) {
+            return true;
+        }
+
+        return $is_in_use;
     }
 
     private function is_divi_builder_active() {
