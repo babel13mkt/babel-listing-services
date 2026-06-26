@@ -107,6 +107,12 @@ class Babel_Directory_Core {
             new \Babel\Directory\WooCommerce_Integration();
         }
 
+        // 6.7 Sistema de Listados Patrocinados (Featured Listings)
+        if ( class_exists( 'Babel\Directory\Featured_Listings' ) ) {
+            new \Babel\Directory\Featured_Listings();
+        }
+
+
         // 7. Sistema de Gestión de Reseñas y Calificaciones
         if ( class_exists( 'Babel\Directory\Reviews' ) ) {
             new \Babel\Directory\Reviews();
