@@ -22,8 +22,9 @@ class Frontend_Dashboard {
         // Auto-crear productos de WooCommerce si no existen
         add_action( 'admin_init', array( $this, 'auto_create_woocommerce_products' ) );
         
-        // AJAX endpoint para agregar al carrito y redirigir al checkout
+        // AJAX endpoints para planes y featured listings
         add_action( 'wp_ajax_babel_upgrade_plan', array( $this, 'handle_ajax_upgrade' ) );
+        add_action( 'wp_ajax_babel_featured_purchase', array( $this, 'handle_ajax_featured_purchase' );
     }
 
     public function enqueue_assets() {
@@ -43,7 +44,8 @@ class Frontend_Dashboard {
 
         wp_localize_script( 'babel-dashboard-js', 'babel_dash_vars', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'babel_upgrade_nonce' )
+            'nonce'    => wp_create_nonce( 'babel_upgrade_nonce' ),
+            'featured_nonce' => wp_create_nonce( 'babel_featured_nonce' ),
         ) );
     }
 
@@ -105,7 +107,43 @@ class Frontend_Dashboard {
             $product->save();
         }
 
+        // 3. Featured Listings (7, 30, 90 días)
+        $featured_products = array(
+            'BABEL-FEATURED-7D'  => array(
+                'name'  => __( 'Destacado 7 Días - Soy de Chile', 'babel-directory' ),
+                'price' => '4990',
+                'desc'  => __( 'Destaca tu negocio en el directorio durante 7 días. Aparece antes que la competencia.', 'babel-directory' ),
+            ),
+            'BABEL-FEATURED-30D' => array(
+                'name'  => __( 'Destacado 30 Días - Soy de Chile', 'babel-directory' ),
+                'price' => '9990',
+                'desc'  => __( 'Destaca tu negocio en el directorio durante 30 días. Ideal para temporada alta.', 'babel-directory' ),
+            ),
+            'BABEL-FEATURED-90D' => array(
+                'name'  => __( 'Destacado 90 Días - Soy de Chile', 'babel-directory' ),
+                'price' => '19990',
+                'desc'  => __( 'Destaca tu negocio en el directorio durante 90 días. Máximo visibilidad al mejor precio.', 'babel-directory' ),
+            ),
+        );
+
+        foreach ( $featured_products as $sku => $data ) {
+            if ( ! wc_get_product_id_by_sku( $sku ) ) {
+                $product = new \WC_Product_Simple();
+                $product->set_name( $data['name'] );
+                $product->set_status( 'publish' );
+                $product->set_catalog_visibility( 'hidden' );
+                $product->set_sku( $sku );
+                $product->set_price( $data['price'] );
+                $product->set_regular_price( $data['price'] );
+                $product->set_virtual( true );
+                $product->set_sold_individually( true );
+                $product->set_description( $data['desc'] );
+                $product->save();
+            }
+        }
+
         update_option( 'babel_wc_products_created', true );
+        update_option( 'babel_featured_products_created', true );
     }
 
     /**
@@ -145,6 +183,58 @@ class Frontend_Dashboard {
         // Devolver la URL del checkout
         wp_send_json_success( array(
             'checkout_url' => wc_get_checkout_url()
+        ) );
+    }
+
+    /**
+     * Endpoint AJAX para comprar un Featured Listing.
+     */
+    public function handle_ajax_featured_purchase() {
+        check_ajax_referer( 'babel_featured_nonce', 'nonce' );
+
+        if ( ! is_user_logged_in() || ! class_exists( 'WooCommerce' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Debes iniciar sesión.', 'babel-directory' ) ) );
+        }
+
+        $post_id       = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+        $duration_days = isset( $_POST['duration_days'] ) ? absint( $_POST['duration_days'] ) : 0;
+
+        if ( ! $post_id || ! $duration_days ) {
+            wp_send_json_error( array( 'message' => __( 'Faltan parámetros.', 'babel-directory' ) ) );
+        }
+
+        // Verificar que el usuario sea el dueño del negocio
+        $post = get_post( $post_id );
+        if ( ! $post || $post->post_author != get_current_user_id() ) {
+            wp_send_json_error( array( 'message' => __( 'No tienes permiso sobre este negocio.', 'babel-directory' ) ) );
+        }
+
+        // Verificar elegibilidad
+        if ( ! class_exists( 'Babel\Directory\Featured_Listings' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Sistema no disponible.', 'babel-directory' ) ) );
+        }
+
+        $featured = new Featured_Listings();
+        $can      = $featured->can_purchase_featured( $post_id );
+        if ( is_wp_error( $can ) ) {
+            wp_send_json_error( array( 'message' => $can->get_error_message() ) );
+        }
+
+        // Obtener SKU y producto
+        $sku        = $featured->get_sku_for_duration( $duration_days );
+        $product_id = wc_get_product_id_by_sku( $sku );
+
+        if ( ! $product_id ) {
+            wp_send_json_error( array( 'message' => __( 'Producto no encontrado. Contacta soporte.', 'babel-directory' ) ) );
+        }
+
+        // Vaciar carrito y agregar
+        WC()->cart->empty_cart();
+        WC()->cart->add_to_cart( $product_id, 1, 0, array(), array( 'babel_target_post_id' => $post_id ) );
+
+        wp_send_json_success( array(
+            'checkout_url' => wc_get_checkout_url(),
+            'message'      => __( '¡Producto agregado! Completa el pago para activar tu destacado.', 'babel-directory' ),
         ) );
     }
 
