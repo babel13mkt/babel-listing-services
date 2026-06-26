@@ -12,9 +12,9 @@
 |-------|-------|
 | **Spec ID** | `01-featured-listings` |
 | **Nombre** | Listados Patrocinados (Featured Listings) |
-| **Autor** | Builder (Hermes Agent) |
-| **Fecha** | 2026-06-26 |
-| **Estado** | `Para revisión` |
+|| **Autor** | Hermes Agent (Builder) |
+|| **Fecha** | 2026-06-26 |
+|| **Estado** | `Para revisión` |
 | **Prioridad** | `Alta` |
 | **Dependencias** | Ninguna (sistema de pagos WooCommerce existente) |
 
@@ -22,7 +22,7 @@
 
 ## 2. RESUMEN EJECUTIVO
 
-Actualmente Babel Directory tiene un flag binario `_babel_featured` que los administradores asignan manualmente desde el backend y que solo se activa con el plan WooCommerce "Premium". **No existe un sistema de listados patrocinados como producto comercial.** Los negocios no pueden comprar destacarse por tiempo limitado, no hay auto-expiraciones, y no hay tiers de visibilidad.
+Actualmente Babel Directory tiene un flag binario `_babel_featured` que los administradores asignan manualmente desde el backend (checkbox en metabox). **No existe un sistema de listados patrocinados como producto comercial.** Los negocios no pueden comprar destacarse por tiempo limitado, no hay auto-expiraciones, y no hay tiers de visibilidad. El shortcode `[bd_featured_businesses]` filtra por `_babel_featured = '1'` con `orderby => 'rand'`, y el REST API ya expone `is_featured` en respuestas de búsqueda y perfil. El plan Premium ($39.990 CLP) promete "posición #1 garantizada" pero actualmente la asignación es 100% manual por el admin — no hay lógica automática que vincule el plan Premium con el flag featured.
 
 Este spec define un sistema completo de **Featured Listings autogestionable**: los negocios pagan por destacarse en el directorio por un período determinado (7, 30 o 90 días), aparecen con prioridad visual en búsquedas y listados, y el sistema maneja automáticamente expiraciones, rotación y renovación. Esto desbloquea una fuente de ingresos recurrente sin depender del plan Premium completo.
 
@@ -55,8 +55,8 @@ Este spec define un sistema completo de **Featured Listings autogestionable**: l
 
 | Producto SKU | Precio Actual | Propósito |
 |-------------|---------------|-----------|
-| `BABEL-PRO` | $19.990 CLP | Plan base: WhatsApp, Web, Galería, Horarios, Verificado |
-| `BABEL-PREMIUM` | (sin precio fijo) | Todo lo anterior + destacado permanente |
+|| `BABEL-PRO` | $19.990 CLP | Plan base: WhatsApp, Web, Galería, Horarios, Verificado |
+|| `BABEL-PREMIUM` | $39.990 CLP | Todo lo anterior + destacado permanente (posición #1 garantizada) |
 
 La solución NO requiere nuevo producto WooCommerce. En su lugar usa **WooCommerce como pasarela de checkout** pero con pedidos de un solo ítem virtual (one-time payment, no suscripción) cuyo SKU refleja la duración. Alternativamente, se puede usar el webhook de pagos existente (`class-payments.php`) con un parámetro `product_type=featured` + `duration_days=N`.
 
@@ -418,7 +418,7 @@ ORDER BY idx.is_featured DESC,
 
 ## 10. MIGRACIÓN Y BACKWARD COMPATIBILITY
 
-- **Meta key `_babel_featured`**: Se mantiene como flag de cache. El setter ahora es dinámico basado en `_babel_featured_expires`. Script de migración única: los negocios existentes con `_babel_featured = '1'` reciben `_babel_featured_expires = '9999-12-31 23:59:59'` (featured permanente legacy).
+- **Meta key `_babel_featured`**: Se mantiene como flag de cache. El setter ahora es dinámico basado en `_babel_featured_expires`. Script de migración única: los negocios existentes con `_babel_featured = '1'` Y `_babel_plan_type !== 'premium'` reciben `_babel_featured_expires = now + 90 días` (gracia inicial para no cortarles el servicio de golpe). Los que son Premium quedan con `_babel_featured_expires = '9999-12-31 23:59:59'` (permanente).
 
 - **Shortcode `[bd_featured_businesses]`**: Se mantiene como alias de `[bd_featured_listings]` para no romper layouts de Divi existentes.
 
@@ -519,6 +519,7 @@ ORDER BY idx.is_featured DESC,
 - **Timezones:** Usar `current_time('mysql')` (hora del sitio WordPress) para todas las comparaciones, no `date()` de PHP (hora del servidor).
 - **Transients en featured:** Si se usa transient cache, la expiración en tiempo real (cron) y la UI pueden diferir hasta 1 hora. Aceptable para fase 1.
 - **WooCommerce auto-create race condition:** Si dos admins cargan la página de settings simultáneamente, se intenta crear el producto dos veces. `wc_get_product_id_by_sku()` previene duplicados.
+- **Auto-create gate:** `auto_create_woocommerce_products()` usa `get_option('babel_wc_products_created')` como gate. Para que los nuevos productos Featured se auto-creen, se debe: (a) agregar los SKUs `BABEL-FEATURED-*` dentro de la misma función, y (b) resetear la opción `babel_wc_products_created` en la próxima versión del plugin (o usar un gate separado `babel_featured_products_created`).
 - **Premium + featured overlap:** La regla "Premium = featured permanente" debe verificarse en TODOS los puntos de consulta (search, shortcode, cron, API), no solo en compra.
 
 ### 13.3 Decisiones de Diseño
@@ -534,6 +535,7 @@ ORDER BY idx.is_featured DESC,
 | Fecha | Versión | Cambio |
 |-------|---------|--------|
 | 2026-06-26 | 1.0 | Creación inicial del spec |
+| 2026-06-26 | 1.1 | Correcciones basadas en análisis de código real: precio BABEL-PREMIUM=$39990, flag featured es manual (no automático con Premium), migración con período de gracia para featured existentes, gate de auto-create necesita reset. |
 
 ---
 
