@@ -310,6 +310,11 @@ class CPT {
             '_babel_hours'            => 'string',
             '_babel_verified'         => 'string',
             '_babel_featured'         => 'string',
+            '_babel_featured_expires' => 'string',
+            '_babel_featured_plan'    => 'string',
+            '_babel_featured_purchased_at' => 'string',
+            '_babel_featured_impressions' => 'integer',
+            '_babel_featured_clicks'  => 'integer',
             '_babel_biz_tags'         => 'string',
             '_babel_is_institution'   => 'string',
             // Legacy keys for compatibility

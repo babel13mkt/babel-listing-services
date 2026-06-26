@@ -51,12 +51,14 @@ class Search_Index {
             rating_avg decimal(3,2) DEFAULT 0.00,
             is_verified tinyint(1) DEFAULT 0,
             is_featured tinyint(1) DEFAULT 0,
+            featured_expires DATETIME DEFAULT NULL,
             PRIMARY KEY (post_id),
             KEY post_type (post_type),
             KEY category_id (category_id),
             KEY region_id (region_id),
             KEY coords (latitude, longitude),
-            KEY sorting (is_featured, rating_avg)
+            KEY sorting (is_featured, rating_avg),
+            KEY featured_expires (featured_expires)
         ) ENGINE=InnoDB $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -110,26 +112,46 @@ class Search_Index {
         // 3. Obtener Flags de Control e Impacto Visual
         $is_verified = get_post_meta( $post_id, '_babel_is_verified', true ) ? 1 : 0;
         $is_featured = get_post_meta( $post_id, '_babel_is_featured', true ) ? 1 : 0;
-        
+
+        // Featured v2: calcular is_featured dinámicamente desde fecha de expiración
+        $featured_expires = get_post_meta( $post_id, '_babel_featured_expires', true );
+        if ( ! empty( $featured_expires ) ) {
+            $expires_ts = strtotime( $featured_expires );
+            $now_ts     = current_time( 'timestamp' );
+            // Si el featured expiró, forzar is_featured = 0 (salvo Premium, se maneja en class-featured-listings)
+            if ( $expires_ts > 0 && $expires_ts < $now_ts ) {
+                $is_featured = 0;
+            } else {
+                $is_featured = 1;
+            }
+        }
+
         // El promedio de reviews por ahora inicia en 0.00 hasta integrar class-reviews
         $rating_avg  = get_post_meta( $post_id, '_babel_rating_avg', true );
         $rating_avg  = ( $rating_avg !== '' ) ? filter_var( $rating_avg, FILTER_VALIDATE_FLOAT ) : 0.00;
+
+        // Formatear featured_expires para DATETIME de MySQL
+        $featured_expires_db = null;
+        if ( ! empty( $featured_expires ) ) {
+            $featured_expires_db = date( 'Y-m-d H:i:s', strtotime( $featured_expires ) );
+        }
 
         // 4. Inserción/Reemplazo Atómico en la BD
         $wpdb->replace(
             $this->table_name,
             array(
-                'post_id'     => $post_id,
-                'post_type'   => 'babel_business',
-                'category_id' => $category_id,
-                'region_id'   => $region_id,
-                'latitude'    => $latitude,
-                'longitude'   => $longitude,
-                'rating_avg'  => $rating_avg,
-                'is_verified' => $is_verified,
-                'is_featured' => $is_featured,
+                'post_id'          => $post_id,
+                'post_type'        => 'babel_business',
+                'category_id'      => $category_id,
+                'region_id'        => $region_id,
+                'latitude'         => $latitude,
+                'longitude'        => $longitude,
+                'rating_avg'       => $rating_avg,
+                'is_verified'      => $is_verified,
+                'is_featured'      => $is_featured,
+                'featured_expires' => $featured_expires_db,
             ),
-            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' )
+            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d', '%s' )
         );
     }
 
@@ -178,17 +200,18 @@ class Search_Index {
         $wpdb->replace(
             $this->table_name,
             array(
-                'post_id'     => $post_id,
-                'post_type'   => 'bd_institution',
-                'category_id' => $category_id,
-                'region_id'   => $region_id,
-                'latitude'    => $latitude,
-                'longitude'   => $longitude,
-                'rating_avg'  => 0.00,
-                'is_verified' => $is_verified,
-                'is_featured' => $is_featured,
+                'post_id'          => $post_id,
+                'post_type'        => 'bd_institution',
+                'category_id'      => $category_id,
+                'region_id'        => $region_id,
+                'latitude'         => $latitude,
+                'longitude'        => $longitude,
+                'rating_avg'       => 0.00,
+                'is_verified'      => $is_verified,
+                'is_featured'      => $is_featured,
+                'featured_expires' => null,
             ),
-            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d' )
+            array( '%d', '%s', '%d', '%d', '%f', '%f', '%f', '%d', '%d', '%s' )
         );
     }
 
@@ -239,6 +262,27 @@ class Search_Index {
         }
 
         return $count;
+    }
+
+    /**
+     * Migración: agrega columna featured_expires si no existe (actualización in-place).
+     * Se ejecuta en la activación del plugin o vía CLI.
+     */
+    public static function maybe_upgrade_table() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bd_search_index';
+
+        // Verificar si la columna ya existe
+        $column_exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'featured_expires'",
+                $table_name
+            )
+        );
+
+        if ( ! $column_exists ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN featured_expires DATETIME DEFAULT NULL AFTER is_featured, ADD INDEX idx_featured_expires (featured_expires)" );
+        }
     }
 
     /**
