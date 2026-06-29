@@ -151,8 +151,12 @@ class Geolocation {
     }
 
     private function resolve_ip_to_region( $ip ) {
+        // SECURITY: Validar IP antes de concatenar en URL (previene SSRF)
+        if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+            return false;
+        }
         // Llamada a API ultra-rápida y gratuita sin auth.
-        $url = 'https://ip-api.com/json/' . $ip . '?lang=es&fields=status,regionName,countryCode';
+        $url = 'https://ip-api.com/json/' . rawurlencode( $ip ) . '?lang=es&fields=status,regionName,countryCode';
         $response = wp_remote_get( $url, array( 'timeout' => 3 ) ); // Timeout ultra corto para no bloquear el LCP
 
         if ( is_wp_error( $response ) ) {

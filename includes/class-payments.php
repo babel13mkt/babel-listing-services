@@ -58,8 +58,11 @@ class Payments {
 
         $params = $request->get_params();
 
-        // Registrar en el log del servidor para auditorías de transacciones
-        error_log( '[Babel Directory Webhook] Payload recibido: ' . print_r( $params, true ) );
+        // SECURITY: Log mínimo sin datos personales (GDPR). Solo IDs.
+        $log_id = $params['id'] ?? $params['data']['id'] ?? 'unknown';
+        if ( defined( 'BD_DEBUG' ) && BD_DEBUG ) {
+            error_log( '[Babel Directory Webhook] Recibido. ID transaccion: ' . sanitize_text_field( $log_id ) );
+        }
 
         $business_id = 0;
 

@@ -430,8 +430,8 @@ class Admin {
                     <td style="display: flex; align-items: center;">
                         <input type="checkbox" class="sdc-bulk-select-item" value="<?php echo esc_attr( get_the_ID() ); ?>" style="margin-right:8px;">
                         <a href="<?php echo esc_url( $edit_link ); ?>" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#3b82f6; color:#ffffff;">Editar (SPA)</a>
-                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="suspend" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#f59e0b; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Pausar negocio (Borrador)">Suspender</button>
-                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="trash" data-postid="<?php echo get_the_ID(); ?>" style="padding:4px 12px; font-size:12px; background:#ef4444; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Eliminar negocio">Borrar</button>
+                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="suspend" data-postid="<?php echo esc_attr( get_the_ID() ); ?>" style="padding:4px 12px; font-size:12px; background:#f59e0b; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Pausar negocio (Borrador)">Suspender</button>
+                        <button type="button" class="sdc-btn sdc-quick-action-btn" data-action="trash" data-postid="<?php echo esc_attr( get_the_ID() ); ?>" style="padding:4px 12px; font-size:12px; background:#ef4444; color:#ffffff; margin-left:8px; border:none; cursor:pointer;" title="Eliminar negocio">Borrar</button>
                         <a href="<?php echo esc_url( get_permalink() ); ?>" target="_blank" class="sdc-btn" style="text-decoration:none; padding:4px 12px; font-size:12px; background:#f1f5f9; color:#475569; margin-left:8px;">Ver Pág.</a>
                     </td>
                 </tr>

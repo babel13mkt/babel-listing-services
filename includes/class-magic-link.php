@@ -86,8 +86,10 @@ class Magic_Link {
             $transient_key = 'bd_magic_' . md5( $email_from_url );
             $saved_token   = get_transient( $transient_key );
 
-            // Verificar si el token existe y coincide
-            if ( $saved_token && hash_equals( $saved_token, $token_from_url ) ) {
+            // SECURITY: Comparar usando hash (token plano NUNCA va en URL)
+            // El URL contiene wp_hash($token), verificamos hasheando el token guardado
+            $saved_token_hash = wp_hash( $saved_token );
+            if ( $saved_token && hash_equals( $saved_token_hash, $token_from_url ) ) {
                 
                 // Borrar el token para que sea de un solo uso
                 delete_transient( $transient_key );
