@@ -2424,12 +2424,14 @@ class Shortcodes {
         wp_enqueue_style( 'babel-public-css' );
 
         $atts = shortcode_atts( array(
-            'limit'  => 4,
-            'region' => '', // slug de la region, vacio para global o 'auto'
+            'limit'    => 4,
+            'region'   => '', // slug de la region, vacio para global o 'auto'
+            'category' => '', // slug de categoría (nuevo en v2)
         ), $atts, 'bd_featured_businesses' );
 
-        $limit = intval( $atts['limit'] );
-        $region_slug = '';
+        $limit        = intval( $atts['limit'] );
+        $region_slug  = '';
+        $category_slug = sanitize_text_field( $atts['category'] );
 
         if ( 'auto' === $atts['region'] ) {
             if ( \is_tax( 'babel_region' ) ) {
@@ -2442,31 +2444,47 @@ class Shortcodes {
             $region_slug = sanitize_text_field( $atts['region'] );
         }
 
-        $query_args = array(
-            'post_type'      => 'babel_business',
-            'post_status'    => 'publish',
-            'posts_per_page' => $limit,
-            'orderby'        => 'rand', // Rotación justa
-            'meta_query'     => array(
-                array(
-                    'key'     => '_babel_featured',
-                    'value'   => '1',
-                    'compare' => '=',
-                ),
-            ),
-        );
+        // Featured v2: usar search index para query eficiente
+        global $wpdb;
+        $table = $wpdb->prefix . 'bd_search_index';
+        $now   = current_time( 'mysql' );
 
+        $sql = "SELECT idx.post_id FROM {$table} idx WHERE idx.post_type = 'babel_business' AND idx.is_featured = 1";
+        $sql .= $wpdb->prepare( " AND (idx.featured_expires IS NULL OR idx.featured_expires > %s)", $now );
+
+        // Filtrar por región
         if ( ! empty( $region_slug ) ) {
-            $query_args['tax_query'] = array(
-                array(
-                    'taxonomy' => 'babel_region',
-                    'field'    => 'slug',
-                    'terms'    => $region_slug,
-                ),
-            );
+            $term = get_term_by( 'slug', $region_slug, 'babel_region' );
+            if ( $term && ! is_wp_error( $term ) ) {
+                $sql .= $wpdb->prepare( " AND idx.region_id = %d", $term->term_id );
+            }
         }
 
-        $featured_query = new \WP_Query( $query_args );
+        // Filtrar por categoría
+        if ( ! empty( $category_slug ) ) {
+            $term = get_term_by( 'slug', $category_slug, 'babel_category' );
+            if ( $term && ! is_wp_error( $term ) ) {
+                $sql .= $wpdb->prepare( " AND idx.category_id = %d", $term->term_id );
+            }
+        }
+
+        // Orden: los que expiran antes primero (incentiva renovación), luego por rating
+        $sql .= " ORDER BY CASE WHEN idx.featured_expires IS NOT NULL THEN idx.featured_expires ELSE '9999-12-31' END ASC, idx.rating_avg DESC";
+        $sql .= $wpdb->prepare( " LIMIT %d", $limit );
+
+        $post_ids = $wpdb->get_col( $sql );
+
+        if ( empty( $post_ids ) ) {
+            return '';
+        }
+
+        $featured_query = new \WP_Query( array(
+            'post_type'      => 'babel_business',
+            'post_status'    => 'publish',
+            'post__in'       => $post_ids,
+            'posts_per_page' => $limit,
+            'orderby'        => 'post__in', // Mantener el orden del search index
+        ) );
 
         if ( ! $featured_query->have_posts() ) {
             wp_reset_postdata();
@@ -2496,9 +2514,17 @@ class Shortcodes {
 
                     $thumb_id  = get_post_thumbnail_id( $post_id );
                     $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
+
+                    // Featured v2: badge dinámico según tipo
+                    $featured_status = array();
+                    if ( class_exists( 'Babel\\Directory\\Featured_Listings' ) ) {
+                        $featured_obj = new \Babel\Directory\Featured_Listings();
+                        $featured_status = $featured_obj->get_featured_status( $post_id );
+                    }
+                    $is_premium_plan = ( get_post_meta( $post_id, '_babel_plan_type', true ) === 'premium' );
                 ?>
-                    <a href="<?php the_permalink(); ?>" class="babel-biz-card babel-biz-card--featured" aria-label="<?php the_title_attribute(); ?>" style="border: 2px solid var(--color-secondary-fixed-dim,#e9c349); box-shadow: 0 4px 15px rgba(233, 195, 73, 0.15);">
-                        
+                    <a href="<?php the_permalink(); ?>" class="babel-biz-card babel-biz-card--featured babel-biz-card--sponsored" aria-label="<?php the_title_attribute(); ?>" style="border: 2px solid var(--babel-color-secondary-fixed-dim,#e9c349); box-shadow: var(--babel-shadow-cardFeatured, 0 4px 20px rgba(255,183,3,0.06));">
+
                         <!-- Zona de imagen -->
                         <div class="babel-biz-card__image-wrap">
                             <?php if ( $thumb_url ) : ?>
@@ -2511,9 +2537,9 @@ class Shortcodes {
 
                             <!-- Badges flotantes -->
                             <div class="babel-biz-card__badges">
-                                <span class="babel-biz-card__badge babel-biz-card__badge--featured" style="background: var(--color-secondary-fixed-dim,#e9c349); color: #000000; font-weight: 700;">
-                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">stars</span>
-                                    <?php esc_html_e( 'Destacado Premium', 'babel-directory' ); ?>
+                                <span class="babel-biz-card__badge bd-featured-badge--sponsored" <?php echo $is_premium_plan ? '' : 'title="' . esc_attr( sprintf( __( 'Expira en %d días', 'babel-directory' ), $featured_status['days_remaining'] ) ) . '"'; ?>>
+                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">star</span>
+                                    <?php echo $is_premium_plan ? esc_html__( 'Destacado', 'babel-directory' ) : esc_html__( 'Patrocinado', 'babel-directory' ); ?>
                                 </span>
                                 <?php if ( $is_verified ) : ?>
                                     <span class="babel-biz-card__badge babel-biz-card__badge--verified">

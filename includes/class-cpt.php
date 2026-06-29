@@ -355,6 +355,14 @@ class CPT {
             '_bd_institucion_dependencia'     => 'string',
             '_bd_institucion_codigo_rbd'      => 'string',
             '_bd_institucion_horario'         => 'string',
+            '_bd_institucion_comuna'          => 'string',
+            '_bd_institucion_region'          => 'string',
+            '_bd_institucion_telefono'        => 'string',
+            '_bd_institucion_direccion'       => 'string',
+            '_bd_institucion_web'             => 'string',
+            '_bd_institucion_latitud'         => 'string',
+            '_bd_institucion_longitud'        => 'string',
+            '_bd_institucion_verificada'      => 'string',
         );
 
         foreach ( $institution_meta_keys as $key => $type ) {
