@@ -13,6 +13,8 @@ class Shortcodes {
 
     public function __construct() {
         add_shortcode( 'babel_region_grid', array( $this, 'render_region_grid' ) );
+        add_shortcode( 'babel_header', array( $this, 'render_header' ) );
+        add_shortcode( 'babel_hero_search', array( $this, 'render_hero_search' ) );
         add_shortcode( 'bd_popular_regions', array( $this, 'render_region_grid' ) ); // Alias simétrico
         add_shortcode( 'babel_region_carousel', array( $this, 'render_region_carousel' ) );
         add_shortcode( 'bd_popular_categories', array( $this, 'render_category_grid' ) );
@@ -25,6 +27,9 @@ class Shortcodes {
         add_shortcode( 'bd_filter_bar', array( $this, 'render_filter_bar' ) );
         add_shortcode( 'babel_auth_menu', array( $this, 'render_auth_menu' ) );
         add_action( 'wp_footer', array( $this, 'render_global_auth_modal' ) );
+        add_action( 'wp_footer', array( $this, 'render_mobile_footer' ) );
+        add_shortcode( 'babel_institutions', array( $this, 'render_region_institutions_pills' ) );
+        add_shortcode( 'bd_region_institutions_pills', array( $this, 'render_region_institutions_pills' ) );
 
         // Shortcodes adicionales B2B restaurados
         add_shortcode( 'babel_claim_business', array( $this, 'render_claim_business' ) );
@@ -44,9 +49,36 @@ class Shortcodes {
         add_shortcode( 'bd_featured_businesses', array( $this, 'render_featured_businesses' ) );
         add_shortcode( 'babel_pricing_tables', array( $this, 'render_pricing_tables' ) );
 
+        // React App Frontend Oficial
+        add_shortcode( 'babel_react_app', array( $this, 'render_react_app' ) );
+
         // Hooks para alertas transaccionales y estadísticas
         add_action( 'post_updated', array( $this, 'notify_user_on_claim_approved' ), 10, 3 );
         add_action( 'wp_head', array( $this, 'track_business_view' ) );
+
+        // Interactive Map Shortcode
+        add_shortcode( 'bd_interactive_map', array( $this, 'render_interactive_map' ) );
+    }
+
+    public function render_interactive_map( $atts ) {
+        $atts = shortcode_atts( array(
+            'height' => '500px',
+            'class'  => '',
+        ), $atts, 'bd_interactive_map' );
+
+        $height = esc_attr( $atts['height'] );
+        $class  = esc_attr( $atts['class'] );
+
+        ob_start();
+        ?>
+        <div class="bd-interactive-map-container <?php echo $class; ?>" style="height: <?php echo $height; ?>; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: #e5e5e5; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 24px;">
+            <div id="bd-interactive-map" style="width: 100%; height: 100%;"></div>
+            <div id="bd-map-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; font-weight: 600; color: var(--bd-primary, #0039A6);">
+                Cargando mapa...
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
     }
 
     public function render_pricing_tables( $atts ) {
@@ -298,9 +330,9 @@ class Shortcodes {
         ob_start();
 
         // Modificar el Placeholder del input dinámicamente
-        $placeholder = "ej: Sushi, región metropolitana";
+        $placeholder = "Buscar comercios o instituciones...";
         if ( ! empty( $auto_region_name ) ) {
-            $placeholder = "ej: Sushi en " . esc_html( $auto_region_name );
+            $placeholder = "Buscar comercios o instituciones en " . esc_html( $auto_region_name );
         }
         ?>
         <div class="babel-filter-bar-section">
@@ -353,6 +385,7 @@ class Shortcodes {
                 </div>
             </form>
 
+
             <!-- Contenedor Dinámico para Carga Asíncrona (AJAX) -->
             <!-- Usamos data-region dinámico basado en PHP para heredar el contexto -->
             <?php if ( 'yes' === $atts['show_results'] || 'true' === $atts['show_results'] || true === $atts['show_results'] || '1' === $atts['show_results'] ) : ?>
@@ -362,7 +395,7 @@ class Shortcodes {
                     #sidebar { display: none !important; }
                     #left-area { width: 100% !important; padding-right: 0 !important; border-right: none !important; float: none !important; }
                 </style>
-                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category=""></div>
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $current_region_slug ); ?>" data-category="" data-entity-type="business"></div>
             <?php endif; ?>
         </div>
         <?php
@@ -405,6 +438,30 @@ class Shortcodes {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    public function render_mobile_footer() {
+        if ( is_admin() ) return;
+        ?>
+        <div class="babel-mobile-bottom-nav">
+            <a href="/" class="babel-mb-nav-item">
+                <span class="material-symbols-outlined">home</span>
+                <span class="babel-mb-nav-label">Home</span>
+            </a>
+            <a href="/buscar/" class="babel-mb-nav-item">
+                <span class="material-symbols-outlined">search</span>
+                <span class="babel-mb-nav-label">Buscar</span>
+            </a>
+            <a href="/buscar/" class="babel-mb-nav-item" onclick="document.getElementById('babel-geo-btn') && document.getElementById('babel-geo-btn').click(); return false;">
+                <span class="material-symbols-outlined">location_on</span>
+                <span class="babel-mb-nav-label">Mapa</span>
+            </a>
+            <a href="#" class="babel-mb-nav-item babel-trigger-auth">
+                <span class="material-symbols-outlined">person</span>
+                <span class="babel-mb-nav-label">Perfil</span>
+            </a>
+        </div>
+        <?php
     }
 
     public function render_global_auth_modal() {
@@ -482,7 +539,7 @@ class Shortcodes {
         }
         $atts['layout']  = 'carousel';
         $atts['rows']    = 1;
-        $atts['columns'] = 20; // Enough to fit all regions
+        $atts['columns'] = 50; // Aumentado a 50 para evitar que array_slice elimine regiones válidas debido a duplicados
         return $this->render_region_grid( $atts );
     }
 
@@ -579,13 +636,13 @@ class Shortcodes {
                     } );
                 }
 
-                // Aplicar el límite
-                if ( $limit > 0 && count( $terms ) > $limit ) {
-                    $terms = array_slice( $terms, 0, $limit );
-                }
-
                 set_transient( $tkey, $terms, 12 * HOUR_IN_SECONDS );
             }
+        }
+
+        // Aplicar el límite de forma dinámica (filas * columnas) garantizando consistencia
+        if ( ! \is_wp_error( $terms ) && ! empty( $terms ) && $limit > 0 && count( $terms ) > $limit ) {
+            $terms = array_slice( $terms, 0, $limit );
         }
 
         if ( \is_wp_error( $terms ) || empty( $terms ) ) {
@@ -607,7 +664,20 @@ class Shortcodes {
         }
         
         foreach ( $terms as $term ) {
-            $image_url = ! empty( $term->image_url ) ? $term->image_url : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%232c3e50"/></svg>';
+            // Re-calcular si la serialización del caché perdió las propiedades dinámicas
+            if ( empty( $term->image_url ) ) {
+                $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
+                $term->image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'large' ) : '';
+            }
+            if ( empty( $term->term_link ) ) {
+                $term_link = get_term_link( $term );
+                $term->term_link = \is_wp_error( $term_link ) ? '' : $term_link;
+            }
+
+            // No ocultar regiones sin imagen; usar fallback.
+
+            $fallback_svg_base64 = 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJjM2U1MCIvPjwvc3ZnPg==';
+            $image_url = ! empty( $term->image_url ) ? $term->image_url : 'data:image/svg+xml;base64,' . $fallback_svg_base64;
             
             if ( empty( $term->term_link ) ) {
                 continue;
@@ -630,7 +700,7 @@ class Shortcodes {
             ?>
             <div class="babel-region-wrapper">
                 <a href="<?php echo esc_url( $term->term_link ); ?>" class="babel-region-card no-lightbox disable-lightbox" target="_self" data-et-has-event-already="true">
-                    <div class="babel-region-bg<?php echo esc_attr( $pip_class ); ?>" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
+                    <div class="babel-region-bg<?php echo esc_attr( $pip_class ); ?>" style="background-image: url('<?php echo esc_url( $image_url, array('http', 'https', 'data') ); ?>');"></div>
                     <div class="babel-region-overlay"></div>
                     <div class="babel-region-content">
                         <span class="babel-region-title"><?php echo esc_html( $term->name ); ?></span>
@@ -690,30 +760,113 @@ class Shortcodes {
         }
 
         ob_start();
-        echo '<div class="babel-region-grid" style="--babel-grid-cols: ' . esc_attr( $columns ) . ';">';
+        ?>
+        <style>
+        .babel-category-grid-ml {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 16px;
+            padding: 20px 0;
+        }
+        .babel-cat-card {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: 16px;
+            padding: 24px 12px;
+            text-align: center;
+            text-decoration: none !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        .babel-cat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 57, 166, 0.12);
+            border-color: transparent;
+        }
+        .babel-cat-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            background: #f0f4ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            color: #0039A6;
+            transition: all 0.3s ease;
+        }
+        .babel-cat-card:hover .babel-cat-icon-wrapper {
+            background: #0039A6;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .babel-cat-icon-wrapper .dashicons {
+            font-size: 32px;
+            width: 32px;
+            height: 32px;
+        }
+        .babel-cat-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .babel-cat-count {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .babel-category-grid-ml {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 12px;
+            }
+            .babel-cat-card {
+                padding: 16px 8px;
+            }
+            .babel-cat-icon-wrapper {
+                width: 52px;
+                height: 52px;
+                margin-bottom: 12px;
+            }
+            .babel-cat-icon-wrapper .dashicons {
+                font-size: 26px;
+                width: 26px;
+                height: 26px;
+            }
+            .babel-cat-title {
+                font-size: 13px;
+            }
+        }
+        </style>
+        <div class="babel-category-grid-ml">
+        <?php
         
         foreach ( $terms as $term ) {
-            $image_id = get_term_meta( $term->term_id, 'bd_term_image_id', true );
-            $image_url = '';
-            
-            if ( $image_id ) {
-                $image_url = wp_get_attachment_image_url( $image_id, 'large' );
-            } else {
-                $image_url = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23e67e22"/></svg>';
+            $cat_url = home_url( '/buscar/?categoria=' . $term->slug );
+            $icon = get_term_meta( $term->term_id, 'dashicon', true );
+            if ( empty( $icon ) ) {
+                $icon = 'dashicons-store'; // Ícono premium por defecto
             }
 
-            $cat_url = home_url( '/buscar/?categoria=' . $term->slug );
-
             ?>
-            <div class="babel-region-wrapper">
-                <a href="<?php echo esc_url( $cat_url ); ?>" class="babel-region-card no-lightbox disable-lightbox" target="_self">
-                    <div class="babel-region-bg" style="background-image: url('<?php echo esc_url( $image_url ); ?>');"></div>
-                    <div class="babel-region-overlay"></div>
-                    <div class="babel-region-content">
-                        <span class="babel-region-title"><?php echo esc_html( $term->name ); ?></span>
-                    </div>
-                </a>
-            </div>
+            <a href="<?php echo esc_url( $cat_url ); ?>" class="babel-cat-card no-lightbox disable-lightbox" target="_self">
+                <div class="babel-cat-icon-wrapper">
+                    <span class="dashicons <?php echo esc_attr( $icon ); ?>"></span>
+                </div>
+                <span class="babel-cat-title"><?php echo esc_html( $term->name ); ?></span>
+                <span class="babel-cat-count"><?php echo esc_html( $term->count ); ?> locales</span>
+            </a>
             <?php
         }
         
@@ -989,7 +1142,7 @@ class Shortcodes {
                     }
                     ?>
                 <?php endwhile; ?>
-            <?php else : ?>
+            <?php elseif ( ! is_front_page() || ! empty( $_GET['keyword'] ) || ! empty( $_GET['location'] ) ) : ?>
                 <p class="sdc-no-results"><?php esc_html_e( 'No se encontraron negocios en esta categoría.', 'babel-directory' ); ?></p>
             <?php endif; ?>
         </div>
@@ -1117,90 +1270,7 @@ class Shortcodes {
             <?php
             // Secciones dinámicas para la taxonomía babel_region (regiones y comunas)
             if ( 'babel_region' === $term->taxonomy ) {
-                // 3. Instituciones básicas permanentes
-                $institutions_key = 'bd_institutions_' . $term->term_id;
-                $institutions = get_transient( $institutions_key );
-                if ( false === $institutions ) {
-                    $inst_args = array(
-                        'post_type'      => 'babel_business',
-                        'post_status'    => 'publish',
-                        'posts_per_page' => 30,
-                        'meta_query'     => array(
-                            array(
-                                'key'     => '_babel_is_institution',
-                                'value'   => '1',
-                                'compare' => '=',
-                            ),
-                        ),
-                        'tax_query' => array(
-                            array(
-                                'taxonomy' => $term->taxonomy,
-                                'field'    => 'term_id',
-                                'terms'    => $term_ids,
-                                'operator' => 'IN',
-                            ),
-                        ),
-                        'orderby' => 'title',
-                        'order'   => 'ASC',
-                        'fields'  => 'all',
-                    );
-                    $inst_query   = new \WP_Query( $inst_args );
-                    $institutions = $inst_query->posts;
-                    \wp_reset_postdata();
-                    set_transient( $institutions_key, $institutions, 12 * HOUR_IN_SECONDS );
-                }
-
-                if ( ! empty( $institutions ) ) {
-                    $icon_map = array(
-                        'salud'         => 'local_hospital',
-                        'hospital'      => 'local_hospital',
-                        'clínica'       => 'local_hospital',
-                        'clinica'       => 'local_hospital',
-                        'educación'     => 'school',
-                        'educacion'     => 'school',
-                        'escuela'       => 'school',
-                        'universidad'   => 'school',
-                        'banco'         => 'account_balance',
-                        'municipalidad' => 'account_balance',
-                        'municipio'     => 'account_balance',
-                        'policía'       => 'local_police',
-                        'policia'       => 'local_police',
-                        'carabineros'   => 'local_police',
-                        'bomberos'      => 'fire_truck',
-                        'correos'       => 'local_post_office',
-                        'registro'      => 'fact_check',
-                    );
-                    ?>
-                    <div class="bd-region-institutions">
-                        <div class="bd-region-institutions__inner">
-                            <h2 class="bd-region-institutions__title">
-                                <span class="material-symbols-outlined">account_balance</span>
-                                <?php printf( esc_html__( 'Instituciones en %s', 'babel-directory' ), esc_html( $clean_name ) ); ?>
-                            </h2>
-                            <div class="bd-region-institutions__grid">
-                                <?php foreach ( $institutions as $inst_post ) : 
-                                    $cats = \wp_get_post_terms( $inst_post->ID, 'babel_category' );
-                                    $icon = 'business';
-                                    if ( ! empty( $cats ) && ! \is_wp_error( $cats ) ) {
-                                        $cat_slug = strtolower( $cats[0]->slug );
-                                        foreach ( $icon_map as $key => $ico ) {
-                                            if ( strpos( $cat_slug, $key ) !== false ) {
-                                                $icon = $ico;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                ?>
-                                <a href="<?php echo esc_url( get_permalink( $inst_post->ID ) ); ?>" class="bd-institution-card">
-                                    <span class="bd-institution-card__icon material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>
-                                    <span class="bd-institution-card__name"><?php echo esc_html( $inst_post->post_title ); ?></span>
-                                </a>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php
-                }
+                // 3. Instituciones removido de aquí (ahora es shortcode independiente)
 
                 // 4. Categorías más buscadas de la Región
                 $top_cats_key = 'bd_top_cats_' . $term->term_id;
@@ -1341,8 +1411,10 @@ class Shortcodes {
                 <?php
                 $data_region = ( 'babel_region' === $term->taxonomy ) ? $term->slug : '';
                 $data_category = ( 'babel_category' === $term->taxonomy ) ? $term->slug : '';
+                $inst_cats = array( 'salud', 'seguridad-publica', 'gobierno', 'justicia', 'cultura', 'municipalidades' );
+                $entity_type = in_array( $data_category, $inst_cats ) ? 'institution' : 'business';
                 ?>
-                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $data_region ); ?>" data-category="<?php echo esc_attr( $data_category ); ?>">
+                <div id="babel-directory-results" class="babel-results-container" data-region="<?php echo esc_attr( $data_region ); ?>" data-category="<?php echo esc_attr( $data_category ); ?>" data-entity-type="<?php echo esc_attr( $entity_type ); ?>">
                     <!-- Los resultados se cargan vía AJAX/REST al cargar la página -->
                 </div>
             </div>
@@ -1365,17 +1437,17 @@ class Shortcodes {
             $post_id = intval( $atts['id'] );
         } else {
             $queried_id = \get_queried_object_id();
-            if ( $queried_id && 'babel_business' === \get_post_type( $queried_id ) ) {
+            if ( $queried_id && in_array( \get_post_type( $queried_id ), array( 'babel_business', 'bd_institution' ), true ) ) {
                 $post_id = $queried_id;
             } else {
                 $post_id = \get_the_ID();
             }
         }
 
-        if ( ! $post_id || 'babel_business' !== \get_post_type( $post_id ) ) {
+        if ( ! $post_id || ! in_array( \get_post_type( $post_id ), array( 'babel_business', 'bd_institution' ), true ) ) {
             // Último intento: revisar el global post
             global $post;
-            if ( isset( $post ) && 'babel_business' === $post->post_type ) {
+            if ( $post && in_array( $post->post_type, array( 'babel_business', 'bd_institution' ), true ) ) {
                 $post_id = $post->ID;
             } else {
                 return '';
@@ -2068,7 +2140,38 @@ class Shortcodes {
                 </div>
                 <?php endif; ?>
             </div>
+            </div>
         </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var postId = <?php echo intval( $post_id ); ?>;
+            var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            
+            function trackEvent(type) {
+                var fd = new FormData();
+                fd.append('action', 'bd_track_event');
+                fd.append('post_id', postId);
+                fd.append('event_type', type);
+                fetch(ajaxUrl, { method: 'POST', body: fd, keepalive: true }).catch(function(){});
+            }
+            
+            // Track view on load
+            trackEvent('view');
+            
+            // Track clicks
+            var links = document.querySelectorAll('.bd-contact-info-item, .bd-website-link');
+            links.forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    var href = this.getAttribute('href') || '';
+                    if (href.indexOf('wa.me') !== -1) {
+                        trackEvent('click_whatsapp');
+                    } else if (this.classList.contains('bd-website-link')) {
+                        trackEvent('click_web');
+                    }
+                });
+            });
+        });
+        </script>
         <?php
         return \ob_get_clean();
     }
@@ -2424,14 +2527,12 @@ class Shortcodes {
         wp_enqueue_style( 'babel-public-css' );
 
         $atts = shortcode_atts( array(
-            'limit'    => 4,
-            'region'   => '', // slug de la region, vacio para global o 'auto'
-            'category' => '', // slug de categoría (nuevo en v2)
+            'limit'  => 4,
+            'region' => '', // slug de la region, vacio para global o 'auto'
         ), $atts, 'bd_featured_businesses' );
 
-        $limit        = intval( $atts['limit'] );
-        $region_slug  = '';
-        $category_slug = sanitize_text_field( $atts['category'] );
+        $limit = intval( $atts['limit'] );
+        $region_slug = '';
 
         if ( 'auto' === $atts['region'] ) {
             if ( \is_tax( 'babel_region' ) ) {
@@ -2444,47 +2545,31 @@ class Shortcodes {
             $region_slug = sanitize_text_field( $atts['region'] );
         }
 
-        // Featured v2: usar search index para query eficiente
-        global $wpdb;
-        $table = $wpdb->prefix . 'bd_search_index';
-        $now   = current_time( 'mysql' );
-
-        $sql = "SELECT idx.post_id FROM {$table} idx WHERE idx.post_type = 'babel_business' AND idx.is_featured = 1";
-        $sql .= $wpdb->prepare( " AND (idx.featured_expires IS NULL OR idx.featured_expires > %s)", $now );
-
-        // Filtrar por región
-        if ( ! empty( $region_slug ) ) {
-            $term = get_term_by( 'slug', $region_slug, 'babel_region' );
-            if ( $term && ! is_wp_error( $term ) ) {
-                $sql .= $wpdb->prepare( " AND idx.region_id = %d", $term->term_id );
-            }
-        }
-
-        // Filtrar por categoría
-        if ( ! empty( $category_slug ) ) {
-            $term = get_term_by( 'slug', $category_slug, 'babel_category' );
-            if ( $term && ! is_wp_error( $term ) ) {
-                $sql .= $wpdb->prepare( " AND idx.category_id = %d", $term->term_id );
-            }
-        }
-
-        // Orden: los que expiran antes primero (incentiva renovación), luego por rating
-        $sql .= " ORDER BY CASE WHEN idx.featured_expires IS NOT NULL THEN idx.featured_expires ELSE '9999-12-31' END ASC, idx.rating_avg DESC";
-        $sql .= $wpdb->prepare( " LIMIT %d", $limit );
-
-        $post_ids = $wpdb->get_col( $sql );
-
-        if ( empty( $post_ids ) ) {
-            return '';
-        }
-
-        $featured_query = new \WP_Query( array(
+        $query_args = array(
             'post_type'      => 'babel_business',
             'post_status'    => 'publish',
-            'post__in'       => $post_ids,
             'posts_per_page' => $limit,
-            'orderby'        => 'post__in', // Mantener el orden del search index
-        ) );
+            'orderby'        => 'rand', // Rotación justa
+            'meta_query'     => array(
+                array(
+                    'key'     => '_babel_featured',
+                    'value'   => '1',
+                    'compare' => '=',
+                ),
+            ),
+        );
+
+        if ( ! empty( $region_slug ) ) {
+            $query_args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'babel_region',
+                    'field'    => 'slug',
+                    'terms'    => $region_slug,
+                ),
+            );
+        }
+
+        $featured_query = new \WP_Query( $query_args );
 
         if ( ! $featured_query->have_posts() ) {
             wp_reset_postdata();
@@ -2514,17 +2599,9 @@ class Shortcodes {
 
                     $thumb_id  = get_post_thumbnail_id( $post_id );
                     $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'medium_large' ) : '';
-
-                    // Featured v2: badge dinámico según tipo
-                    $featured_status = array();
-                    if ( class_exists( 'Babel\\Directory\\Featured_Listings' ) ) {
-                        $featured_obj = new \Babel\Directory\Featured_Listings();
-                        $featured_status = $featured_obj->get_featured_status( $post_id );
-                    }
-                    $is_premium_plan = ( get_post_meta( $post_id, '_babel_plan_type', true ) === 'premium' );
                 ?>
-                    <a href="<?php the_permalink(); ?>" class="babel-biz-card babel-biz-card--featured babel-biz-card--sponsored" aria-label="<?php the_title_attribute(); ?>" style="border: 2px solid var(--babel-color-secondary-fixed-dim,#e9c349); box-shadow: var(--babel-shadow-cardFeatured, 0 4px 20px rgba(255,183,3,0.06));">
-
+                    <a href="<?php the_permalink(); ?>" class="babel-biz-card babel-biz-card--featured" aria-label="<?php the_title_attribute(); ?>" style="border: 2px solid var(--color-secondary-fixed-dim,#e9c349); box-shadow: 0 4px 15px rgba(233, 195, 73, 0.15);">
+                        
                         <!-- Zona de imagen -->
                         <div class="babel-biz-card__image-wrap">
                             <?php if ( $thumb_url ) : ?>
@@ -2537,9 +2614,9 @@ class Shortcodes {
 
                             <!-- Badges flotantes -->
                             <div class="babel-biz-card__badges">
-                                <span class="babel-biz-card__badge bd-featured-badge--sponsored" <?php echo $is_premium_plan ? '' : 'title="' . esc_attr( sprintf( __( 'Expira en %d días', 'babel-directory' ), $featured_status['days_remaining'] ) ) . '"'; ?>>
-                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">star</span>
-                                    <?php echo $is_premium_plan ? esc_html__( 'Destacado', 'babel-directory' ) : esc_html__( 'Patrocinado', 'babel-directory' ); ?>
+                                <span class="babel-biz-card__badge babel-biz-card__badge--featured" style="background: var(--color-secondary-fixed-dim,#e9c349); color: #000000; font-weight: 700;">
+                                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">stars</span>
+                                    <?php esc_html_e( 'Destacado Premium', 'babel-directory' ); ?>
                                 </span>
                                 <?php if ( $is_verified ) : ?>
                                     <span class="babel-biz-card__badge babel-biz-card__badge--verified">
@@ -2614,64 +2691,291 @@ class Shortcodes {
         $separator = esc_html( $atts['separator'] );
         $home_url = home_url('/');
 
-        $output = '<nav class="babel-breadcrumbs" aria-label="Breadcrumb">';
-        $output .= '<ol>';
-        
-        // Home
-        $output .= '<li><a href="' . esc_url( $home_url ) . '"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">home</span> Inicio</a></li>';
+        ob_start();
+        ?>
+        <nav class="babel-breadcrumbs" aria-label="Breadcrumb">
+            <ol>
+                <!-- Home -->
+                <li><a href="<?php echo esc_url( $home_url ); ?>"><span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">home</span> Inicio</a></li>
 
-        if ( is_tax('babel_region') || is_tax('babel_category') ) {
-            $region = get_query_var('babel_region');
-            $category = get_query_var('babel_category');
+                <?php if ( is_tax('babel_region') || is_tax('babel_category') ) : 
+                    $region = get_query_var('babel_region');
+                    $category = get_query_var('babel_category');
 
-            if ( $region ) {
-                $term = get_term_by('slug', $region, 'babel_region');
-                if ( $term ) {
-                    $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
-                    if ( $category ) {
-                        $output .= '<li><a href="' . esc_url( get_term_link( $term ) ) . '">' . esc_html( $term->name ) . '</a></li>';
-                    } else {
-                        $output .= '<li aria-current="page">' . esc_html( $term->name ) . '</li>';
-                    }
-                }
-            }
+                    if ( $region ) :
+                        $term = get_term_by('slug', $region, 'babel_region');
+                        if ( $term ) : ?>
+                            <li><span class="babel-breadcrumbs-separator"><?php echo $separator; ?></span></li>
+                            <?php if ( $category ) : ?>
+                                <li><a href="<?php echo esc_url( get_term_link( $term ) ); ?>"><?php echo esc_html( $term->name ); ?></a></li>
+                            <?php else : ?>
+                                <li aria-current="page"><?php echo esc_html( $term->name ); ?></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    <?php endif; ?>
 
-            if ( $category ) {
-                $term = get_term_by('slug', $category, 'babel_category');
-                if ( $term ) {
-                    $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
-                    $output .= '<li aria-current="page">' . esc_html( $term->name ) . '</li>';
-                }
-            }
-        } elseif ( is_singular('babel_business') ) {
-            $post_id = get_the_ID();
-            $regions = wp_get_post_terms( $post_id, 'babel_region' );
-            $categories = wp_get_post_terms( $post_id, 'babel_category' );
+                    <?php if ( $category ) :
+                        $term = get_term_by('slug', $category, 'babel_category');
+                        if ( $term ) : ?>
+                            <li><span class="babel-breadcrumbs-separator"><?php echo $separator; ?></span></li>
+                            <li aria-current="page"><?php echo esc_html( $term->name ); ?></li>
+                        <?php endif; ?>
+                    <?php endif; ?>
 
-            if ( ! is_wp_error( $regions ) && ! empty( $regions ) ) {
-                $region = $regions[0];
-                $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
-                $output .= '<li><a href="' . esc_url( get_term_link( $region ) ) . '">' . esc_html( $region->name ) . '</a></li>';
-            }
+                <?php elseif ( is_singular('babel_business') ) :
+                    $post_id = get_the_ID();
+                    $regions = wp_get_post_terms( $post_id, 'babel_region' );
+                    $categories = wp_get_post_terms( $post_id, 'babel_category' );
 
-            if ( ! is_wp_error( $categories ) && ! empty( $categories ) ) {
-                $category = $categories[0];
-                $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
-                
-                $cat_link = get_term_link( $category );
-                if ( ! empty( $regions ) ) {
-                    $cat_link = home_url( '/region/' . $regions[0]->slug . '/categoria/' . $category->slug . '/' );
-                }
-                $output .= '<li><a href="' . esc_url( $cat_link ) . '">' . esc_html( $category->name ) . '</a></li>';
-            }
+                    if ( ! is_wp_error( $regions ) && ! empty( $regions ) ) :
+                        $region = $regions[0]; ?>
+                        <li><span class="babel-breadcrumbs-separator"><?php echo $separator; ?></span></li>
+                        <li><a href="<?php echo esc_url( get_term_link( $region ) ); ?>"><?php echo esc_html( $region->name ); ?></a></li>
+                    <?php endif; ?>
 
-            $output .= '<li><span class="babel-breadcrumbs-separator">' . $separator . '</span></li>';
-            $output .= '<li aria-current="page">' . esc_html( get_the_title() ) . '</li>';
+                    <?php if ( ! is_wp_error( $categories ) && ! empty( $categories ) ) :
+                        $category = $categories[0];
+                        $cat_link = get_term_link( $category );
+                        if ( ! empty( $regions ) ) {
+                            $cat_link = home_url( '/region/' . $regions[0]->slug . '/categoria/' . $category->slug . '/' );
+                        } ?>
+                        <li><span class="babel-breadcrumbs-separator"><?php echo $separator; ?></span></li>
+                        <li><a href="<?php echo esc_url( $cat_link ); ?>"><?php echo esc_html( $category->name ); ?></a></li>
+                    <?php endif; ?>
+
+                    <li><span class="babel-breadcrumbs-separator"><?php echo $separator; ?></span></li>
+                    <li aria-current="page"><?php echo esc_html( get_the_title() ); ?></li>
+                <?php endif; ?>
+            </ol>
+        </nav>
+        <?php
+        return ob_get_clean();
+    }
+    public function render_region_institutions_pills( $atts ) {
+        $atts = shortcode_atts( array(
+            'region' => '',
+        ), $atts, 'bd_region_institutions_pills' );
+
+        $region_slug = sanitize_text_field( $atts['region'] );
+        if ( empty( $region_slug ) ) {
+            $region_slug = get_query_var( 'region' );
+        }
+        if ( empty( $region_slug ) && is_tax( 'babel_region' ) ) {
+            $region_slug = get_queried_object()->slug;
         }
 
-        $output .= '</ol>';
-        $output .= '</nav>';
+        if ( empty( $region_slug ) ) {
+            return '';
+        }
 
-        return $output;
+        $term = get_term_by( 'slug', $region_slug, 'babel_region' );
+        if ( ! $term ) {
+            return '';
+        }
+
+        $transient_key = 'bd_inst_pills_' . $term->term_id;
+        $html = get_transient( $transient_key );
+
+        if ( false === $html ) {
+            $inst_args = array(
+                'post_type'      => array( 'babel_business', 'bd_institution' ),
+                'post_status'    => 'publish',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+                'meta_query'     => array(
+                    array(
+                        'key'     => '_babel_is_institution',
+                        'value'   => array( '1', 'yes' ),
+                        'compare' => 'IN',
+                    ),
+                ),
+                'tax_query' => array(
+                    array(
+                        'taxonomy' => 'babel_region',
+                        'field'    => 'term_id',
+                        'terms'    => $term->term_id,
+                    ),
+                ),
+            );
+
+            $inst_ids = get_posts( $inst_args );
+            if ( empty( $inst_ids ) ) {
+                return '';
+            }
+
+            $cat_ids = array();
+            foreach ( $inst_ids as $id ) {
+                $terms = wp_get_post_terms( $id, 'babel_category', array( 'fields' => 'ids' ) );
+                if ( ! is_wp_error( $terms ) ) {
+                    $cat_ids = array_merge( $cat_ids, $terms );
+                }
+            }
+            
+            $cat_ids = array_unique( $cat_ids );
+
+            $icon_map = array(
+                'salud'         => 'local_hospital',
+                'hospital'      => 'local_hospital',
+                'clínica'       => 'local_hospital',
+                'clinica'       => 'local_hospital',
+                'educación'     => 'school',
+                'educacion'     => 'school',
+                'escuela'       => 'school',
+                'universidad'   => 'school',
+                'banco'         => 'account_balance',
+                'municipalidad' => 'account_balance',
+                'municipio'     => 'account_balance',
+                'policía'       => 'local_police',
+                'policia'       => 'local_police',
+                'carabineros'   => 'local_police',
+                'bomberos'      => 'fire_truck',
+                'correos'       => 'local_post_office',
+                'registro'      => 'fact_check',
+            );
+
+            ob_start();
+            ?>
+            <div class="bd-category-pills">
+                <a href="javascript:void(0);" class="bd-category-pill active" data-category="">Todos</a>
+                <?php
+                foreach ( $cat_ids as $cid ) {
+                    $c_term = get_term( $cid, 'babel_category' );
+                    if ( ! $c_term || is_wp_error( $c_term ) ) continue;
+
+                    $c_slug = strtolower( $c_term->slug );
+                    $icon = 'business';
+                    foreach ( $icon_map as $key => $ico ) {
+                        if ( strpos( $c_slug, $key ) !== false ) {
+                            $icon = $ico;
+                            break;
+                        }
+                    }
+                    ?>
+                    <a href="javascript:void(0);" class="bd-category-pill" data-category="<?php echo esc_attr( $c_term->slug ); ?>">
+                        <span class="bd-category-pill-icon material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>
+                        <?php echo esc_html( $c_term->name ); ?>
+                    </a>
+                    <?php
+                }
+                ?>
+            </div>
+            <?php
+            $html = ob_get_clean();
+            set_transient( $transient_key, $html, 12 * HOUR_IN_SECONDS );
+        }
+
+        return $html;
+    }
+
+    /**
+     * Shortcode [babel_react_app] - Inyecta la App React (Vite) compilada.
+     * Sirve el entry point HTML + encola JS/CSS compilados desde assets/app/assets/
+     */
+    public function render_react_app( $atts ) {
+        // En la arquitectura de "Lego de Alta Velocidad", el diseñador usa este shortcode 
+        // libremente dentro de Divi para inyectar el motor de búsqueda y mapa asíncrono.
+        $admin_warning = '';
+
+        wp_enqueue_style( 'babel-public-css' );
+
+        $nonce = wp_create_nonce( 'wp_rest' );
+
+        // Detectar assets compilados (Vite genera hash en filename)
+        $assets_dir = BD_PATH . 'assets/app/assets/';
+        $js_file  = '';
+        $css_file = '';
+
+        if ( is_dir( $assets_dir ) ) {
+            $files = glob( $assets_dir . 'index-*.js' );
+            if ( ! empty( $files ) ) {
+                $js_file = basename( $files[0] );
+            }
+            $css_files = glob( $assets_dir . 'index-*.css' );
+            if ( ! empty( $css_files ) ) {
+                $css_file = basename( $css_files[0] );
+            }
+        }
+
+        $js_url  = $js_file  ? BD_URL . 'assets/app/assets/' . $js_file  : '';
+        $css_url = $css_file ? BD_URL . 'assets/app/assets/' . $css_file : '';
+
+        $nonce = $atts['api_nonce'] ?: wp_create_nonce( 'babel_react_api' );
+
+        ob_start();
+        echo $admin_warning;
+        ?>
+        <div id="root" data-api-nonce="<?php echo esc_attr( $nonce ); ?>" data-api-url="<?php echo esc_url( rest_url( 'babel/search' ) ); ?>"></div>
+        <?php
+        if ( $css_url ) {
+            wp_enqueue_style( 'babel-react-app-css', $css_url, [], BD_VERSION );
+        }
+        if ( $js_url ) {
+            wp_enqueue_script( 'babel-react-app-js', $js_url, [], BD_VERSION, true );
+            // Pasar config al frontend via wp_localize_script
+            wp_localize_script( 'babel-react-app-js', 'BabelReactConfig', [
+                'apiUrl'   => rest_url( 'babel/search' ),
+                'nonce'    => $nonce,
+                'siteUrl'  => home_url('/'),
+            ] );
+        }
+        return ob_get_clean();
+    }
+
+    public function render_header( $atts ) {
+        ob_start();
+        ?>
+        <header class="babel-premium-header" style="padding: 20px 40px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif;">
+            <div class="babel-logo-area">
+                <a href="<?php echo esc_url( home_url( '/' ) ); ?>" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 28px; font-weight: 900; color: #1e3a8a; letter-spacing: -1px; text-transform: uppercase;">SoyDe<span style="color: #ef4444;">Chile</span></span>
+                </a>
+            </div>
+            <nav class="babel-nav-links" style="display: flex; gap: 24px; align-items: center;">
+                <a href="<?php echo esc_url( home_url( '/' ) ); ?>" style="color: #1e293b; font-weight: 600; font-size: 15px; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#1e293b'">Inicio</a>
+                <a href="<?php echo esc_url( home_url( '/negocios/' ) ); ?>" style="color: #1e293b; font-weight: 600; font-size: 15px; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#1e293b'">Negocios</a>
+                <a href="<?php echo esc_url( home_url( '/instituciones/' ) ); ?>" style="color: #1e293b; font-weight: 600; font-size: 15px; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#1e293b'">Instituciones</a>
+            </nav>
+        </header>
+        <?php
+        return ob_get_clean();
+    }
+
+    public function render_hero_search( $atts ) {
+        ob_start();
+        ?>
+        <section class="babel-hero-section" style="position: relative; padding: 100px 20px 80px 20px; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 450px;">
+            <div style="position: absolute; inset: 0; opacity: 0.15; background: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1600') center/cover no-repeat; z-index: 1;"></div>
+            
+            <div style="position: relative; z-index: 2; max-width: 800px; width: 100%;">
+                <h1 style="font-size: 48px; font-weight: 900; margin-bottom: 16px; letter-spacing: -1.5px; line-height: 1.1; text-shadow: 0 4px 12px rgba(0,0,0,0.15);">Encuentra fiestas, comunas y negocios</h1>
+                <p style="font-size: 18px; color: #94a3b8; font-weight: 500; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;">El directorio comercial y de eventos turísticos definitivo de las regiones de Chile.</p>
+                
+                <div class="bd-search-widget" style="padding: 24px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 24px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25); display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                    <form action="<?php echo esc_url( home_url( '/buscar/' ) ); ?>" method="GET" style="display: flex; width: 100%; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex: 2; min-width: 250px; position: relative;">
+                            <input type="text" name="keyword" placeholder="¿Qué buscas? (ej. Fiestas, Sushi, Salud)" style="width: 100%; padding: 18px 20px 18px 50px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.95); border-radius: 16px; font-size: 16px; font-weight: 500; color: #0f172a; outline: none; transition: border-color 0.3s;" />
+                            <span style="position: absolute; left: 20px; top: 18px; font-size: 20px; color: #64748b;">🔍</span>
+                        </div>
+                        <div style="flex: 1.5; min-width: 200px; position: relative;">
+                            <input type="text" name="location" placeholder="Comuna o Región" style="width: 100%; padding: 18px 50px 18px 50px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.95); border-radius: 16px; font-size: 16px; font-weight: 500; color: #0f172a; outline: none; transition: border-color 0.3s;" />
+                            <span style="position: absolute; left: 20px; top: 18px; font-size: 20px; color: #64748b;">📍</span>
+                            
+                            <!-- Radar GPS Button inside Hero Search -->
+                            <button type="button" id="babel-hero-geo-btn" class="babel-radar-btn" title="Buscar cerca de mí" style="position: absolute; right: 12px; top: 12px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0039A6; transition: all 0.2s;">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">my_location</span>
+                            </button>
+                        </div>
+
+                        <!-- Hidden GPS inputs -->
+                        <input type="hidden" id="babel-search-lat" name="lat" value="" />
+                        <input type="hidden" id="babel-search-lng" name="lng" value="" />
+                        <input type="hidden" id="babel-search-radius" name="radius" value="25" />
+                        <button type="submit" style="padding: 18px 40px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.4); transition: transform 0.2s, box-shadow 0.2s; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)';" onmouseout="this.style.transform='translateY(0)';">Buscar</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <?php
+        return ob_get_clean();
     }
 }

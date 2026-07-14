@@ -23,6 +23,7 @@ class Submission {
 
         // Hook para notificar al administrador sobre negocio pendiente de aprobación
         add_action( 'transition_post_status', array( $this, 'notify_admin_on_pending' ), 10, 3 );
+        add_action( 'transition_post_status', array( $this, 'notify_client_on_publish' ), 10, 3 );
     }
 
     public function enqueue_submission_assets() {
@@ -82,7 +83,7 @@ class Submission {
         if ( ! $edit_id || ! $user_id ) return null;
 
         $post = get_post( $edit_id );
-        if ( ! $post || $post->post_author != $user_id || $post->post_type !== 'babel_business' ) return null;
+        if ( ! $post || $post->post_author != $user_id || ! in_array( $post->post_type, array( 'babel_business', 'bd_institution' ), true ) ) return null;
 
         return array(
             'id'                => $post->ID,
@@ -100,6 +101,7 @@ class Submission {
             'business_region'   => wp_get_post_terms( $post->ID, 'babel_region', array('fields' => 'ids') )[0] ?? '',
             'business_category' => wp_get_post_terms( $post->ID, 'babel_category', array('fields' => 'ids') )[0] ?? '',
             'plan_type'         => get_post_meta( $post->ID, '_babel_plan_type', true ) ?: 'gratis',
+            'entity_type'       => $post->post_type,
             // Atributos y Horarios se pueden manejar en JS o PHP, pero por simplicidad pasaremos raw meta
             'raw_meta'          => get_post_meta( $post->ID )
         );
@@ -201,6 +203,31 @@ class Submission {
                     <!-- Hidden Edit ID -->
                     <input type="hidden" name="edit_id" value="<?php echo esc_attr( isset( $_GET['edit_id'] ) ? intval( $_GET['edit_id'] ) : 0 ); ?>">
 
+                    <!-- ── SELECTOR DE TIPO DE ENTIDAD ── -->
+                    <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface">
+                            <label class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-3">¿Qué deseas registrar?</label>
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <label class="flex-1 babel-entity-label flex items-center gap-3 p-4 border border-outline-variant/30 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                                    <input type="radio" name="entity_type" value="babel_business" checked class="w-4 h-4 accent-primary">
+                                    <span class="material-symbols-outlined text-on-surface-variant text-xl has-checked:text-primary">store</span>
+                                    <div>
+                                        <span class="font-headline-sm text-headline-sm text-on-surface block">Negocio / Comercio</span>
+                                        <span class="font-body-md text-body-md text-on-surface-variant text-xs">Pymes, restaurantes, tiendas</span>
+                                    </div>
+                                </label>
+                                <label class="flex-1 babel-entity-label flex items-center gap-3 p-4 border border-outline-variant/30 rounded-lg cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                                    <input type="radio" name="entity_type" value="bd_institution" class="w-4 h-4 accent-primary">
+                                    <span class="material-symbols-outlined text-on-surface-variant text-xl has-checked:text-primary">account_balance</span>
+                                    <div>
+                                        <span class="font-headline-sm text-headline-sm text-on-surface block">Institución / Público</span>
+                                        <span class="font-body-md text-body-md text-on-surface-variant text-xs">Colegios, clínicas, municipios</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ── SECCIÓN 1: Información Básica ── -->
                     <div class="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
                         <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface flex items-center gap-3">
@@ -212,9 +239,9 @@ class Submission {
                         <div class="px-6 py-5 space-y-4">
 
                             <div>
-                                <label class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">
+                                <label id="label-business-name" class="block font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">
                                     <span class="material-symbols-outlined text-sm align-middle mr-1">store</span>
-                                    Nombre del Comercio <span class="text-secondary">*</span>
+                                    <span>Nombre del Comercio</span> <span class="text-secondary">*</span>
                                 </label>
                                 <input type="text" name="business_name" required placeholder="Ej: Pizzería Don Carlos"
                                        class="w-full px-4 py-3 border border-outline-variant/30 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary font-body-md text-body-md text-on-surface transition-all duration-200">
@@ -694,10 +721,13 @@ class Submission {
 
         $edit_id = isset( $_POST['edit_id'] ) ? intval( $_POST['edit_id'] ) : 0;
         
+        // Capturar entity_type
+        $entity_type = ( isset( $_POST['entity_type'] ) && $_POST['entity_type'] === 'bd_institution' ) ? 'bd_institution' : 'babel_business';
+
         if ( $edit_id ) {
             // Verificar propiedad
             $existing_post = get_post( $edit_id );
-            if ( ! $existing_post || $existing_post->post_author != $user_id || $existing_post->post_type !== 'babel_business' ) {
+            if ( ! $existing_post || $existing_post->post_author != $user_id || ! in_array( $existing_post->post_type, array( 'babel_business', 'bd_institution' ), true ) ) {
                 wp_send_json_error( array( 'message' => 'No tienes permiso para editar este negocio.' ) );
                 return;
             }
@@ -716,7 +746,7 @@ class Submission {
                 'post_title'   => $title,
                 'post_content' => isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '',
                 'post_status'  => 'pending',
-                'post_type'    => 'babel_business',
+                'post_type'    => $entity_type,
                 'post_author'  => $user_id,
             ) );
         }
@@ -868,7 +898,7 @@ class Submission {
      * Envía una notificación por correo al administrador cuando un negocio queda en estado 'pending'.
      */
     public function notify_admin_on_pending( $new_status, $old_status, $post ) {
-        if ( 'babel_business' !== $post->post_type ) {
+        if ( ! in_array( $post->post_type, array( 'babel_business', 'bd_institution' ), true ) ) {
             return;
         }
 
@@ -881,6 +911,25 @@ class Submission {
                 admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
             );
             wp_mail( $admin_email, $subject, $message );
+        }
+    }
+
+    public function notify_client_on_publish( $new_status, $old_status, $post ) {
+        if ( ! in_array( $post->post_type, array( 'babel_business', 'bd_institution' ), true ) ) return;
+        
+        if ( 'publish' === $new_status && 'pending' === $old_status ) {
+            $author_id = $post->post_author;
+            $user_info = get_userdata($author_id);
+            if ($user_info) {
+                $subject = '[Babel Directory] ¡Tu negocio ha sido aprobado!';
+                $message = sprintf(
+                    "Hola %s,\n\nTu negocio '%s' ha sido aprobado y ya está público en el directorio.\n\nPuedes verlo aquí: %s\n\nSaludos.",
+                    $user_info->display_name,
+                    $post->post_title,
+                    get_permalink($post->ID)
+                );
+                wp_mail( $user_info->user_email, $subject, $message );
+            }
         }
     }
 }

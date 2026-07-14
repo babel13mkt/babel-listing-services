@@ -17,9 +17,17 @@ class Ajax {
     public function __construct() {
         add_action( 'wp_ajax_bd_filter_listings', array( $this, 'filter_listings' ) );
         add_action( 'wp_ajax_nopriv_bd_filter_listings', array( $this, 'filter_listings' ) );
+        
+        add_action( 'wp_ajax_bd_track_event', array( $this, 'track_event' ) );
+        add_action( 'wp_ajax_nopriv_bd_track_event', array( $this, 'track_event' ) );
     }
 
     public function filter_listings() {
+        // [NUEVO] Middleware de Seguridad: Máximo 30 peticiones de búsqueda por minuto por IP
+        if ( class_exists( '\Babel\Directory\Security' ) && ! \Babel\Directory\Security::check_rate_limit( 'ajax_search', 30, 60 ) ) {
+            wp_send_json_error( 'Rate limit exceeded. Please wait a moment.' );
+        }
+
         // Verificación de nonce desactivada para búsquedas públicas. 
         // El caché de página (Cloudflare/Divi) almacena el HTML con un nonce estático, 
         // lo que provoca que check_ajax_referer devuelva -1 (HTTP 200) y rompa el buscador 
@@ -30,11 +38,12 @@ class Ajax {
         $table_index = $wpdb->prefix . 'bd_search_index';
 
         // Sanitización de parámetros recibidos
-        $keyword = isset( $_POST['keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['keyword'] ) ) : '';
-        $cat     = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
-        $region  = isset( $_POST['region'] ) ? sanitize_text_field( wp_unslash( $_POST['region'] ) ) : '';
-        $sort    = isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'featured';
-        $paged   = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
+        $keyword     = isset( $_POST['keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['keyword'] ) ) : '';
+        $cat         = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+        $region      = isset( $_POST['region'] ) ? sanitize_text_field( wp_unslash( $_POST['region'] ) ) : '';
+        $sort        = isset( $_POST['sort'] ) ? sanitize_text_field( wp_unslash( $_POST['sort'] ) ) : 'featured';
+        $paged       = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 1;
+        $entity_type = isset( $_POST['entity_type'] ) ? sanitize_text_field( wp_unslash( $_POST['entity_type'] ) ) : 'business';
         
         $lat    = isset( $_POST['lat'] ) ? floatval( $_POST['lat'] ) : 0;
         $lng    = isset( $_POST['lng'] ) ? floatval( $_POST['lng'] ) : 0;
@@ -43,15 +52,69 @@ class Ajax {
         $posts_per_page = 12;
         $offset = ( $paged - 1 ) * $posts_per_page;
 
+        // [NUEVO] Interceptar con Caché (Transients) — key determinística y normalizada
+        if ( class_exists( '\Babel\Directory\Cache' ) ) {
+            $cache_key = \Babel\Directory\Cache::key( 'ajax_search', $_POST );
+            $cached_result = \Babel\Directory\Cache::get_transient( $cache_key );
+            if ( false !== $cached_result ) {
+                wp_send_json_success( $cached_result );
+            }
+        }
+
         // Construir consulta SQL optimizada sobre el índice
         $where = array( "p.post_status = 'publish'" );
         $join  = " INNER JOIN {$wpdb->posts} p ON idx.post_id = p.ID";
+        $join .= " LEFT JOIN {$wpdb->postmeta} pm_prio ON (p.ID = pm_prio.post_id AND pm_prio.meta_key = '_babel_priority_score')";
         
-        // Filtro por Categoría (slug a ID)
-        if ( ! empty( $cat ) ) {
-            $term = get_term_by( 'slug', $cat, 'babel_category' );
+        // Filtro Entidad (Comercios vs Instituciones)
+        $inst_slugs = array( 'salud', 'seguridad-publica', 'gobierno', 'justicia', 'cultura', 'educacion', 'instituciones-y-servicios-publicos' );
+        $institution_term_ids = array();
+        foreach ( $inst_slugs as $slug ) {
+            $term = get_term_by( 'slug', $slug, 'babel_category' );
             if ( $term ) {
-                $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
+                $institution_term_ids[] = $term->term_id;
+                $children = get_term_children( $term->term_id, 'babel_category' );
+                if ( ! is_wp_error( $children ) ) {
+                    $institution_term_ids = array_merge( $institution_term_ids, $children );
+                }
+            }
+        }
+        $inst_ids_sql = implode(',', array_map('intval', array_unique($institution_term_ids)));
+
+        // Si el usuario escribe una palabra clave, buscamos en TODO (negocios e instituciones)
+        if ( ! empty( $keyword ) ) {
+            $entity_type = 'all';
+        }
+
+        if ( $entity_type === 'institution' ) {
+            if ( ! empty( $cat ) ) {
+                $term = get_term_by( 'slug', $cat, 'babel_category' );
+                if ( $term ) {
+                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
+                }
+            } else {
+                $where[] = "idx.category_id IN ($inst_ids_sql)";
+            }
+        } elseif ( $entity_type === 'business' ) {
+            // Excluir siempre las instituciones por tipo de post
+            $where[] = "p.post_type != 'bd_institution'";
+            
+            if ( ! empty( $cat ) ) {
+                $term = get_term_by( 'slug', $cat, 'babel_category' );
+                if ( $term ) {
+                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
+                }
+            } else {
+                // Solo comercios (excluimos instituciones y sus hijas por defecto)
+                $where[] = "idx.category_id NOT IN ($inst_ids_sql)";
+            }
+        } else {
+            // entity_type == 'all'
+            if ( ! empty( $cat ) ) {
+                $term = get_term_by( 'slug', $cat, 'babel_category' );
+                if ( $term ) {
+                    $where[] = $wpdb->prepare( "idx.category_id = %d", $term->term_id );
+                }
             }
         }
 
@@ -63,26 +126,27 @@ class Ajax {
             }
         }
 
-        // Geolocalización mediante Haversine sobre índices compuestos
-        $distance_select = "";
+        // Geolocalización mediante Haversine sobre índices compuestos (SEGURO: usa placeholders en query final)
+        $distance_select = ", CAST(IFNULL(pm_prio.meta_value, 0) AS SIGNED) AS priority_score";
+        $haversine_sql = "";
+        $haversine_params = [];
         if ( $lat && $lng ) {
-            $haversine = $wpdb->prepare(
-                "( 6371 * acos( cos( radians(%f) ) * cos( radians( idx.latitude ) ) * cos( radians( idx.longitude ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( idx.latitude ) ) ) )",
-                $lat, $lng, $lat
-            );
-            $distance_select = ", $haversine AS distance";
+            $haversine_sql = "( 6371 * acos( cos( radians(%f) ) * cos( radians( idx.latitude ) ) * cos( radians( idx.longitude ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( idx.latitude ) ) ) )";
+            $haversine_params = [ $lat, $lng, $lat ];
+            $distance_select = ", ( {$haversine_sql} ) AS distance";
             if ( $radius > 0 ) {
-                $where[] = "($haversine <= " . floatval( $radius ) . ")";
+                $haversine_params[] = floatval( $radius );
+                $where[] = "( {$haversine_sql} <= %f )";
             }
         }
 
         // Prioridad e indexación de ordenamientos compuestos (Whitelist estricta)
         // Cuando hay coordenadas, el orden por defecto es por distancia (más cercanos primero)
         $allowed_orders = array(
-            'rating'   => 'idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC',
-            'az'       => 'idx.is_featured DESC, p.post_title ASC',
-            'distance' => ( $lat && $lng ) ? 'idx.is_featured DESC, distance ASC' : 'idx.is_featured DESC, idx.post_id DESC',
-            'newest'   => 'idx.is_featured DESC, idx.post_id DESC'
+            'rating'   => 'priority_score DESC, idx.is_featured DESC, idx.rating_avg DESC, idx.post_id DESC',
+            'az'       => 'priority_score DESC, idx.is_featured DESC, p.post_title ASC',
+            'distance' => ( $lat && $lng ) ? 'priority_score DESC, idx.is_featured DESC, distance ASC' : 'priority_score DESC, idx.is_featured DESC, idx.post_id DESC',
+            'newest'   => 'priority_score DESC, idx.is_featured DESC, idx.post_id DESC'
         );
         // Si hay coordenadas y el sort es 'featured', usar distancia por defecto
         if ( $lat && $lng && ( $sort === 'featured' || ! isset( $allowed_orders[ $sort ] ) ) ) {
@@ -148,8 +212,46 @@ class Ajax {
         $is_layout_valid = $is_layout_valid && function_exists( 'do_shortcode' );
 
         ob_start();
+        
+        // CSS para tarjetas de institución y grilla mixta inteligente (12 columnas)
+        echo '<style>
+        .babel-grid-container { display: grid !important; grid-template-columns: repeat(12, 1fr) !important; gap: 24px !important; }
+        
+        /* Comportamiento por defecto (móvil) */
+        .babel-divi-card-wrapper, .babel-biz-card, .babel-inst-card { grid-column: span 12 !important; }
+        
+        /* Tablet */
+        @media (min-width: 768px) {
+            .babel-divi-card-wrapper, .babel-biz-card, .babel-inst-card { grid-column: span 6 !important; }
+        }
+        
+        /* Desktop */
+        @media (min-width: 981px) {
+            .babel-divi-card-wrapper, .babel-biz-card { grid-column: span 4 !important; } /* 3 columnas para negocios */
+            .babel-inst-card { grid-column: span 3 !important; } /* 4 columnas para instituciones */
+        }
+        
+        .babel-inst-card { display: flex; flex-direction: column; padding: 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #1e293b; transition: all 0.2s; gap: 8px; align-items: flex-start; }
+        .babel-inst-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transform: translateY(-2px); }
+        .babel-inst-card-header { display: flex; gap: 12px; align-items: center; width: 100%; }
+        .babel-inst-card-icon { font-size: 24px; color: #64748b; }
+        .babel-inst-card-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; color: #0f172a; }
+        .babel-inst-card-body { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 8px; font-size: 13px; color: #475569; }
+        .babel-inst-card-detail { display: flex; gap: 6px; align-items: center; }
+        .babel-inst-card-detail .material-symbols-outlined { font-size: 16px; color: #94a3b8; }
+        .babel-inst-card-link { color: #2563eb; text-decoration: none; }
+        .babel-inst-card-link:hover { text-decoration: underline; }
+        </style>';
+
+        $map_markers = array();
+
         if ( ! empty( $post_ids ) ) {
-            echo '<div class="babel-grid-container">';
+            $is_inst_grid = false;
+            if ( get_post_type($post_ids[0]) === 'bd_institution' ) {
+                $is_inst_grid = true;
+            }
+            $grid_class = $is_inst_grid ? 'babel-grid-container babel-grid-institutions' : 'babel-grid-container';
+            echo '<div class="' . esc_attr($grid_class) . '">';
             
             global $post;
             $original_post = $post; // Respaldar post global original
@@ -165,8 +267,35 @@ class Ajax {
                     // Forzar el reemplazo del objeto global $post para que Divi 5 (Dynamic Content) reconozca el negocio actual
                     $post = $current_post;
                     setup_postdata( $post );
+
+                    // Recolectar datos para el mapa
+                    $lat = get_post_meta( $pid, '_babel_lat', true ) ?: get_post_meta( $pid, '_babel_latitude', true );
+                    $lng = get_post_meta( $pid, '_babel_lng', true ) ?: get_post_meta( $pid, '_babel_longitude', true );
                     
-                    if ( $is_layout_valid ) {
+                    if ( ! empty( $lat ) && ! empty( $lng ) ) {
+                        $categorias = get_the_terms( $pid, 'babel_category' );
+                        $cat_name = ( ! empty( $categorias ) && ! \is_wp_error( $categorias ) ) ? $categorias[0]->name : '';
+                        $thumb_id  = get_post_thumbnail_id( $pid );
+                        $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'thumbnail' ) : '';
+
+                        $map_markers[] = array(
+                            'id'    => $pid,
+                            'lat'   => (float) $lat,
+                            'lng'   => (float) $lng,
+                            'title' => get_the_title( $pid ),
+                            'url'   => get_permalink( $pid ),
+                            'cat'   => $cat_name,
+                            'img'   => $thumb_url
+                        );
+                    }
+                    
+                    $is_inst_meta = get_post_meta( $pid, '_babel_is_institution', true );
+                    $requested_entity = isset($_POST['entity_type']) ? sanitize_text_field($_POST['entity_type']) : '';
+                    $is_institution = ( get_post_type($pid) === 'bd_institution' || in_array( $is_inst_meta, array( '1', 'yes', true ), true ) || $requested_entity === 'institution' );
+                    
+                    if ( $is_institution ) {
+                        $this->render_institution_list_item( $pid );
+                    } elseif ( $is_layout_valid ) {
                         // 3. RENDERIZADO EFICIENTE
                         echo '<div class="babel-divi-card-wrapper">';
                         echo do_shortcode( '[et_pb_layout id="' . absint( $layout_id ) . '"]' );
@@ -198,15 +327,26 @@ class Ajax {
             }
         } else {
             // Estado vacío estilizado
-            $this->render_empty_state();
+            if ( ! empty( $keyword ) || ! empty( $cat ) || ! empty( $region ) ) {
+                $this->render_empty_state();
+            }
         }
         
         $html = ob_get_clean();
-        wp_send_json_success( array( 
-            'html'  => $html, 
-            'count' => intval( $total_posts ), 
-            'max'   => intval( $max_pages ) 
-        ) );
+        
+        $result_data = array( 
+            'html'    => $html, 
+            'count'   => intval( $total_posts ), 
+            'max'     => intval( $max_pages ),
+            'markers' => $map_markers 
+        );
+
+        // [NUEVO] Guardar en Caché por 30 minutos
+        if ( class_exists( '\Babel\Directory\Cache' ) ) {
+            \Babel\Directory\Cache::set_transient( $cache_key, $result_data, 1800 );
+        }
+
+        wp_send_json_success( $result_data );
     }
 
     /**
@@ -334,18 +474,117 @@ class Ajax {
     }
 
     /**
+     * Renderiza un item de lista para instituciones.
+     */
+    private function render_institution_list_item( $post_id ) {
+        $title     = get_the_title( $post_id );
+        $address   = get_post_meta( $post_id, '_babel_address', true );
+        $phone     = get_post_meta( $post_id, '_babel_phone', true );
+        $whatsapp  = get_post_meta( $post_id, '_babel_whatsapp', true );
+        $email     = get_post_meta( $post_id, '_babel_email', true );
+        $website   = get_post_meta( $post_id, '_babel_website', true );
+        $hours     = get_post_meta( $post_id, '_babel_hours', true );
+        
+        $contact_phone = $phone ? $phone : $whatsapp;
+        
+        ?>
+        <div class="babel-inst-card">
+            <div class="babel-inst-card-header">
+                <span class="material-symbols-outlined babel-inst-card-icon" aria-hidden="true">account_balance</span>
+                <h3 class="babel-inst-card-title"><?php echo esc_html( $title ); ?></h3>
+            </div>
+            
+            <div class="babel-inst-card-body">
+                <?php if ( $address ) : ?>
+                    <div class="babel-inst-card-detail" title="Dirección">
+                        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                        <span><?php echo esc_html( $address ); ?></span>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ( $contact_phone ) : ?>
+                    <div class="babel-inst-card-detail" title="Teléfono">
+                        <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                        <a href="tel:<?php echo esc_attr( preg_replace('/[^0-9+]/', '', $contact_phone) ); ?>" class="babel-inst-card-link"><?php echo esc_html( $contact_phone ); ?></a>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ( $email ) : ?>
+                    <div class="babel-inst-card-detail" title="Email">
+                        <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+                        <a href="mailto:<?php echo esc_attr( $email ); ?>" class="babel-inst-card-link"><?php echo esc_html( $email ); ?></a>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ( $website ) : ?>
+                    <div class="babel-inst-card-detail" title="Sitio Web">
+                        <span class="material-symbols-outlined" aria-hidden="true">language</span>
+                        <a href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener noreferrer" class="babel-inst-card-link">Visitar sitio web</a>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ( $hours && ! is_array( $hours ) ) : ?>
+                    <div class="babel-inst-card-detail" title="Horario">
+                        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                        <span><?php echo esc_html( $hours ); ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Renderiza el estado vacío cuando no se encuentran resultados de búsqueda.
      */
     private function render_empty_state() {
         ?>
         <div class="babel-empty-state">
             <div class="babel-empty-icon">🔍</div>
-            <h3><?php esc_html_e( 'Sin resultados coincidentes', 'babel-directory' ); ?></h3>
-            <p><?php esc_html_e( 'No encontramos ningún negocio que coincida con tus criterios de búsqueda. Intenta limpiando los filtros o ampliando el rango.', 'babel-directory' ); ?></p>
-            <button type="button" class="babel-clear-filters-btn" onclick="if(window.babelResetFilters) window.babelResetFilters();">
-                <?php esc_html_e( 'Limpiar Filtros', 'babel-directory' ); ?>
-            </button>
+            <h3><?php esc_html_e( '¡Este espacio está disponible!', 'babel-directory' ); ?></h3>
+            <p><?php esc_html_e( 'Tu negocio puede ser el primero en aparecer aquí. Destaca tu marca y llega a más clientes en esta región.', 'babel-directory' ); ?></p>
+            <a href="/publicar-negocio/" class="babel-clear-filters-btn" style="text-decoration:none; display:inline-block; margin-top:10px;">
+                <?php esc_html_e( 'Publicar mi Negocio', 'babel-directory' ); ?>
+            </a>
         </div>
         <?php
+    }
+
+    /**
+     * Endpoint ligero para rastrear eventos de analíticas (vistas, clics).
+     */
+    public function track_event() {
+        if ( ! isset( $_POST['post_id'] ) || ! isset( $_POST['event_type'] ) ) {
+            wp_send_json_error( 'Missing parameters.' );
+        }
+
+        $post_id = absint( $_POST['post_id'] );
+        $event_type = sanitize_text_field( wp_unslash( $_POST['event_type'] ) );
+        
+        $allowed_events = array( 'view', 'click_phone', 'click_map', 'click_web', 'click_whatsapp' );
+        if ( ! in_array( $event_type, $allowed_events ) ) {
+            wp_send_json_error( 'Invalid event type.' );
+        }
+
+        global $wpdb;
+        $stats_table = $wpdb->prefix . 'bd_listing_stats';
+        $today = current_time( 'Y-m-d' );
+
+        $query = $wpdb->prepare(
+            "INSERT INTO $stats_table (post_id, event_type, event_date, event_count) 
+             VALUES (%d, %s, %s, 1) 
+             ON DUPLICATE KEY UPDATE event_count = event_count + 1",
+            $post_id,
+            $event_type,
+            $today
+        );
+
+        $result = $wpdb->query( $query );
+
+        if ( false === $result ) {
+            wp_send_json_error( 'Database error.' );
+        }
+
+        wp_send_json_success();
     }
 }

@@ -20,7 +20,7 @@ namespace Babel\Directory;
  * REGLA DE ESPECIFICIDAD:
  * Siempre escribir CSS en 3 capas:
  *   Capa 1: .mi-clase-babel { ... }                          (0,1,0)
- *   Capa 2: #mi-form [data-babel-componente="true"] { ... }  (1,1,0)  
+ *   Capa 2: #mi-form [data-babel-componente="true"] { ... }  (1,1,0) 
  *   Capa 3: #et-main-area #mi-form [data-babel-...] { ... }  (2,1,0)
  * 
  * COMPATIBILIDAD VERIFICADA CON:
@@ -60,7 +60,7 @@ class Divi_Compat {
         add_action( 'wp_enqueue_scripts', [ $this, 'force_enqueue_assets' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'inject_compat_css' ], 100 );
         add_action( 'wp_head', [ $this, 'remove_divi_input_styles' ], 999 );
-
+        add_action( 'et_builder_ready', [ $this, 'register_divi_modules' ] );
         // FIX CRÍTICO: Divi usa el sistema MultiView para et_pb_code con raw_content,
         // lo que causa que los shortcodes no sean parseados por the_content de manera nativa
         // y puedan codificarse como entidades HTML si el usuario los inserta ahí.
@@ -69,7 +69,7 @@ class Divi_Compat {
         add_filter( 'the_content', function( $content ) {
             if ( strpos( $content, 'babel_' ) !== false || strpos( $content, 'bd_' ) !== false ) {
                 // Captura tanto [babel_...] como versiones codificadas &#91;babel_...&#93;
-                $content = preg_replace_callback( '/(?:&#91;|\[)(babel_|bd_)(.*?)(?:&#93;|\])/', function($m) {
+                $content = preg_replace_callback( '/(?:&#91;|\\[)(babel_|bd_)(.*?)(?:&#93;|\\])/', function($m) {
                     return do_shortcode('[' . $m[1] . $m[2] . ']');
                 }, $content );
             }
@@ -94,32 +94,13 @@ class Divi_Compat {
     /**
      * Registra los shortcodes de Babel en el sistema de cache dinámica de Divi.
      * Esto evita que Divi guarde [babel_region_carousel] como texto plano.
+     * 
+     * @param bool   $is_in_use     Valor por defecto del filtro.
+     * @param string $shortcode_tag Nombre del shortcode que Divi está evaluando.
+     * @return bool
      */
     public function register_babel_shortcodes_with_divi( $is_in_use, $shortcode_tag ) {
-        $babel_shortcodes = [
-            'babel_region_carousel',
-            'babel_region_grid',
-            'bd_popular_regions',
-            'bd_popular_categories',
-            'babel_auth_menu',
-            'bd_filter_bar',
-            'bd_archive_loop',
-            'bd_region_template',
-            'bd_business_profile',
-            'bd_breadcrumbs',
-            'bd_user_dashboard',
-            'bd_business_gallery',
-            'bd_business_hours',
-            'bd_business_map',
-            'bd_business_contact',
-            'bd_business_badges',
-            'bd_ad_space',
-            'bd_featured_businesses',
-            'babel_pricing_tables',
-            'babel_submission_form',
-            'babel_claim_business',
-            'babel_frontend_dashboard',
-        ];
+        $babel_shortcodes = $this->get_babel_shortcodes_list();
 
         if ( in_array( $shortcode_tag, $babel_shortcodes, true ) ) {
             return true;
@@ -128,10 +109,69 @@ class Divi_Compat {
         return $is_in_use;
     }
 
+    /**
+     * Lista canónica de TODOS los shortcodes registrados en class-shortcodes.php
+     * Mantenida en un solo lugar para sincronización.
+     *
+     * @return string[]
+     */
+    private function get_babel_shortcodes_list(): array {
+        return [
+            // Regiones
+            'babel_region_grid',
+            'bd_popular_regions',
+            'babel_region_carousel',
+            'bd_popular_categories',
+            'bd_footer_regions',
+            'bd_footer_categories',
+            
+            // Archivos y templates
+            'bd_archive_loop',
+            'bd_region_template',
+            
+            // Perfil de negocio
+            'bd_business_profile',
+            'bd_breadcrumbs',
+            'bd_filter_bar',
+            
+            // Auth / Usuario
+            'babel_auth_menu',
+            'babel_claim_business',
+            'bd_user_dashboard',
+            
+            // Micro-shortcodes atómicos
+            'bd_business_gallery',
+            'bd_business_hours',
+            'bd_business_map',
+            'bd_business_contact',
+            'bd_business_badges',
+            
+            // Publicidad y destacados
+            'bd_ad_space',
+            'bd_featured_businesses',
+            'babel_pricing_tables',
+            
+            // React
+            'babel_react_app',
+            
+            // Instituciones
+            'babel_institutions',
+            'bd_region_institutions_pills',
+        ];
+    }
+
     private function is_divi_builder_active() {
         return ( isset( $_GET['et_fb'] ) && '1' === $_GET['et_fb'] ) || 
                ( isset( $_POST['action'] ) && 'et_fb_retrieve_builder_data' === $_POST['action'] ) || 
                ( function_exists( 'et_core_is_fb_enabled' ) && et_core_is_fb_enabled() );
+    }
+
+    public function register_divi_modules() {
+        $module_file = BD_PATH . 'includes/class-bd-divi-map-module.php';
+        if ( file_exists( $module_file ) && class_exists( 'ET_Builder_Module' ) ) {
+            require_once $module_file;
+            new \Babel_Directory_Divi_Map_Module();
+        }
     }
 
     public function register_dummy_shortcodes() {
@@ -139,31 +179,8 @@ class Divi_Compat {
             return '<div style="padding:20px;background:#f5f5f5;border:2px dashed #ccc;text-align:center;color:#666;">[' . esc_html( $tag ) . ': Renderizado pausado en Divi Builder]</div>';
         };
 
-        $tags = [
-            'babel_region_grid',
-            'bd_popular_regions',
-            'bd_popular_categories',
-            'bd_footer_regions',
-            'bd_footer_categories',
-            'bd_archive_loop',
-            'bd_region_template',
-            'bd_business_profile',
-            'bd_filter_bar',
-            'babel_auth_menu',
-            'babel_claim_business',
-            'bd_user_dashboard',
-            'babel_submission_form',
-            'bd_breadcrumbs',
-            'babel_frontend_dashboard',
-            'bd_business_gallery',
-            'bd_business_hours',
-            'bd_business_map',
-            'bd_business_contact',
-            'bd_business_badges',
-            'bd_ad_space',
-            'bd_featured_businesses',
-            'babel_pricing_tables'
-        ];
+        // Debe coincidir EXACTAMENTE con get_babel_shortcodes_list()
+        $tags = $this->get_babel_shortcodes_list();
 
         foreach ( $tags as $tag ) {
             add_shortcode( $tag, $dummy_render );

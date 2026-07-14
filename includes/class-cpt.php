@@ -26,6 +26,9 @@ class CPT {
         // Invalidación de transients de regiones al actualizar negocios e instituciones
         add_action( 'save_post_babel_business', array( $this, 'invalidate_region_transients' ), 10, 1 );
         add_action( 'save_post_bd_institution', array( $this, 'invalidate_region_transients' ), 10, 1 );
+
+        // Cargar plantillas desde el plugin (ej: taxonomy-babel_region.php)
+        add_filter( 'template_include', array( $this, 'load_custom_templates' ) );
     }
 
     /**
@@ -44,6 +47,20 @@ class CPT {
             'index.php?babel_region=$matches[1]&babel_category=$matches[2]',
             'top'
         );
+    }
+
+    /**
+     * Cargar plantillas personalizadas para taxonomías y CPTs desde el plugin,
+     * sobreescribiendo las de Divi o el tema activo para evitar 404s/No Results.
+     */
+    public function load_custom_templates( $template ) {
+        if ( is_tax( 'babel_region' ) ) {
+            $plugin_template = BD_PATH . 'templates/taxonomy-babel_region.php';
+            if ( file_exists( $plugin_template ) ) {
+                return $plugin_template;
+            }
+        }
+        return $template;
     }
 
     /**
@@ -335,13 +352,6 @@ class CPT {
 
         foreach ( $meta_keys as $key => $type ) {
             register_post_meta( 'babel_business', $key, array(
-                'show_in_rest' => true,
-                'single'       => true,
-                'type'         => $type,
-            ) );
-            
-            // Fix: Register these fields for institutions as well so Divi Dynamic Content can read them via REST
-            register_post_meta( 'bd_institution', $key, array(
                 'show_in_rest' => true,
                 'single'       => true,
                 'type'         => $type,

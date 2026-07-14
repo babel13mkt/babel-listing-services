@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Babel Directory
  * Description: Plugin de estructuración de datos para el directorio de Negocios en WordPress. CPT, Taxonomías y Metaboxes nativas para administración exclusiva desde el backend.
- * Version: 8.2.0
+ * Version: 8.1.18
  * Author: Babel13 MKT
  * Text Domain: babel-directory
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Definir constantes globales de la arquitectura v7.2.0+
-define( 'BD_VERSION', '8.2.0' );
+define( 'BD_VERSION', '8.1.18' );
 define( 'BD_PATH', plugin_dir_path( __FILE__ ) );
 // FIX: Forzar HTTPS en la URL del plugin.
 // Detrás de Cloudflare el servidor no ve HTTPS, plugin_dir_url() genera http://
@@ -49,13 +49,19 @@ class Babel_Directory_Core {
      */
     private function __construct() {
         require_once BD_PATH . 'includes/autoloader.php';
+        
+        // Optimización: Fast AJAX (cargar lo antes posible)
+        if ( file_exists( BD_PATH . 'includes/class-bd-fast-ajax.php' ) ) {
+            require_once BD_PATH . 'includes/class-bd-fast-ajax.php';
+            \Babel\Directory\Fast_AJAX::init();
+        }
+
         $this->init_components();
     }
 
     /**
      * Inclusión segura y acoplada de todos los archivos core de la arquitectura.
      */
-    
 
     /**
      * Instanciación y desacople de los componentes estructurales del plugin.
@@ -63,147 +69,155 @@ class Babel_Directory_Core {
      */
     private function init_components() {
         // 1. Estructura de Datos: CPT (Custom Post Types & Taxonomías)
-        if ( class_exists( 'Babel\Directory\CPT' ) ) {
+        if ( class_exists( 'Babel\\Directory\\CPT' ) ) {
             new \Babel\Directory\CPT();
         }
 
-        // 1.5 Estructura de Datos: CPT de Instituciones (Escuelas, Universidades, Bancos, Organismos)
-        if ( class_exists( 'Babel\Directory\Institution' ) ) {
-            new \Babel\Directory\Institution();
-        }
-
         // 2. Estructura de Datos: Metaboxes de Datos de Negocios
-        if ( class_exists( 'Babel\Directory\Metaboxes' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Metaboxes' ) ) {
             new \Babel\Directory\Metaboxes();
         }
 
+        // 2.5 Caché de Búsquedas y Transients
+        if ( class_exists( 'Babel\\Directory\\Cache' ) ) {
+            new \Babel\Directory\Cache();
+        }
+
+        // 2.6 Middleware de Seguridad y Rate Limiting
+        if ( class_exists( 'Babel\\Directory\\Security' ) ) {
+            new \Babel\Directory\Security();
+        }
+
         // 3. Motor de Indexación Rápida
-        if ( class_exists( 'Babel\Directory\Search_Index' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Search_Index' ) ) {
             new \Babel\Directory\Search_Index();
         }
 
         // 4. Control de Consultas Asíncronas AJAX
-        if ( class_exists( 'Babel\Directory\Ajax' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Ajax' ) ) {
             new \Babel\Directory\Ajax();
         }
 
         // 5. Panel de Administración y Registro de Menús/Settings API
-        if ( class_exists( 'Babel\Directory\Admin' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Admin' ) ) {
             new \Babel\Directory\Admin();
         }
 
         // 6. Gestión de Assets Públicos y Shortcodes de Presentación
-        if ( class_exists( 'Babel\Directory\Assets' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Assets' ) ) {
             new \Babel\Directory\Assets();
         }
 
         // 6.5 Panel de Control Frontend (Client Portal)
-        if ( class_exists( 'Babel\Directory\Frontend_Dashboard' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Frontend_Dashboard' ) ) {
             new \Babel\Directory\Frontend_Dashboard();
         }
 
         // 6.6 Integración con WooCommerce para Planes
-        if ( class_exists( 'Babel\Directory\WooCommerce_Integration' ) ) {
+        if ( class_exists( 'Babel\\Directory\\WooCommerce_Integration' ) ) {
             new \Babel\Directory\WooCommerce_Integration();
         }
 
-        // 6.7 Sistema de Listados Patrocinados (Featured Listings)
-        if ( class_exists( 'Babel\Directory\Featured_Listings' ) ) {
-            new \Babel\Directory\Featured_Listings();
-        }
-
-
         // 7. Sistema de Gestión de Reseñas y Calificaciones
-        if ( class_exists( 'Babel\Directory\Reviews' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Reviews' ) ) {
             new \Babel\Directory\Reviews();
         }
 
         // 8. Procesamiento Seguro de Envío de Negocios desde el Frontend
-        if ( class_exists( 'Babel\Directory\Submission' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Submission' ) ) {
             new \Babel\Directory\Submission();
         }
 
-        // 8.5 Formulario Multi-step de Auto-registro Frontend
-        if ( class_exists( 'Babel\Directory\Frontend_Registration' ) ) {
-            new \Babel\Directory\Frontend_Registration();
-        }
-
         // 12. Autenticación con Google Identity Services
-        if ( class_exists( 'Babel\Directory\Google_Auth' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Google_Auth' ) ) {
             new \Babel\Directory\Google_Auth();
         }
 
-        // 12.1 Autenticación con Microsoft
-        if ( class_exists( 'Babel\Directory\Microsoft_Auth' ) ) {
-            new \Babel\Directory\Microsoft_Auth();
+        // 12.1 Autenticación vía Magic Link (Email)
+        if ( class_exists( 'Babel\\Directory\\Magic_Link' ) ) {
+            new \Babel\Directory\Magic_Link();
         }
 
         // 9. Soporte de Imágenes en Taxonomías
-        if ( class_exists( 'Babel\Directory\Taxonomy_Images' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Taxonomy_Images' ) ) {
             new \Babel\Directory\Taxonomy_Images();
         }
 
         // 10. Shortcodes de Presentación (Radar y Grilla de Regiones)
-        if ( class_exists( 'Babel\Directory\Shortcodes' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Shortcodes' ) ) {
             new \Babel\Directory\Shortcodes();
         }
 
         // 11. Endpoints de REST API
-        if ( class_exists( 'Babel\Directory\Api\Rest_Endpoints' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Api\\Rest_Endpoints' ) ) {
             new \Babel\Directory\Api\Rest_Endpoints();
         }
 
         // 13. Capa de Compatibilidad con Temas Opinionados (Divi 5, Elementor, etc.)
-        if ( class_exists( 'Babel\Directory\Divi_Compat' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Divi_Compat' ) ) {
             new \Babel\Directory\Divi_Compat();
         }
 
         // 14. Integración de Pagos y Webhooks
-        if ( class_exists( 'Babel\Directory\Payments' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Payments' ) ) {
             new \Babel\Directory\Payments();
         }
 
         // 15. Geolocalización Pasiva (IP Detección)
-        if ( class_exists( 'Babel\Directory\Geolocation' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Geolocation' ) ) {
             new \Babel\Directory\Geolocation();
         }
 
 
         // 16. API de Publicidad y Redireccionamiento de Clics
-        if ( class_exists( 'Babel\Directory\Ads_API' ) ) {
+        if ( class_exists( 'Babel\\Directory\\Ads_API' ) ) {
             new \Babel\Directory\Ads_API();
         }
 
+        // 16.1 Arquitectura Core V2 - Índice Geoespacial
+        if ( class_exists( 'Babel\\Directory\\V2\\Models\\Geo_Index' ) ) {
+            new \Babel\Directory\V2\Models\Geo_Index();
+        }
+
+        // 16.2 Arquitectura Core V2 - API Búsqueda Geoespacial (Clean Slate - sin V2 en namespace)
+        if ( class_exists( 'Babel\\Directory\\Search\\Controller' ) ) {
+            new \Babel\Directory\Search\Controller();
+        }
+
         // 16.5 Lógica de SEO y Schema Markup
-        if ( class_exists( 'Babel\Directory\SEO' ) ) {
+        if ( class_exists( 'Babel\\Directory\\SEO' ) ) {
             new \Babel\Directory\SEO();
         }
 
-        // 17. Enrutamiento de Plantillas Autónomas (Fallback Divi/FSE)
-        add_filter( 'template_include', function( $template ) {
-            if ( is_tax( 'babel_region' ) || is_tax( 'babel_category' ) ) {
-                $plugin_template = BD_PATH . 'templates/taxonomy-babel_region.php';
-                if ( file_exists( $plugin_template ) ) return $plugin_template;
-            }
-            if ( is_singular( 'babel_business' ) ) {
-                $plugin_template = BD_PATH . 'templates/single-babel_business.php';
-                if ( file_exists( $plugin_template ) ) return $plugin_template;
-            }
-            if ( is_singular( 'bd_institution' ) ) {
-                $plugin_template = BD_PATH . 'templates/single-bd_institution.php';
-                if ( file_exists( $plugin_template ) ) return $plugin_template;
-            }
-            return $template;
-        }, 99 );
+        // 17. Desacoplado: Renderización delegada a Divi y Shortcodes React (Lego Architecture)
+        // Ya no forzamos plantillas ATR rígidas. Dejamos que el tema maneje el Layout 
+        // y que el diseñador ubique los shortcodes [bd_react_map], etc. donde quiera.
+
+        // 18. Comandos WP-CLI
+        if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'Babel\\Directory\\CLI' ) ) {
+            // El autoloader cargará la clase y sus hooks de WP-CLI
+            new \Babel\Directory\CLI();
+        }
     }
 }
 
-/**
- * Hook de Activación de Seguridad:
- * Vincula el método estático de creación de la tabla física de búsquedas rápidas.
- * Se ejecuta exclusivamente al activar el plugin para garantizar integridad.
- */
-register_activation_hook( __FILE__, array( 'Babel\Directory\Search_Index', 'create_table' ) );
+function babel_directory_activate() {
+    // 1. Crear tablas custom
+    if ( class_exists( 'Babel\\Directory\\Search_Index' ) ) {
+        \Babel\Directory\Search_Index::create_table();
+    }
+    // 2. Marcar para flushear permalinks en el próximo init (Safe Flush)
+    update_option( 'bd_flush_rewrite_rules', true );
+}
+register_activation_hook( __FILE__, 'babel_directory_activate' );
+
+// Hook para disparar el flush de forma segura cuando ya están registrados los CPTs
+add_action( 'init', function() {
+    if ( get_option( 'bd_flush_rewrite_rules' ) ) {
+        flush_rewrite_rules();
+        delete_option( 'bd_flush_rewrite_rules' );
+    }
+}, 999 );
 
 /**
  * Inicializa y retorna la instancia principal de la arquitectura del plugin.
@@ -231,3 +245,36 @@ add_action( 'phpmailer_init', function( $phpmailer ) {
     $phpmailer->From       = defined('BD_SMTP_FROM') ? BD_SMTP_FROM : 'contacto@soydechile.cl';
     $phpmailer->FromName   = defined('BD_SMTP_FROM_NAME') ? BD_SMTP_FROM_NAME : 'Soy de Chile';
 } );
+
+/**
+ * Interceptar búsqueda en /buscar/ si el keyword coincide con una Región o Categoría
+ */
+add_action( 'template_redirect', 'bd_intercept_taxonomy_search' );
+function bd_intercept_taxonomy_search() {
+    if ( is_page( 'buscar' ) && ! empty( $_GET['keyword'] ) && empty( $_GET['location'] ) ) {
+        $keyword = sanitize_text_field( wp_unslash( $_GET['keyword'] ) );
+        
+        // 1. Buscar si el keyword coincide exactamente con una región
+        $term = get_term_by( 'name', $keyword, 'babel_region' );
+        if ( ! $term || is_wp_error( $term ) ) {
+            // Intentar coincidencia parcial
+            $terms = get_terms( array(
+                'taxonomy'   => 'babel_region',
+                'name__like' => $keyword,
+                'hide_empty' => false,
+                'number'     => 1,
+            ) );
+            if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
+                // Verificar que la similitud sea fuerte para no redirigir falsos positivos
+                if ( stripos( $terms[0]->name, $keyword ) !== false ) {
+                    $term = $terms[0];
+                }
+            }
+        }
+        
+        if ( $term && ! is_wp_error( $term ) ) {
+            wp_redirect( get_term_link( $term ) );
+            exit;
+        }
+    }
+}

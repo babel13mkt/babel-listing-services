@@ -249,9 +249,9 @@ class Frontend_Dashboard {
         $user_id = get_current_user_id();
         $user = wp_get_current_user();
 
-        // Obtener los negocios del usuario
+        // Obtener los negocios e instituciones del usuario
         $args = array(
-            'post_type'      => 'babel_business',
+            'post_type'      => array( 'babel_business', 'bd_institution' ),
             'author'         => $user_id,
             'posts_per_page' => -1,
             'post_status'    => array( 'publish', 'pending', 'draft' )
@@ -273,7 +273,7 @@ class Frontend_Dashboard {
                         <p class="text-on-surface-variant m-0">Este es tu panel de control de Soy de Chile.</p>
                     </div>
                 </div>
-                <div class="mt-4 md:mt-0">
+                <div class="mt-4 md:mt-0 flex gap-2">
                     <a href="/publicar/" class="bg-secondary text-white font-label-md px-6 py-3 rounded-xl shadow-lg shadow-secondary/30 hover:bg-[#c4291f] transition-all flex items-center gap-2">
                         <span class="material-symbols-outlined text-xl">add_business</span>
                         Nuevo Negocio
@@ -285,9 +285,9 @@ class Frontend_Dashboard {
                 <!-- Estado Vacío -->
                 <div class="bg-white rounded-2xl border border-outline-variant/30 p-12 text-center shadow-sm">
                     <span class="material-symbols-outlined text-6xl text-outline-variant/50 mb-4 block">storefront</span>
-                    <h3 class="font-headline-md text-headline-md text-on-surface mb-2">Aún no tienes negocios registrados</h3>
-                    <p class="text-on-surface-variant max-w-md mx-auto mb-6">Suma tu negocio al directorio más moderno de Chile y comienza a recibir clientes de tu región.</p>
-                    <a href="/publicar/" class="inline-block bg-primary text-white px-6 py-3 rounded-lg shadow-md hover:bg-[#1a3a7a] transition-all">Registrar mi primer negocio</a>
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-2">Aún no tienes registros</h3>
+                    <p class="text-on-surface-variant max-w-md mx-auto mb-6">Suma tu negocio o institución al directorio más moderno de Chile y comienza a recibir visibilidad en tu región.</p>
+                    <a href="/publicar/" class="inline-block bg-primary text-white px-6 py-3 rounded-lg shadow-md hover:bg-[#1a3a7a] transition-all">Crear mi primer registro</a>
                 </div>
             <?php else : ?>
                 <!-- Lista de Negocios -->
@@ -309,9 +309,23 @@ class Frontend_Dashboard {
                         $plan_type   = get_post_meta( $post->ID, '_babel_plan_type', true ) ?: 'gratis';
                         $is_featured = get_post_meta( $post->ID, '_babel_is_featured', true );
 
-                        // Estadísticas falsas/reales para FOMO
-                        $views = get_post_meta( $post->ID, '_babel_view_count', true ) ?: rand( 24, 187 );
-                        $lost_leads = ceil( $views * 0.12 ); // 12% conversión hipotética
+                        // Estadísticas Reales (Analytics)
+                        global $wpdb;
+                        $stats_table = $wpdb->prefix . 'bd_listing_stats';
+                        
+                        $views = (int) $wpdb->get_var( $wpdb->prepare( 
+                            "SELECT SUM(event_count) FROM $stats_table WHERE post_id = %d AND event_type = 'view'", 
+                            $post->ID 
+                        ) );
+                        
+                        $clicks = (int) $wpdb->get_var( $wpdb->prepare( 
+                            "SELECT SUM(event_count) FROM $stats_table WHERE post_id = %d AND event_type LIKE 'click_%'", 
+                            $post->ID 
+                        ) );
+                        
+                        // Solo para mantener el FOMO si no tiene vistas aún, podemos dejar un placeholder o 0.
+                        $display_views = $views > 0 ? $views : 0;
+                        $display_leads = $clicks > 0 ? $clicks : 0;
 
                         $thumb_url = get_the_post_thumbnail_url( $post->ID, 'medium' );
                     ?>
@@ -330,7 +344,12 @@ class Frontend_Dashboard {
                             
                             <div class="flex-1">
                                 <div class="flex justify-between items-start mb-1">
-                                    <h3 class="font-headline-sm text-lg text-primary m-0 group-hover:text-secondary transition-colors"><?php echo esc_html( $post->post_title ); ?></h3>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-headline-sm text-lg text-primary m-0 group-hover:text-secondary transition-colors"><?php echo esc_html( $post->post_title ); ?></h3>
+                                        <?php if ( $post->post_type === 'bd_institution' ) : ?>
+                                            <span class="text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full border border-indigo-200">Institución</span>
+                                        <?php endif; ?>
+                                    </div>
                                     <span class="text-xs font-label-sm px-2.5 py-1 rounded-full border <?php echo esc_attr( $status_color ); ?>">
                                         <?php echo esc_html( $status_label ); ?>
                                     </span>
@@ -365,9 +384,9 @@ class Frontend_Dashboard {
                                     <div class="flex items-start gap-3">
                                         <span class="material-symbols-outlined text-amber-600">monitoring</span>
                                         <div>
-                                            <h4 class="font-label-md text-amber-900 m-0 mb-1">¡Estás perdiendo clientes!</h4>
+                                            <h4 class="font-label-md text-amber-900 m-0 mb-1">Mejora tu conversión</h4>
                                             <p class="text-sm text-amber-800/80 m-0 leading-tight">
-                                                Tu ficha fue vista <strong><?php echo esc_html( $views ); ?> veces</strong> esta semana. Si tuvieras el botón de WhatsApp activado, aproximadamente <strong><?php echo esc_html( $lost_leads ); ?> personas</strong> te habrían contactado directamente.
+                                                Tu ficha fue vista <strong><?php echo esc_html( $display_views ); ?> veces</strong>. Hasta ahora tienes <strong><?php echo esc_html( $display_leads ); ?> interacciones</strong>. Si tuvieras los botones de WhatsApp y Web desbloqueados, convertirías mucho más.
                                             </p>
                                         </div>
                                     </div>

@@ -264,7 +264,46 @@ class Rest_Endpoints {
 	 * @return string Clave de transient.
 	 */
 	private function cache_key( $prefix, array $params ) {
-		return 'bd_api_' . $prefix . '_' . md5( wp_json_encode( $params ) );
+		// Normalize parameters to prevent cache key collisions:
+		// 1. Remove empty/null values
+		// 2. Sort by key for consistent ordering
+		// 3. Normalize numeric values (float precision)
+		// 4. Recursively sort nested arrays
+		$normalized = $this->normalize_cache_params( $params );
+
+		return 'bd_api_' . $prefix . '_' . md5( wp_json_encode( $normalized ) );
+	}
+
+	/**
+	 * Normalize parameters for consistent cache key generation.
+	 * Prevents collisions from parameter ordering, empty values, and float precision.
+	 */
+	private function normalize_cache_params( array $params ): array {
+		$normalized = [];
+
+		foreach ( $params as $key => $value ) {
+			// Skip empty values (but keep '0' and '0.0')
+			if ( $value === '' || $value === null || ( is_array( $value ) && empty( $value ) ) ) {
+				continue;
+			}
+
+			// Normalize nested arrays
+			if ( is_array( $value ) ) {
+				$value = $this->normalize_cache_params( $value );
+			}
+
+			// Normalize numeric values to avoid float precision issues
+			if ( is_float( $value ) ) {
+				$value = round( $value, 6 );
+			}
+
+			$normalized[ $key ] = $value;
+		}
+
+		// Sort by key for consistent ordering regardless of input order
+		ksort( $normalized );
+
+		return $normalized;
 	}
 
 	/**
@@ -379,14 +418,14 @@ class Rest_Endpoints {
 
 		// Geolocalización Haversine.
 		$distance_select = '';
+		$haversine_params = [];
 		if ( $lat && $lng ) {
-			$haversine = $wpdb->prepare(
-				"( 6371 * acos( cos( radians(%f) ) * cos( radians( idx.latitude ) ) * cos( radians( idx.longitude ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( idx.latitude ) ) ) )",
-				$lat, $lng, $lat
-			);
-			$distance_select = ", {$haversine} AS distance";
+			$haversine_sql = "( 6371 * acos( cos( radians(%f) ) * cos( radians( idx.latitude ) ) * cos( radians( idx.longitude ) - radians(%f) ) + sin( radians(%f) ) * sin( radians( idx.latitude ) ) ) )";
+			$haversine_params = [ $lat, $lng, $lat ];
+			$distance_select = ", ( {$haversine_sql} ) AS distance";
 			if ( $radius > 0 ) {
-				$where[] = "({$haversine} <= " . floatval( $radius ) . ")";
+				$haversine_params[] = floatval( $radius );
+				$where[] = "( {$haversine_sql} <= %f )";
 			}
 		}
 
@@ -421,13 +460,12 @@ class Rest_Endpoints {
 
 		$where_str = implode( ' AND ', $where );
 
-		// Consulta de resultados.
+		// Consulta de resultados - USAR PREPARE PARA PREVENIR SQL INJECTION
 		$sql = "SELECT idx.post_id {$distance_select} FROM {$table_index} idx {$join} WHERE {$where_str} ORDER BY {$orderby} LIMIT {$offset}, {$per_page}";
-		$post_ids = $wpdb->get_results( $sql, ARRAY_A );
-
-		// Consulta de total.
 		$total_sql   = "SELECT COUNT(idx.post_id) FROM {$table_index} idx {$join} WHERE {$where_str}";
-		$total_posts = (int) $wpdb->get_var( $total_sql );
+
+		$post_ids = $wpdb->get_results( $wpdb->prepare( $sql, ...$haversine_params ), ARRAY_A );
+		$total_posts = (int) $wpdb->get_var( $wpdb->prepare( $total_sql, ...$haversine_params ) );
 		$max_pages   = (int) ceil( $total_posts / $per_page );
 
 		// Construir items limpios.
@@ -917,9 +955,9 @@ class Rest_Endpoints {
 			$results = array_merge( $results, $cats );
 		}
 
-		// 2. Regiones.
+		// 2. Regiones y Comunas.
 		$regs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT t.name AS label, 'region' AS type, t.slug AS value
+			"SELECT t.name AS label, IF(tt.parent > 0, 'comuna', 'region') AS type, t.slug AS value
 			FROM {$wpdb->terms} t
 			INNER JOIN {$wpdb->term_taxonomy} tt ON t.term_id = tt.term_id
 			WHERE tt.taxonomy = 'babel_region' AND t.name LIKE %s
@@ -942,6 +980,19 @@ class Rest_Endpoints {
 
 		if ( $bizs ) {
 			$results = array_merge( $results, $bizs );
+		}
+
+		// 4. Instituciones (bd_institution).
+		$insts = $wpdb->get_results( $wpdb->prepare(
+			"SELECT post_title AS label, 'business' AS type, post_title AS value
+			FROM {$wpdb->posts}
+			WHERE post_type = 'bd_institution' AND post_status = 'publish' AND post_title LIKE %s
+			LIMIT 5",
+			$like_q
+		), ARRAY_A );
+
+		if ( $insts ) {
+			$results = array_merge( $results, $insts );
 		}
 
 		return $results;

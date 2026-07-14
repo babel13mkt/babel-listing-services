@@ -106,6 +106,26 @@ class Admin {
             'bd-settings',
             'babel_recaptcha_section'
         );
+
+        register_setting(
+            'babel_directory_settings_group',
+            'babel_recaptcha_site_key',
+            array(
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            )
+        );
+
+        register_setting(
+            'babel_directory_settings_group',
+            'babel_recaptcha_secret_key',
+            array(
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            )
+        );
     }
 
     public function render_google_section_description() {
@@ -153,10 +173,12 @@ class Admin {
      */
     public function ajax_save_settings() {
         if ( ! check_ajax_referer( 'babel_admin_nonce', 'nonce', false ) ) {
-            wp_send_json_error( 'Nonce invalido' );
+            wp_send_json_error( 'Nonce inválido.' );
+            return;
         }
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_send_json_error( 'Permisos insuficientes.' );
+            return;
         }
         
         if ( isset( $_POST['babel_google_client_id'] ) ) {
@@ -642,13 +664,15 @@ class Admin {
             <div id="sdc-tab-configuracion" class="sdc-tab-content">
                 <h2 style="margin-top:0;">Configuración de Soy de Chile</h2>
                 <div class="sdc-card">
-                    <form id="sdc-settings-form">
+                    <form id="sdc-settings-form" action="" onsubmit="return false;">
                         <?php
+                        // Campo nonce para AJAX
+                        wp_nonce_field( 'babel_admin_nonce', 'nonce' );
                         // Renderiza las secciones y campos
                         do_settings_sections( 'bd-settings' );
                         ?>
                         <div style="margin-top: 24px;">
-                            <button type="submit" class="sdc-btn sdc-btn-primary">Guardar Configuración</button>
+                            <button type="button" id="sdc-save-settings-btn" class="sdc-btn sdc-btn-primary">Guardar Configuración</button>
                         </div>
                     </form>
                 </div>
@@ -1117,6 +1141,77 @@ class Admin {
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 4.4 React & Nuevos Features -->
+                    <div class="sdc-shortcode-item">
+                        <div class="sdc-shortcode-header" onclick="this.parentElement.classList.toggle('active')">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; background: #e0e7ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--sdc-blue);">
+                                    <span class="dashicons dashicons-admin-plugins" style="font-size:16px; width:16px; height:16px;"></span>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-size: 15px; color: #1f2937; font-weight: 600;">React App & Nuevos Bloques</h4>
+                                    <p style="margin: 4px 0 0; font-size: 12.5px; color: #6b7280;">Aplicación Frontend Vite, Destacados y Precios B2B.</p>
+                                </div>
+                            </div>
+                            <span class="dashicons dashicons-arrow-down-alt2 toggle-icon"></span>
+                        </div>
+                        <div class="sdc-shortcode-body">
+                            
+                            <!-- babel_react_app -->
+                            <div class="sdc-shortcode-variant">
+                                <div class="sdc-variant-top">
+                                    <div class="sdc-variant-code">
+                                        <code>[babel_react_app]</code>
+                                        <button type="button" id="copy-react-app" onclick="copyShortcode('[babel_react_app]', 'copy-react-app')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar</button>
+                                    </div>
+                                </div>
+                                <div class="sdc-variant-desc">
+                                    Inyecta la aplicación Frontend completa hecha en React (AI Studio). Muestra el mapa geolocalizado interactivo y los resultados de búsqueda dinámicos. Ideal para la Portada principal de Directorios.
+                                </div>
+                            </div>
+
+                            <!-- bd_featured_businesses -->
+                            <div class="sdc-shortcode-variant">
+                                <div class="sdc-variant-top">
+                                    <div class="sdc-variant-code">
+                                        <code>[bd_featured_businesses]</code>
+                                        <button type="button" id="copy-feat-bus" onclick="copyShortcode('[bd_featured_businesses]', 'copy-feat-bus')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar</button>
+                                    </div>
+                                </div>
+                                <div class="sdc-variant-desc">
+                                    Muestra un carrusel o grid de Negocios Destacados (Premium) basado en el nivel de suscripción.
+                                </div>
+                            </div>
+
+                            <!-- babel_pricing_tables -->
+                            <div class="sdc-shortcode-variant">
+                                <div class="sdc-variant-top">
+                                    <div class="sdc-variant-code">
+                                        <code>[babel_pricing_tables]</code>
+                                        <button type="button" id="copy-pricing" onclick="copyShortcode('[babel_pricing_tables]', 'copy-pricing')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar</button>
+                                    </div>
+                                </div>
+                                <div class="sdc-variant-desc">
+                                    Muestra las tres tablas de precios (Gratis, Profesional, Premium) del servicio B2B con un diseño moderno.
+                                </div>
+                            </div>
+                            
+                            <!-- babel_institutions -->
+                            <div class="sdc-shortcode-variant">
+                                <div class="sdc-variant-top">
+                                    <div class="sdc-variant-code">
+                                        <code>[babel_institutions]</code>
+                                        <button type="button" id="copy-inst" onclick="copyShortcode('[babel_institutions]', 'copy-inst')" style="background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600;">📋 Copiar</button>
+                                    </div>
+                                </div>
+                                <div class="sdc-variant-desc">
+                                    Muestra una botonera/pastillas (Pills) con filtros rápidos de Instituciones (Carabineros, Bomberos, etc). Su alias funcional es <code>[bd_region_institutions_pills]</code>.
                                 </div>
                             </div>
 

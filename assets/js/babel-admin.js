@@ -26,6 +26,7 @@ function initBabelAdmin() {
         formData.append('action', 'sdc_fetch_businesses');
         formData.append('search', search);
         formData.append('paged', paged);
+        formData.append('nonce', (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.admin_nonce : '');
         
         const endpoint = (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.ajaxurl : (typeof ajaxurl !== 'undefined' ? ajaxurl : '');
         if (!endpoint) {
@@ -215,6 +216,7 @@ function initBabelAdmin() {
 
             const formData = new FormData(settingsForm);
             formData.append('action', 'sdc_save_settings');
+            formData.append('nonce', (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.admin_nonce : '');
             
             // Append WP nonce if exists
             if (typeof ajaxurl !== 'undefined') {
@@ -263,6 +265,7 @@ function initBabelAdmin() {
 
             const formData = new FormData(businessForm);
             formData.append('action', 'sdc_save_business');
+            formData.append('nonce', (typeof sdc_admin_vars !== 'undefined') ? sdc_admin_vars.admin_nonce : '');
             
             // Collect amenities toggles if they are not standard inputs
             // The toggles in the UI might need special handling if they are custom divs. 
