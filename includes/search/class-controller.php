@@ -24,12 +24,14 @@ class Controller {
     }
 
     public function register_routes() {
-        register_rest_route( 'babel', '/search', [
+        $search_args = [
             'methods'             => 'GET, POST',
             'callback'            => [ $this, 'handle_search' ],
             'permission_callback' => '__return_true',
             'args'                => $this->get_search_schema(),
-        ] );
+        ];
+        register_rest_route( 'babel', '/search', $search_args );
+        register_rest_route( 'babel/v2', '/search', $search_args );
     }
 
     private function get_search_schema() {
