@@ -59,6 +59,7 @@ class Assets {
         wp_register_style( 'babel-global-auth-css', BD_URL . 'assets/css/babel-global-auth.css', array(), BD_VERSION );
         wp_register_script( 'babel-global-auth-js', BD_URL . 'assets/js/babel-global-auth.js', array(), BD_VERSION, true );
         wp_register_script( 'babel-geolocation-js', BD_URL . 'assets/js/babel-geolocation.js', array(), BD_VERSION, true );
+        wp_register_script( 'google-gsi-client-global', 'https://accounts.google.com/gsi/client', array(), null, false );
 
         add_shortcode( 'babel_header', array( $this, 'render_header' ) );
         add_shortcode( 'babel_hero_search', array( $this, 'render_hero_search' ) );
@@ -104,6 +105,7 @@ class Assets {
         wp_register_script( 'leaflet-cluster-js', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', array( 'leaflet-js' ), '1.5.3', true );
 
         wp_register_style( 'babel-admin-css', BD_URL . 'assets/css/babel-admin.css', array(), BD_VERSION );
+        wp_enqueue_style( 'babel-admin-css' );
         wp_enqueue_script( 'babel-admin-js', BD_URL . 'assets/js/babel-admin.js', array(), BD_VERSION, true );
         wp_localize_script( 'babel-admin-js', 'sdc_admin_vars', array(
             'ajaxurl' => admin_url( 'admin-ajax.php' ),

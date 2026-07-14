@@ -62,20 +62,25 @@ class Divi_Compat {
         add_action( 'wp_head', [ $this, 'remove_divi_input_styles' ], 999 );
         add_action( 'et_builder_ready', [ $this, 'register_divi_modules' ] );
         // FIX CRÍTICO: Divi usa el sistema MultiView para et_pb_code con raw_content,
-        // lo que causa que los shortcodes no sean parseados por the_content de manera nativa
-        // y puedan codificarse como entidades HTML si el usuario los inserta ahí.
-        // Solución: Usamos the_content con prioridad muy baja (9999) para interceptar
-        // el output de Divi, extraer nuestros shortcodes y forzar su renderizado.
-        add_filter( 'the_content', function( $content ) {
-            if ( strpos( $content, 'babel_' ) !== false || strpos( $content, 'bd_' ) !== false ) {
-                // Captura tanto [babel_...] como versiones codificadas &#91;babel_...&#93;
-                $content = preg_replace_callback( '/(?:&#91;|\\[)(babel_|bd_)(.*?)(?:&#93;|\\])/', function($m) {
-                    return do_shortcode('[' . $m[1] . $m[2] . ']');
-                }, $content );
+                // lo que causa que los shortcodes no sean parseados por the_content de manera nativa
+                // y puedan codificarse como entidades HTML si el usuario los inserta ahí.
+                // Solución: Usamos the_content con prioridad muy baja (9999) para interceptar
+                // el output de Divi, extraer nuestros shortcodes y forzar su renderizado.
+                add_filter( 'the_content', function( $content ) {
+                    if ( strpos( $content, 'babel_' ) !== false || strpos( $content, 'bd_' ) !== false ) {
+                        // Captura tanto [babel_...] como versiones codificadas &#91;babel_...&#93;
+                        $content = preg_replace_callback( '/(?:&#91;|\\\\[)(babel_|bd_)(.*?)(?:&#93;|\\\\])/', function($m) {
+                            return do_shortcode('[' . $m[1] . $m[2] . ']');
+                        }, $content );
+                    }
+                    return $content;
+                }, 9999 );
+
+                // FIX: Divi 5 Code module NO procesa shortcodes por defecto (et_pb_code_shortcode_process = false).
+                // Esto rompe [babel_region_grid] y cualquier shortcode nuestro dentro del módulo Code.
+                // Forzamos el procesamiento global para nuestros shortcodes sin depender de settings del usuario.
+                add_filter( 'et_pb_code_shortcode_process', '__return_true' );
             }
-            return $content;
-        }, 9999 );
-    }
 
     /**
      * NOTA LEGACY: process_babel_shortcodes() fue eliminado en favor de la regex directa en the_content.
